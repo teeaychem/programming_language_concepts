@@ -8,6 +8,7 @@
   <ItemGroup>
     <Compile Include="Intro/Intro1.fs" />
     <Compile Include="Intro/Intro2.fs" />
+    <Compile Include="Intcomp/Intcomp1.fs" />
     <Compile Include="Library.fs" />
   </ItemGroup>
 
