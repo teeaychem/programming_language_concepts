@@ -32,11 +32,10 @@ let rec eval e (env: eval_env) : int =
         let x_env = (x_var, eval x_val env) :: env
         eval ebody x_env
 
-    | Lets((x_var, x_val) :: xs, ebody) ->
-        let x_env = (x_var, eval x_val env) :: env
-        let lets_less = Lets(xs, ebody)
-        eval lets_less x_env
-    | Lets([], ebody) -> eval ebody env
+    | Lets(evals, ebody) ->
+
+        let renv = List.fold (fun env (xvar, xval) -> (xvar, eval xval env) :: env) [] evals
+        eval ebody renv
 
     | Prim("+", e1, e2) -> eval e1 env + eval e2 env
     | Prim("*", e1, e2) -> eval e1 env * eval e2 env
@@ -145,10 +144,16 @@ let rec freevars e : string list =
     | CstI _ -> []
     | Var x -> [ x ]
     | Let(x, erhs, ebody) -> union (freevars erhs, minus (freevars ebody, [ x ]))
-    | Lets((x_var, x_val) :: lets, ebody) ->
-        let lets_next = Lets(lets, ebody)
-        union (freevars x_val, minus (freevars lets_next, [ x_var ]))
-    | Lets([], ebody) -> freevars ebody
+    | Lets(lets, ebody) ->
+
+        let free, bound =
+            List.fold
+                (fun (free, bound) (xvar, xval) -> union (freevars xval, minus (free, [ xvar ])), xvar :: bound)
+                ([], [])
+                (List.rev lets)
+
+        union (free, minus (freevars ebody, bound))
+
     | Prim(_, e1, e2) -> union (freevars e1, freevars e2)
 
 (* Alternative definition of closed *)
@@ -183,17 +188,14 @@ let rec tcomp (e: expr) (cenv: string list) : texpr =
         let cenv1 = x :: cenv
         TLet(tcomp erhs cenv, tcomp ebody cenv1)
 
-    | Lets((x_ref, x_val) :: lets, ebody) ->
-        let sub_cenv = x_ref :: cenv
-        let subcmp = tcomp (Lets(lets, ebody)) sub_cenv
+    | Lets(elist, ebody) ->
 
-        match subcmp with
-        | TLets(vals, body) ->
-            let x_val = tcomp x_val cenv
-            TLets(x_val :: vals, body)
-        | _ -> failwith "tcomp Lets divergence"
+        let rvals, renv =
+            List.fold (fun (avals, aenv) (a, b) -> tcomp b aenv :: avals, a :: aenv) ([], []) elist
 
-    | Lets([], ebody) -> TLets([], tcomp ebody cenv)
+        TLets(List.rev rvals, tcomp ebody renv)
+
+
     | Prim(ope, e1, e2) -> TPrim(ope, tcomp e1 cenv, tcomp e2 cenv)
 
 (* Evaluation of target expressions with variable indexes. *)
@@ -207,12 +209,10 @@ let rec teval (e: texpr) (renv: int list) : int =
         let xval = teval erhs renv
         let renv1 = xval :: renv
         teval ebody renv1
-    | TLets(xval :: lets, ebody) ->
-        let xval = teval xval renv
-        let renv1 = xval :: renv
-        teval (TLets(lets, ebody)) renv1
-    | TLets([], ebody) ->
-        teval ebody renv
+    | TLets(elist, ebody) ->
+
+        let renvx = List.fold (fun aenv elem -> teval elem aenv :: aenv) [] elist
+        teval ebody renvx
 
     | TPrim("+", e1, e2) -> teval e1 renv + teval e2 renv
     | TPrim("*", e1, e2) -> teval e1 renv * teval e2 renv
