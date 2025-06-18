@@ -241,7 +241,4 @@ let ``Exercise 2.6`` () =
 
     let e1v = eval e1 []
 
-    printfn "%A" e1v
-
-
-    true
+    Assert.Equal(34, e1v)
