@@ -1,0 +1,30 @@
+/fac { dup 0 eq { pop 1 } { dup 1 sub fac mul } ifelse } def
+
+% duplicate n, calculate f(n - 1), swap so top is n, f (n - 1), add f(n - 1) and f(f - 2)
+/fib { dup 2 le { pop 1 } { dup 1 sub fib exch 2 sub fib add } ifelse } def
+
+
+/Times-Roman findfont 310 scalefont setfont
+10 20 moveto
+(Exercise 2.7) show
+
+/Times-Roman findfont 200 scalefont setfont
+360 530 moveto
+(2.7) show
+
+/Times-Roman findfont 10 scalefont setfont
+120 230 moveto
+(A few values...) show
+
+/s 20 string def
+
+200 200 moveto
+6 fib s cvs show
+200 190 moveto
+7 fib s cvs show
+200 180 moveto
+8 fib s cvs show
+200 170 moveto
+9 fib s cvs show
+
+showpage
