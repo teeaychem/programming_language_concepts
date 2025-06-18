@@ -96,6 +96,7 @@ let rec nsubst (e: expr) (env: (string * expr) list) : expr =
     | Let(x, erhs, ebody) ->
         let newenv = remove env x
         Let(x, nsubst erhs env, nsubst ebody newenv)
+    | Lets(_, _) -> failwith "nsubst is not implemented for Lets"
     | Prim(ope, e1, e2) -> Prim(ope, nsubst e1 env, nsubst e2 env)
 
 let newVar: string -> string =
@@ -314,8 +315,32 @@ let rec scomp (e: expr) (cenv: stackvalue list) : sinstr list =
 
 (* Output the integers in list inss to the text file called fname: *)
 
-let intsToFile (inss: int list) (fname: string) =
+let intsToFile (inss: int list) (fname: string) : string =
     let text = String.concat " " (List.map string inss)
+
+    if not (System.IO.File.Exists fname) then
+
+        let creation_code = System.IO.File.Create fname
+        creation_code.Close()
+
     System.IO.File.WriteAllText(fname, text)
 
+    System.IO.Path.GetFullPath fname
+
 (* -----------------------------------------------------------------  *)
+
+let rec assemble (instructions: sinstr list) : int list =
+    match instructions with
+    | i :: is ->
+        let alist = assemble is
+
+        match i with
+        | SCstI cst -> 0 :: cst :: alist
+        | SVar var -> 1 :: var :: alist
+        | SAdd -> 2 :: alist
+        | SSub -> 3 :: alist
+        | SMul -> 4 :: alist
+        | SPop -> 5 :: alist
+        | SSwap -> 6 :: alist
+
+    | [] -> []

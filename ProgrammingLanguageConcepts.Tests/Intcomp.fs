@@ -196,3 +196,14 @@ let ``Exercise 2.3`` () =
     Assert.Equal(e2_expected, tcomp e2 cenv)
 
     Assert.Equal(eval e2 [], teval (tcomp e2 []) [])
+
+[<Fact>]
+let ``Exercises 2.4 & 2.5`` () =
+
+    let cenv = []
+
+    let _file_path = intsToFile (assemble (scomp e1 cenv)) "assembly.txt"
+
+    // The rest is up to you.
+
+    Assert.True true
