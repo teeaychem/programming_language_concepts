@@ -124,7 +124,6 @@ let ``Capture avoiding substitution tests`` () =
 [<Fact>]
 let ``Compilation`` () =
 
-
     let s1 = scomp e1 []
     let s1_expected = [ SCstI 17; SVar 0; SVar 1; SAdd; SSwap; SPop ]
     Assert.True(EqualLists s1 s1_expected)
@@ -154,6 +153,13 @@ let ``Compilation`` () =
     let s5_expected = [ SCstI 2; SCstI 3; SVar 0; SCstI 4; SAdd; SSwap; SPop; SMul ]
     Assert.True(EqualLists s5 s5_expected)
 
+[<Fact>]
+let ``Stack evaluation`` () =
+    let rpn1 = reval [ RCstI 10; RCstI 17; RDup; RMul; RAdd ] []
+
+    Assert.Equal(299, rpn1)
+
+
 
 [<Fact>]
 let ``Exercise 2.1`` () =
@@ -169,7 +175,24 @@ let ``Exercise 2.2`` () =
 
     Assert.True(EqualLists [ "x3" ] (freevars e1))
 
-    let e2 =
-        Lets([ "x1", Prim("+", Var "x1", CstI 7) ], Prim("+", Var "x1", CstI 8))
+    let e2 = Lets([ "x1", Prim("+", Var "x1", CstI 7) ], Prim("+", Var "x1", CstI 8))
 
     Assert.True(EqualLists [ "x1" ] (freevars e2))
+
+[<Fact>]
+let ``Exercise 2.3`` () =
+    let cenv: string list = []
+
+    let e1_expected = TLet(TCstI 17, TPrim("+", TVar 0, TVar 0))
+
+    Assert.Equal(e1_expected, tcomp e1 cenv)
+
+    let e2 =
+        Lets([ "x1", Prim("+", CstI 5, CstI 7); "x2", Prim("*", Var "x1", CstI 2) ], Prim("+", Var "x1", Var "x2"))
+
+    let e2_expected =
+        TLets([ TPrim("+", TCstI 5, TCstI 7); TPrim("*", TVar 0, TCstI 2) ], TPrim("+", TVar 1, TVar 0))
+
+    Assert.Equal(e2_expected, tcomp e2 cenv)
+
+    Assert.Equal(eval e2 [], teval (tcomp e2 []) [])

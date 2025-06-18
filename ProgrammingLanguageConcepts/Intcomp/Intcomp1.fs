@@ -162,6 +162,7 @@ type texpr = (* target expressions *)
     | TCstI of int
     | TVar of int (* index into runtime environment *)
     | TLet of texpr * texpr (* erhs and ebody *)
+    | TLets of (texpr list) * texpr (* erhs and ebody *)
     | TPrim of string * texpr * texpr
 
 
@@ -181,6 +182,18 @@ let rec tcomp (e: expr) (cenv: string list) : texpr =
     | Let(x, erhs, ebody) ->
         let cenv1 = x :: cenv
         TLet(tcomp erhs cenv, tcomp ebody cenv1)
+
+    | Lets((x_ref, x_val) :: lets, ebody) ->
+        let sub_cenv = x_ref :: cenv
+        let subcmp = tcomp (Lets(lets, ebody)) sub_cenv
+
+        match subcmp with
+        | TLets(vals, body) ->
+            let x_val = tcomp x_val cenv
+            TLets(x_val :: vals, body)
+        | _ -> failwith "tcomp Lets divergence"
+
+    | Lets([], ebody) -> TLets([], tcomp ebody cenv)
     | Prim(ope, e1, e2) -> TPrim(ope, tcomp e1 cenv, tcomp e2 cenv)
 
 (* Evaluation of target expressions with variable indexes. *)
@@ -194,6 +207,13 @@ let rec teval (e: texpr) (renv: int list) : int =
         let xval = teval erhs renv
         let renv1 = xval :: renv
         teval ebody renv1
+    | TLets(xval :: lets, ebody) ->
+        let xval = teval xval renv
+        let renv1 = xval :: renv
+        teval (TLets(lets, ebody)) renv1
+    | TLets([], ebody) ->
+        teval ebody renv
+
     | TPrim("+", e1, e2) -> teval e1 renv + teval e2 renv
     | TPrim("*", e1, e2) -> teval e1 renv * teval e2 renv
     | TPrim("-", e1, e2) -> teval e1 renv - teval e2 renv
@@ -215,8 +235,7 @@ type rinstr =
     | RDup
     | RSwap
 
-(* A simple stack machine for evaluation of variable-free expressions
-   in postfix form *)
+(* A simple stack machine for evaluation of variable-free expressions in postfix form *)
 
 let rec reval (inss: rinstr list) (stack: int list) : int =
     match inss, stack with
@@ -230,8 +249,6 @@ let rec reval (inss: rinstr list) (stack: int list) : int =
     | RSwap :: insr, i2 :: i1 :: stkr -> reval insr (i1 :: i2 :: stkr)
     | _ -> failwith "reval: too few operands on stack"
 
-let rpn1 = reval [ RCstI 10; RCstI 17; RDup; RMul; RAdd ] []
-
 
 (* Compilation of a variable-free expression to a rinstr list *)
 
@@ -240,6 +257,7 @@ let rec rcomp (e: expr) : rinstr list =
     | CstI i -> [ RCstI i ]
     | Var _ -> failwith "rcomp cannot compile Var"
     | Let _ -> failwith "rcomp cannot compile Let"
+    | Lets _ -> failwith "rcomp cannot compile Lets"
     | Prim("+", e1, e2) -> rcomp e1 @ rcomp e2 @ [ RAdd ]
     | Prim("*", e1, e2) -> rcomp e1 @ rcomp e2 @ [ RMul ]
     | Prim("-", e1, e2) -> rcomp e1 @ rcomp e2 @ [ RSub ]
