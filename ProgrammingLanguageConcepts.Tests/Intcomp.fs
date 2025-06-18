@@ -207,3 +207,41 @@ let ``Exercises 2.4 & 2.5`` () =
     // The rest is up to you.
 
     Assert.True true
+
+[<Fact>]
+let ``Exercise 2.6`` () =
+
+    // eval is rebound here for the modification.
+    let rec eval e (env: eval_env) : int =
+        match e with
+        | CstI i -> i
+        | Var x -> lookup env x
+        | Let(x_var, x_val, ebody) ->
+            let x_env = (x_var, eval x_val env) :: env
+            eval ebody x_env
+
+        | Lets(evals, ebody) ->
+
+            // Pair vars with vals evaluated wrt. env
+            let together =
+                List.fold (fun acc (xvar, xval) -> (xvar, eval xval env) :: acc) [] evals
+
+            // Bind each var with evaluated val wrt. env
+            let renv = List.fold (fun env (xvar, xval) -> (xvar, xval) :: env) env together
+
+            eval ebody renv
+
+        | Prim("+", e1, e2) -> eval e1 env + eval e2 env
+        | Prim("*", e1, e2) -> eval e1 env * eval e2 env
+        | Prim("-", e1, e2) -> eval e1 env - eval e2 env
+        | Prim _ -> failwith "unknown primitive"
+
+    let e1 =
+        Let("x", CstI 11, Lets([ "x", CstI 22; "y", Prim("+", Var "x", CstI 1) ], Prim("+", Var "x", Var "y")))
+
+    let e1v = eval e1 []
+
+    printfn "%A" e1v
+
+
+    true
