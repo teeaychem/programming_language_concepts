@@ -482,4 +482,10 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Project specific files
 /ProgrammingLanguageConcepts/Intcomp/machine
+/ProgrammingLanguageConcepts/ExprLex.fs
+/ProgrammingLanguageConcepts/ExprLex.fsi
+/ProgrammingLanguageConcepts/ExprPar.fs
+/ProgrammingLanguageConcepts/ExprPar.fsi
