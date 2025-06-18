@@ -6,10 +6,30 @@
   </PropertyGroup>
 
   <ItemGroup>
+    
+    
     <Compile Include="Intro/Intro1.fs" />
     <Compile Include="Intro/Intro2.fs" />
     <Compile Include="Intcomp/Intcomp1.fs" />
+    <Compile Include="Expr/Absyn.fs" />
+    <Compile Include="Expr/Expr.fs" />
+    
+    <FsYacc Include="Expr/ExprPar.fsy">
+      <OtherFlags>--module ExprPar</OtherFlags>
+    </FsYacc>
+    <Compile Include="ExprPar.fs" />
+    
+    <FsLex Include="Expr/ExprLex.fsl">
+      <OtherFlags>--unicode</OtherFlags>
+    </FsLex>
+    <Compile Include="ExprLex.fs" />
+
+    <Compile Include="Expr/Parse.fs" />
     <Compile Include="Library.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FsLexYacc" Version="11.3.0" />
   </ItemGroup>
 
 </Project>
