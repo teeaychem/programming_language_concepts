@@ -28,3 +28,20 @@ Tests can be run via:
 cd ./ProgrammingLanguageConcepts.Tests/
 dotnet test
 ```
+
+## The stack machine
+
+Intcomp contains a version of the stack machine written in C.
+For slight confusion, shadow the unix program `machine`.
+
+``` shell
+cd ./Intcomp
+clang -o machine machine.c
+```
+
+The machine reads a file, or runs a couple of internal tests.
+
+``` shell
+./machine <FILE>
+./machine -t
+```
