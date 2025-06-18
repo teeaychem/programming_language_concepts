@@ -116,11 +116,13 @@ void test_rpn2() {
 
 int main(int argc, char *argv[]) {
 
-  struct Machine m = default_machine();
 
-  if (argc == 1) {
-    printf("Run with '-t' for tests or the path to a file.");
+  if (argc < 2) {
+    printf("Please run with '-t' for tests or the path to a file.\n");
+    exit(-1);
   }
+
+  struct Machine m = default_machine();
 
   if (strcmp(argv[1], "-t") == 0) {
     test_rpn1();
