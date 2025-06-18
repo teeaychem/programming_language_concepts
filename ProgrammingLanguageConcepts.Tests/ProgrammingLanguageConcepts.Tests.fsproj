@@ -10,7 +10,9 @@
     <Compile Include="Intro1.fs" />
     <Compile Include="Intro2.fs" />
     <Compile Include="Intcomp.fs" />
-    <Compile Include="Program.fs" />
+    <Compile Include="Expr.fs" />
+
+    <Compile Include="Program.fs" />    
   </ItemGroup>
 
   <ItemGroup>

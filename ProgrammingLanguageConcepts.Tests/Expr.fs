@@ -1,0 +1,73 @@
+module TestsExpr
+
+open Xunit
+open System
+
+open Parse
+open Absyn
+open Expr
+
+
+(* From file expr/expr.sml * Simple arithmetic expressions *)
+
+let e1 = Let("z", CstI 17, Prim("+", Var "z", Var "z"))
+
+let e2 =
+    Let("z", CstI 17, Prim("+", Let("z", CstI 22, Prim("*", CstI 100, Var "z")), Var "z"))
+
+let e3 = Let("z", Prim("-", CstI 5, CstI 4), Prim("*", CstI 100, Var "z"))
+let e4 = Prim("-", Prim("-", Var "a", Var "b"), Var "c")
+let e5 = Prim("-", Var "a", Prim("-", Var "b", Var "c"))
+let e6 = Prim("*", Prim("-", Var "a", Var "b"), Var "c")
+let e7 = Prim("-", Prim("*", Var "a", Var "b"), Var "c")
+let e8 = Prim("*", Var "a", Prim("-", Var "b", Var "c"))
+let e9 = Prim("-", Var "a", Prim("*", Var "b", Var "c"))
+
+let es = [ e1; e2; e3; e4; e5; e6; e7; e8; e9 ]
+
+[<Fact>]
+let ``readme`` () =
+    let arun = run (fromString "2 + 3 * 4")
+    Assert.Equal(14, arun)
+
+    let ev1 = eval (fromString "2 + x * 4") [ ("x", 3) ]
+    Assert.Equal(14, ev1)
+
+    let ev2 = eval (fromString "let x = 1+2 in 2 + x * 4 end") []
+    Assert.Equal(14, ev2)
+
+
+[<Fact>]
+let ``Exercise 3.5`` () =
+
+    let fs0 = fromString "1 + 2 * 3"
+    let fs0r = run fs0
+    Assert.Equal(7, fs0r)
+
+    let fs1 = fromString "1 - 2 - 3"
+    let fs1r = run fs1
+    // Assert.Equal(-4, fs1r)
+
+    let fs2 = fromString "1 + -2"
+    let fs2r = run fs2
+    Assert.Equal(-1, fs2r)
+
+    Assert.Throws<Exception>(fun () -> fromString "x++" |> ignore) |> ignore
+
+    Assert.Throws<Exception>(fun () -> fromString "1 + 1.2" |> ignore) |> ignore
+
+    Assert.Throws<Exception>(fun () -> fromString "1 + " |> ignore) |> ignore
+
+    let fs6 = fromString "let z = (17) in z + 2 * 3 end"
+    let fs6r = run fs6
+    Assert.Equal(23, fs6r)
+
+    Assert.Throws<Exception>(fun () -> fromString "let z = 17) in z + 2 * 3 end" |> ignore)
+    |> ignore
+
+    Assert.Throws<Exception>(fun () -> fromString "let in = (17) in z + 2 * 3 end" |> ignore)
+    |> ignore
+
+    let fs9 = fromString "1 + let x=5 in let y=7+x in y+y end + x end"
+    let fs9r = run fs9
+    Assert.Equal(30, fs9r)
