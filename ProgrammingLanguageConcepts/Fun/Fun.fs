@@ -44,6 +44,8 @@ let rec eval (e: expr) (env: value env) : int =
         | "-" -> i1 - i2
         | "=" -> if i1 = i2 then 1 else 0
         | "<" -> if i1 < i2 then 1 else 0
+        | "&&" -> if i1 = 0 then 0 else i2
+        | "||" -> if i1 <> 0 then 1 else i2
         | _ -> failwith ("unknown primitive " + ope)
     | Let(x, eRhs, letBody) ->
         let xVal = Int(eval eRhs env)

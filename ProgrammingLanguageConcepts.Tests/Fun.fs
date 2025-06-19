@@ -237,3 +237,12 @@ let ``Exercise 4.4`` () =
     let e3ast = fromString e3s
 
     Assert.Equal(1, eval e3ast ["n", Int 2])
+
+[<Fact>]
+let ``Exercise 4.5`` () =
+
+    Assert.Equal(1, run (fromString "1 && 0 || 1"))
+
+    Assert.Equal(0, run (fromString "1 && 0"))
+
+    Assert.Equal(1, eval (fromString "x || y") ["x", Int 0; "y", Int 1])
