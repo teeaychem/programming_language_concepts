@@ -12,6 +12,7 @@
     <Compile Include="Intcomp.fs" />
     <Compile Include="Expr.fs" />
     <Compile Include="Fun.fs" />
+    <Compile Include="TypedFun.fs" />
 
     <Compile Include="Program.fs" />    
   </ItemGroup>
