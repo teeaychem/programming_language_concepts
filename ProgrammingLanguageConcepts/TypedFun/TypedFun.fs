@@ -36,26 +36,25 @@ let rec lookup env x =
 type typ =
     | TypI (* int                         *)
     | TypB (* bool                        *)
-    | TypF of typ * typ (* (argumenttype, resulttype)  *)
+    | TypF of typ list * typ (* (argumenttype, resulttype)  *)
 
 (* New abstract syntax with explicit types, instead of Absyn.expr: *)
 
 type tyexpr =
-    | CstI of int
+    | Call of tyexpr * tyexpr list
     | CstB of bool
-    | Var of string
-    | Let of string * tyexpr * tyexpr
-    | Prim of string * tyexpr * tyexpr
+    | CstI of int
     | If of tyexpr * tyexpr * tyexpr
-    | Letfun of string * string * typ * tyexpr * typ * tyexpr
-    (* (f,       x,       xTyp, fBody,  rTyp, letBody *)
-    | Call of tyexpr * tyexpr
+    | Let of string * tyexpr * tyexpr
+    | Letfun of string * (string * typ) list * tyexpr * typ * tyexpr // (f, (x, xTyp) list , fBody,  rTyp, letBody
+    | Prim of string * tyexpr * tyexpr
+    | Var of string
 
 (* A runtime value is an integer or a function closure *)
 
 type value =
     | Int of int
-    | Closure of string * string * tyexpr * value env (* (f, x, fBody, fDeclEnv) *)
+    | Closure of string * string list * tyexpr * value env (* (f, x, fBody, fDeclEnv) *)
 
 let rec eval (e: tyexpr) (env: value env) : int =
     match e with
@@ -83,16 +82,18 @@ let rec eval (e: tyexpr) (env: value env) : int =
     | If(e1, e2, e3) ->
         let b = eval e1 env
         if b <> 0 then eval e2 env else eval e3 env
-    | Letfun(f, x, _, fBody, _, letBody) ->
-        let bodyEnv = (f, Closure(f, x, fBody, env)) :: env
+    | Letfun(f, xTypL, fBody, _, letBody) ->
+        let xs = List.map (fun (x, _) -> x) xTypL
+        let bodyEnv = (f, Closure(f, xs, fBody, env)) :: env
         eval letBody bodyEnv
-    | Call(Var f, eArg) ->
+    | Call(Var f, eArgs) ->
         let fClosure = lookup env f
 
         match fClosure with
-        | Closure(f, x, fBody, fDeclEnv) ->
-            let xVal = Int(eval eArg env)
-            let fBodyEnv = (x, xVal) :: (f, fClosure) :: fDeclEnv
+        | Closure(f, xL, fBody, fDeclEnv) ->
+
+            let xVals = List.map (fun (x, eArg) -> x, Int(eval eArg env)) (List.zip xL eArgs)
+            let fBodyEnv = xVals @ (f, fClosure) :: fDeclEnv
             eval fBody fBodyEnv
         | _ -> failwith "eval Call: not a function"
     | Call _ -> failwith "illegal function in Call"
@@ -127,22 +128,23 @@ let rec typ (e: tyexpr) (env: typ env) : typ =
             let t3 = typ e3 env
             if t2 = t3 then t2 else failwith "If: branch types differ"
         | _ -> failwith "If: condition not boolean"
-    | Letfun(f, x, xTyp, fBody, rTyp, letBody) ->
-        let fTyp = TypF(xTyp, rTyp)
-        let fBodyEnv = (x, xTyp) :: (f, fTyp) :: env
+    | Letfun(f, xTypL, fBody, rTyp, letBody) ->
+        let argTyps = List.map (fun (_, t) -> t) xTypL
+        let fTyp = TypF(argTyps, rTyp)
+        let fBodyEnv = xTypL @ (f, fTyp) :: env
         let letBodyEnv = (f, fTyp) :: env
 
         if typ fBody fBodyEnv = rTyp then
             typ letBody letBodyEnv
         else
             failwith ("Letfun: return type in " + f)
-    | Call(Var f, eArg) ->
+    | Call(Var f, eArgs) ->
         match lookup env f with
-        | TypF(xTyp, rTyp) ->
-            if typ eArg env = xTyp then
+        | TypF(xTypsL, rTyp) ->
+            if List.forall (fun (eArg, xTyp) -> typ eArg env = xTyp) (List.zip eArgs xTypsL) then
                 rTyp
             else
-                failwith "Call: wrong argument type"
+                failwith "Call: wrong argument type(s)"
         | _ -> failwith "Call: unknown function"
     | Call(_, _) -> failwith "Call: illegal function in call"
 

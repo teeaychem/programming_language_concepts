@@ -8,7 +8,7 @@ let ``initial`` () =
     (* Examples of successful type checking *)
 
     let ex1 =
-        Letfun("f1", "x", TypI, Prim("+", Var "x", CstI 1), TypI, Call(Var "f1", CstI 12))
+        Letfun("f1", [ "x", TypI ], Prim("+", Var "x", CstI 1), TypI, Call(Var "f1", [ CstI 12 ]))
 
     Assert.Equal(13, eval ex1 [])
 
@@ -17,11 +17,10 @@ let ``initial`` () =
     let ex2 =
         Letfun(
             "fac",
-            "x",
+            [ "x", TypI ],
+            If(Prim("=", Var "x", CstI 0), CstI 1, Prim("*", Var "x", Call(Var "fac", [ Prim("-", Var "x", CstI 1) ]))),
             TypI,
-            If(Prim("=", Var "x", CstI 0), CstI 1, Prim("*", Var "x", Call(Var "fac", Prim("-", Var "x", CstI 1)))),
-            TypI,
-            Let("n", CstI 7, Call(Var "fac", Var "n"))
+            Let("n", CstI 7, Call(Var "fac", [ Var "n" ]))
         )
 
     Assert.Equal(5040, eval ex2 [])
@@ -41,7 +40,7 @@ let ``initial`` () =
     Assert.Equal(666, eval ex5 [])
 
     let ex6 =
-        Letfun("inf", "x", TypI, Call(Var "inf", Var "x"), TypI, Call(Var "inf", CstI 0))
+        Letfun("inf", [ "x", TypI ], Call(Var "inf", [ Var "x" ]), TypI, Call(Var "inf", [ CstI 0 ]))
 
     let exs = [ ex1; ex2; ex3; ex4; ex5; ex6 ]
     let ext = [ TypI; TypI; TypI; TypB; TypI; TypI ]
@@ -57,16 +56,36 @@ let ``initial`` () =
     Assert.Throws<System.Exception>(fun () -> typeCheck exErr1 |> ignore) |> ignore
 
     let exErr2 =
-        Letfun("f", "x", TypB, If(Var "x", CstI 11, CstI 22), TypI, Call(Var "f", CstI 0))
+        Letfun("f", [ "x", TypB ], If(Var "x", CstI 11, CstI 22), TypI, Call(Var "f", [ CstI 0 ]))
 
     Assert.Throws<System.Exception>(fun () -> typeCheck exErr2 |> ignore) |> ignore
 
     let exErr3 =
-        Letfun("f", "x", TypB, Call(Var "f", CstI 22), TypI, Call(Var "f", CstB true))
+        Letfun("f", [ "x", TypB ], Call(Var "f", [ CstI 22 ]), TypI, Call(Var "f", [ CstB true ]))
 
     Assert.Throws<System.Exception>(fun () -> typeCheck exErr3 |> ignore) |> ignore
 
     let exErr4 =
-        Letfun("f", "x", TypB, If(Var "x", CstI 11, CstI 22), TypB, Call(Var "f", CstB true))
+        Letfun("f", [ "x", TypB ], If(Var "x", CstI 11, CstI 22), TypB, Call(Var "f", [ CstB true ]))
 
     Assert.Throws<System.Exception>(fun () -> typeCheck exErr4 |> ignore) |> ignore
+
+[<Fact>]
+let ``Exercise 4.7`` () =
+
+    let pow =
+        Letfun(
+            "pow",
+            [ "x", TypI; "n", TypI ],
+            If(
+                Prim("=", Var "n", CstI 0),
+                CstI 1,
+                Prim("*", Var "x", Call(Var "pow", [ Var "x"; Prim("-", Var "n", CstI 1) ]))
+            ),
+            TypI,
+            Call(Var "pow", [ CstI 3; CstI 8 ])
+        )
+
+
+    Assert.Equal(TypI, typeCheck pow)
+    Assert.Equal(6561, eval pow [])
