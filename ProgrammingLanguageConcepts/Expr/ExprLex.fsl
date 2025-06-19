@@ -16,9 +16,12 @@ let lexemeAsString lexbuf =
 
 let keyword s =
     match s with
-    | "let" -> LET
-    | "in"  -> IN
+    | "else" -> ELSE
     | "end" -> END
+    | "if" -> IF
+    | "in"  -> IN
+    | "let" -> LET
+    | "then" -> THEN
     | _     -> NAME s
 }
 

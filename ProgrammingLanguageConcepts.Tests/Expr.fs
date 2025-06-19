@@ -42,14 +42,13 @@ let ``readme`` () =
 let ``Exercise 3.2`` () =
     let rx = Regex(@"^a$|^b$|^(?:(?:a?b+)+)a$", RegexOptions.Compiled)
 
-    Assert.True(rx.IsMatch  "b")
+    Assert.True(rx.IsMatch "b")
     Assert.True(rx.IsMatch "a")
     Assert.True(rx.IsMatch "ba")
     Assert.True(rx.IsMatch "ababbbaba")
 
     Assert.False(rx.IsMatch "aa")
     Assert.False(rx.IsMatch "babaa")
-
 
 
 [<Fact>]
@@ -86,3 +85,30 @@ let ``Exercise 3.5`` () =
     let fs9 = fromString "1 + let x=5 in let y=7+x in y+y end + x end"
     let fs9r = run fs9
     Assert.Equal(30, fs9r)
+
+
+[<Fact>]
+let ``Exercise 3.6`` () =
+    let compString (str: string) : sinstr list =
+        let expr = fromString str
+        scomp expr []
+
+    Assert.Equal(7, seval (compString "1 + 2 * 3") [])
+
+
+[<Fact>]
+let ``Exercise 3.7`` () =
+
+    // As there's no equality, a condition is true whenever the expression evaluates to a non-zero value and false otherwise.
+
+    let ok = "if 1 then 2 * 3 else 3 - 4"
+    let okexpr = fromString ok
+    Assert.Equal(fmt okexpr, ok)
+    Assert.Equal(6, eval okexpr [])
+
+    let nok = "if 0 then 2 * 3 else 3 - 4"
+    let okexpr = fromString nok
+    Assert.Equal(fmt okexpr, nok)
+    Assert.Equal(-1, eval okexpr [])
+
+    true
