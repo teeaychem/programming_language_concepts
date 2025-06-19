@@ -489,3 +489,7 @@ $RECYCLE.BIN/
 /ProgrammingLanguageConcepts/ExprLex.fsi
 /ProgrammingLanguageConcepts/ExprPar.fs
 /ProgrammingLanguageConcepts/ExprPar.fsi
+/ProgrammingLanguageConcepts/FunLex.fs
+/ProgrammingLanguageConcepts/FunLex.fsi
+/ProgrammingLanguageConcepts/FunPar.fs
+/ProgrammingLanguageConcepts/FunPar.fsi
