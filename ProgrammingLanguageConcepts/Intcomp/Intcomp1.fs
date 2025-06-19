@@ -64,6 +64,7 @@ let rec closedin (e: expr) (vs: string list) : bool =
         let vs1 = x :: vs
         closedin erhs vs && closedin ebody vs1
     | Prim(_, e1, e2) -> closedin e1 vs && closedin e2 vs
+    | Lets(_, _) -> failwith "Not Implemented"
 
 (* An expression is closed if it is closed in the empty environment *)
 
@@ -119,6 +120,7 @@ let rec subst (e: expr) (env: (string * expr) list) : expr =
         let newenv = (x, Var newx) :: remove env x
         Let(newx, subst erhs env, subst ebody newenv)
     | Prim(ope, e1, e2) -> Prim(ope, subst e1 env, subst e2 env)
+    | Lets(_, _) -> failwith "Not Implemented"
 
 
 (* Operations on sets, represented as lists. *)
@@ -310,6 +312,7 @@ let rec scomp (e: expr) (cenv: stackvalue list) : sinstr list =
     | Prim("-", e1, e2) -> scomp e1 cenv @ scomp e2 (Value :: cenv) @ [ SSub ]
     | Prim("*", e1, e2) -> scomp e1 cenv @ scomp e2 (Value :: cenv) @ [ SMul ]
     | Prim _ -> failwith "scomp: unknown operator"
+    | Lets(_, _) -> failwith "Not Implemented"
 
 
 
