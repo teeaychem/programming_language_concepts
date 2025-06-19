@@ -8,7 +8,8 @@ open FunParse
 
 [<Fact>]
 let ``abstract`` () =
-    let ex1 = Letfun("f1", "x", Prim("+", Var "x", CstI 1), Call(Var "f1", CstI 12))
+    let ex1 =
+        Letfun("f1", [ "x" ], Prim("+", Var "x", CstI 1), Call(Var "f1", [ CstI 12 ]))
 
     Assert.Equal(13, run ex1)
 
@@ -19,9 +20,9 @@ let ``factorial`` () =
     let ex2 =
         Letfun(
             "fac",
-            "x",
-            If(Prim("=", Var "x", CstI 0), CstI 1, Prim("*", Var "x", Call(Var "fac", Prim("-", Var "x", CstI 1)))),
-            Call(Var "fac", Var "n")
+            [ "x" ],
+            If(Prim("=", Var "x", CstI 0), CstI 1, Prim("*", Var "x", Call(Var "fac", [ Prim("-", Var "x", CstI 1) ]))),
+            Call(Var "fac", [ Var "n" ])
         )
 
     let fac10 = eval ex2 [ ("n", Int 10) ]
@@ -34,9 +35,9 @@ let ``deep`` () =
     let ex3 =
         Letfun(
             "deep",
-            "x",
-            If(Prim("=", Var "x", CstI 0), CstI 1, Call(Var "deep", Prim("-", Var "x", CstI 1))),
-            Call(Var "deep", Var "count")
+            [ "x" ],
+            If(Prim("=", Var "x", CstI 0), CstI 1, Call(Var "deep", [ Prim("-", Var "x", CstI 1) ])),
+            Call(Var "deep", [ Var "count" ])
         )
 
     let rundeep n = eval ex3 [ ("count", Int n) ]
@@ -46,7 +47,11 @@ let ``deep`` () =
 [<Fact>]
 let ``scope`` () =
     let ex4 =
-        Let("y", CstI 11, Letfun("f", "x", Prim("+", Var "x", Var "y"), Let("y", CstI 22, Call(Var "f", CstI 3))))
+        Let(
+            "y",
+            CstI 11,
+            Letfun("f", [ "x" ], Prim("+", Var "x", Var "y"), Let("y", CstI 22, Call(Var "f", [ CstI 3 ])))
+        )
 
     // dynamic scope = 25
     Assert.Equal(14, run ex4)
@@ -56,21 +61,25 @@ let ``scope`` () =
 let ``two defs`` () =
 
     let ge2 b =
-        Letfun("ge2", "x", Prim("<", CstI 1, Var "x"), b)
+        Letfun("ge2", [ "x" ], Prim("<", CstI 1, Var "x"), b)
 
     let fib b =
         Letfun(
             "fib",
-            "n",
+            [ "n" ],
             If(
-                Call(Var "ge2", Var "n"),
-                Prim("+", Call(Var "fib", Prim("-", Var "n", CstI 1)), Call(Var "fib", Prim("-", Var "n", CstI 2))),
+                Call(Var "ge2", [ Var "n" ]),
+                Prim(
+                    "+",
+                    Call(Var "fib", [ Prim("-", Var "n", CstI 1) ]),
+                    Call(Var "fib", [ Prim("-", Var "n", CstI 2) ])
+                ),
                 CstI 1
             ),
             b
         )
 
-    let ex5 = ge2 (fib (Call(Var "fib", CstI 25)))
+    let ex5 = ge2 (fib (Call(Var "fib", [ CstI 25 ])))
 
     Assert.Equal(121393, run ex5)
 
@@ -127,12 +136,28 @@ let ``additional parse`` () =
 
 [<Fact>]
 let ``Exercise 4.2`` () =
+
+    let sum n = n * (n + 1) / 2
+
+    let x =
+        Letfun(
+            "sum",
+            [ "n" ],
+            If(Prim("=", Var "n", CstI 1), CstI 1, Prim("+", Var "n", Call(Var "sum", [ Prim("-", Var "n", CstI 1) ]))),
+            Call(Var "sum", [ CstI 1000 ])
+        )
+
+    Assert.Equal(sum 1000, run x)
+
+
     let sum_expr =
         @"
     let sum n = if n = 1 then 1 else n + sum(n - 1) in sum 1000 end
     "
 
-    let sum n = n * (n + 1) / 2
+
+
+    printfn "%A" (fromString sum_expr)
 
     Assert.Equal(sum 1000, run (fromString sum_expr))
 
@@ -193,3 +218,26 @@ let ``Exercise 4.2`` () =
     let lim = 10
 
     Assert.Equal(int (pow_sum2_expected ex (float lim)), run (fromString (pow_sum2_expr ex lim)))
+
+
+[<Fact>]
+let ``Exercise 4.4`` () =
+    let e1s = "let pow x n = if n=0 then 1 else x * pow x (n-1) in pow 3 8 end"
+    let e1ast = fromString e1s
+
+    Assert.Equal(6561, run e1ast)
+
+    let e2s = "
+    let max2 a b = if a<b then b else a
+        in let max3 a b c = max2 a (max2 b c)
+            in max3 25 6 62 end
+        end"
+    let e2ast = fromString e2s
+
+    Assert.Equal(62, run e2ast)
+
+    let e3s = "
+    n - 1"
+    let e3ast = fromString e3s
+
+    Assert.Equal(1, eval e3ast ["n", Int 2])
