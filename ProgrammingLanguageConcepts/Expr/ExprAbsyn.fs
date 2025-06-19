@@ -2,7 +2,7 @@
    Abstract syntax for the simple expression language 
  *)
 
-module Absyn
+module ExprAbsyn
 
 type expr = 
   | CstI of int

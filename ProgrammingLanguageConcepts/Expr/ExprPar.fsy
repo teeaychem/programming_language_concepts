@@ -3,7 +3,7 @@
      Parser specification for the simple expression language.
    *)
 
-  open Absyn
+  open ExprAbsyn
 %}
 
 %token <int> CSTINT
@@ -19,7 +19,7 @@
 
 
 %start Main
-%type <Absyn.expr> Main 
+%type <ExprAbsyn.expr> Main
 
 %%
 

@@ -11,7 +11,7 @@
     <Compile Include="Intro/Intro1.fs" />
     <Compile Include="Intro/Intro2.fs" />
     <Compile Include="Intcomp/Intcomp1.fs" />
-    <Compile Include="Expr/Absyn.fs" />
+    <Compile Include="Expr/ExprAbsyn.fs" />
     <Compile Include="Expr/Expr.fs" />
     
     <FsYacc Include="Expr/ExprPar.fsy">
@@ -25,6 +25,19 @@
     <Compile Include="ExprLex.fs" />
 
     <Compile Include="Expr/Parse.fs" />
+
+    <!-- <Compile Include="Fun/FunAbsyn.fs" /> -->
+    <!-- <FsYacc Include="Fun/FunPar.fsy"> -->
+    <!--   <OtherFlags>-\-module FunPar</OtherFlags> -->
+    <!-- </FsYacc> -->
+    <!-- <Compile Include="FunPar.fs" /> -->
+    
+    <!-- <FsLex Include="Fun/FunLex.fsl"> -->
+    <!--   <OtherFlags>-\-unicode</OtherFlags> -->
+    <!-- </FsLex> -->
+    <!-- <Compile Include="FunLex.fs" /> -->
+
+    
     <Compile Include="Library.fs" />
   </ItemGroup>
 

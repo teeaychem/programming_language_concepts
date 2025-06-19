@@ -5,7 +5,7 @@ module Parse
 
 open System.IO
 open FSharp.Text.Lexing
-open Absyn
+open ExprAbsyn
 
 (* Plain parsing from a string, with poor error reporting *)
 

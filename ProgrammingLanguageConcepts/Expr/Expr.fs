@@ -4,7 +4,7 @@
 
 module Expr
 
-open Absyn
+open ExprAbsyn
 
 let rec fmt1 (e: expr) : string =
     match e with
