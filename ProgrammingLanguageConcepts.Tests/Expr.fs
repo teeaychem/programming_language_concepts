@@ -37,6 +37,16 @@ let ``readme`` () =
     let ev2 = eval (fromString "let x = 1+2 in 2 + x * 4 end") []
     Assert.Equal(14, ev2)
 
+    let code1 = scomp (fromString "2 + 3 * 4") []
+    Assert.Equal(14, seval code1 [])
+
+    let code2 = scomp (fromString "2 + x * 4") [Bound "x"]
+    Assert.Equal(14, seval code2 [3])
+
+    let code3 = scomp (fromString "let x = 1+2 in 2 + x * 4 end") []
+    Assert.Equal(14, seval code3 [])
+
+
 
 [<Fact>]
 let ``Exercise 3.2`` () =
