@@ -2,6 +2,7 @@ module TestsExpr
 
 open Xunit
 open System
+open System.Text.RegularExpressions
 
 open Parse
 open Absyn
@@ -38,6 +39,20 @@ let ``readme`` () =
 
 
 [<Fact>]
+let ``Exercise 3.2`` () =
+    let rx = Regex(@"^a$|^b$|^(?:(?:a?b+)+)a$", RegexOptions.Compiled)
+
+    Assert.True(rx.IsMatch  "b")
+    Assert.True(rx.IsMatch "a")
+    Assert.True(rx.IsMatch "ba")
+    Assert.True(rx.IsMatch "ababbbaba")
+
+    Assert.False(rx.IsMatch "aa")
+    Assert.False(rx.IsMatch "babaa")
+
+
+
+[<Fact>]
 let ``Exercise 3.5`` () =
 
     let fs0 = fromString "1 + 2 * 3"
@@ -46,7 +61,7 @@ let ``Exercise 3.5`` () =
 
     let fs1 = fromString "1 - 2 - 3"
     let fs1r = run fs1
-    // Assert.Equal(-4, fs1r)
+    Assert.Equal(2, fs1r)
 
     let fs2 = fromString "1 + -2"
     let fs2r = run fs2
