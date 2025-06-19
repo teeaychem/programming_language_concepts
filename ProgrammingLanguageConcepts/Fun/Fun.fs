@@ -25,6 +25,7 @@ let rec lookup env x =
 type value =
     | Int of int
     | Closure of string * string list * expr * value env (* (f, x, fBody, fDeclEnv) *)
+    | TupV of expr list
 
 let rec eval (e: expr) (env: value env) : int =
     match e with
@@ -48,8 +49,11 @@ let rec eval (e: expr) (env: value env) : int =
         | "||" -> if i1 <> 0 then 1 else i2
         | _ -> failwith ("unknown primitive " + ope)
     | Let(x, eRhs, letBody) ->
-        let xVal = Int(eval eRhs env)
-        let bodyEnv = (x, xVal) :: env
+        let bodyEnv =
+            match eRhs with
+            | Tup t -> (x, TupV t) :: env
+            | _ -> (x, Int(eval eRhs env)) :: env
+
         eval letBody bodyEnv
     | If(e1, e2, e3) ->
         let b = eval e1 env
@@ -64,13 +68,31 @@ let rec eval (e: expr) (env: value env) : int =
         | Closure(f, x, fBody, fDeclEnv) ->
             let fBodyEnv =
                 List.fold
-                    (fun acc (nv, na) -> (nv, Int(eval na env)) :: acc)
+                    (fun acc (nv, na) ->
+                        match na with
+                        | Tup t -> (nv, TupV t) :: acc
+                        | _ -> (nv, Int(eval na env)) :: acc)
                     ((f, fClosure) :: fDeclEnv)
                     (List.zip x eArgs)
 
             eval fBody fBodyEnv
         | _ -> failwith "eval Call: not a function"
     | Call _ -> failwith "eval Call: not first-order function"
+
+    | Sel(i, t) ->
+        match t with
+        | Var t ->
+            let t = lookup env t
+
+            match t with
+            | TupV t -> eval (t.Item(i - 1)) env
+            | _ -> failwith "Selection on a variable which does not refer to a tuple"
+        | Tup t -> eval (t.Item(i - 1)) env
+        | _ -> failwith "Selection on something other than a variable"
+
+
+
+    | Tup t -> failwith "eval Tup"
 
 (* Evaluate in empty environment: program must have no free variables: *)
 

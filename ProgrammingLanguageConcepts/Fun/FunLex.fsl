@@ -57,6 +57,8 @@ rule Token = parse
   | ')'             { RPAR }
   | "&&"            { AND }
   | "||"            { OR }
+  | ','             { COMMA }
+  | '#'             { HASH }
   | eof             { EOF }
   | _               { failwith "Lexer error: illegal symbol" }
 

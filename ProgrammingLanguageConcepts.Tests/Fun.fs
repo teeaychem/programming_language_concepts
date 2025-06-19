@@ -223,20 +223,24 @@ let ``Exercise 4.4`` () =
 
     Assert.Equal(6561, run e1ast)
 
-    let e2s = "
+    let e2s =
+        "
     let max2 a b = if a<b then b else a
         in let max3 a b c = max2 a (max2 b c)
             in max3 25 6 62 end
         end"
+
     let e2ast = fromString e2s
 
     Assert.Equal(62, run e2ast)
 
-    let e3s = "
+    let e3s =
+        "
     n - 1"
+
     let e3ast = fromString e3s
 
-    Assert.Equal(1, eval e3ast ["n", Int 2])
+    Assert.Equal(1, eval e3ast [ "n", Int 2 ])
 
 [<Fact>]
 let ``Exercise 4.5`` () =
@@ -245,4 +249,37 @@ let ``Exercise 4.5`` () =
 
     Assert.Equal(0, run (fromString "1 && 0"))
 
-    Assert.Equal(1, eval (fromString "x || y") ["x", Int 0; "y", Int 1])
+    Assert.Equal(1, eval (fromString "x || y") [ "x", Int 0; "y", Int 1 ])
+
+
+[<Fact>]
+let ``Exercise 4.6`` () =
+
+    Assert.Throws<System.Exception>(fun () -> fromString "( , )" |> ignore)
+    |> ignore
+
+    Assert.Throws<System.Exception>(fun () -> fromString "(1, )" |> ignore)
+    |> ignore
+
+    Assert.Throws<System.ArgumentException>(fun () -> run (fromString "#0(1, 2)") |> ignore)
+    |> ignore
+
+    Assert.Throws<System.ArgumentException>(fun () -> run (fromString "#3(1, 2)") |> ignore)
+    |> ignore
+
+    let e1 = fromString "#2(1, n - 2)"
+    Assert.Equal(1, eval e1 [ "n", Int 3 ])
+
+    let e2 = fromString "#1(3, 2, 1)"
+    Assert.Equal(3, run e2)
+
+    let e3 = fromString "let t = (1+2, false, 5<8) in if #3(t) then #1(t) else 14 end"
+    Assert.Equal(3, run e3)
+
+    let e4 = fromString "let t = (1+2, false, 8<5) in if #3(t) then #1(t) else 14 end"
+    Assert.Equal(14, run e4)
+
+    let e5 = fromString "
+    let max xy = if #2(xy) < #1(xy) then #1(xy) else #2(xy) in max (3, 88) end
+    "
+    Assert.Equal(88, run e5)
