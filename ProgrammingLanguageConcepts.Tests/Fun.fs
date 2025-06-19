@@ -155,10 +155,6 @@ let ``Exercise 4.2`` () =
     let sum n = if n = 1 then 1 else n + sum(n - 1) in sum 1000 end
     "
 
-
-
-    printfn "%A" (fromString sum_expr)
-
     Assert.Equal(sum 1000, run (fromString sum_expr))
 
     let pow_expr =
