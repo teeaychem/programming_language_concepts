@@ -12,6 +12,8 @@ let rec fmt1 (e: expr) : string =
     | Var x -> x
     | Let(x, erhs, ebody) -> String.concat " " [ "let"; x; "="; fmt1 erhs; "in"; fmt1 ebody; "end" ]
     | Prim(ope, e1, e2) -> String.concat "" [ "("; fmt1 e1; ope; fmt1 e2; ")" ]
+    | If(a, b, c) -> String.concat " " [ "if"; fmt1 a; "then"; fmt1 b; "else"; fmt1 c ]
+
 
 (* Format expressions as strings, avoiding excess parentheses *)
 
@@ -22,10 +24,11 @@ let rec fmt2 (ctxpre: int) (e: expr) =
     | Let(x, erhs, ebody) -> String.concat " " [ "let"; x; "="; fmt2 -1 erhs; "in"; fmt2 -1 ebody; "end" ]
     | Prim(ope, e1, e2) ->
         match ope with
-        | "+" -> wrappar ctxpre 6 [ fmt2 5 e1; ope; fmt2 6 e2 ]
-        | "-" -> wrappar ctxpre 6 [ fmt2 5 e1; ope; fmt2 6 e2 ]
-        | "*" -> wrappar ctxpre 7 [ fmt2 6 e1; ope; fmt2 7 e2 ]
+        | "+" -> wrappar ctxpre 6 [ fmt2 5 e1; " + "; fmt2 6 e2 ]
+        | "-" -> wrappar ctxpre 6 [ fmt2 5 e1; " - "; fmt2 6 e2 ]
+        | "*" -> wrappar ctxpre 7 [ fmt2 6 e1; " * "; fmt2 7 e2 ]
         | _ -> raise (Failure "unknown primitive")
+    | If(a, b, c) -> String.concat " " [ "if"; fmt2 -1 a; "then"; fmt2 -1 b; "else"; fmt2 -1 c ]
 
 and wrappar ctxpre pre ss =
     if pre <= ctxpre then
@@ -56,6 +59,7 @@ let rec eval (e: expr) (env: (string * int) list) : int =
     | Prim("*", e1, e2) -> eval e1 env * eval e2 env
     | Prim("-", e1, e2) -> eval e1 env - eval e2 env
     | Prim _ -> raise (Failure "unknown primitive")
+    | If(a, b, c) -> if eval a env <> 0 then eval b env else eval c env
 
 (* Evaluate in empty environment: expression must have no free variables: *)
 
@@ -78,6 +82,7 @@ let rec closedin (e: expr) (env: string list) : bool =
         let env1 = x :: env
         closedin erhs env && closedin ebody env1
     | Prim(_, e1, e2) -> closedin e1 env && closedin e2 env
+    | If(a, b, c) -> closedin a env && closedin b env && closedin c env
 
 (* An expression is closed if it is closed in the empty environment *)
 
@@ -112,6 +117,7 @@ let rec freevars e : string list =
     | Var x -> [ x ]
     | Let(x, erhs, ebody) -> union (freevars erhs) (minus (freevars ebody) [ x ])
     | Prim(_, e1, e2) -> union (freevars e1) (freevars e2)
+    | If(a, b, c) -> union (freevars a) (union (freevars b) (freevars c))
 
 (* Alternative definition of closed *)
 
@@ -152,6 +158,7 @@ let rec tcomp e (cenv: string list) : texpr =
         let cenv1 = x :: cenv
         TLet(tcomp erhs cenv, tcomp ebody cenv1)
     | Prim(ope, e1, e2) -> TPrim(ope, tcomp e1 cenv, tcomp e2 cenv)
+    | If(_, _, _) -> failwith "Not Implemented"
 
 (* Evaluation of target expressions with variable indexes.  The
    run-time environment renv is a list of variable values (ints).  *)
@@ -273,6 +280,7 @@ let rec scomp e (cenv: rtvalue list) : sinstr list =
     | Prim("-", e1, e2) -> scomp e1 cenv @ scomp e2 (Intrm :: cenv) @ [ SSub ]
     | Prim("*", e1, e2) -> scomp e1 cenv @ scomp e2 (Intrm :: cenv) @ [ SMul ]
     | Prim _ -> raise (Failure "scomp: unknown operator")
+    | If(_, _, _) -> failwith "Not Implemented"
 
 (* Correctness: eval e [] [] equals seval (scomp e []) [] for an expression with no free variables. *)
 
