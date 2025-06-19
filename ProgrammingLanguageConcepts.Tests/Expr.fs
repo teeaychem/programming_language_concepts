@@ -60,7 +60,7 @@ let ``Exercise 3.5`` () =
 
     let fs1 = fromString "1 - 2 - 3"
     let fs1r = run fs1
-    Assert.Equal(2, fs1r)
+    Assert.Equal(-4, fs1r)
 
     let fs2 = fromString "1 + -2"
     let fs2r = run fs2
