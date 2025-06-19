@@ -5,26 +5,8 @@ open System
 open System.Text.RegularExpressions
 
 open Parse
-open Absyn
 open Expr
 
-
-(* From file expr/expr.sml * Simple arithmetic expressions *)
-
-let e1 = Let("z", CstI 17, Prim("+", Var "z", Var "z"))
-
-let e2 =
-    Let("z", CstI 17, Prim("+", Let("z", CstI 22, Prim("*", CstI 100, Var "z")), Var "z"))
-
-let e3 = Let("z", Prim("-", CstI 5, CstI 4), Prim("*", CstI 100, Var "z"))
-let e4 = Prim("-", Prim("-", Var "a", Var "b"), Var "c")
-let e5 = Prim("-", Var "a", Prim("-", Var "b", Var "c"))
-let e6 = Prim("*", Prim("-", Var "a", Var "b"), Var "c")
-let e7 = Prim("-", Prim("*", Var "a", Var "b"), Var "c")
-let e8 = Prim("*", Var "a", Prim("-", Var "b", Var "c"))
-let e9 = Prim("-", Var "a", Prim("*", Var "b", Var "c"))
-
-let es = [ e1; e2; e3; e4; e5; e6; e7; e8; e9 ]
 
 [<Fact>]
 let ``readme`` () =
@@ -40,8 +22,8 @@ let ``readme`` () =
     let code1 = scomp (fromString "2 + 3 * 4") []
     Assert.Equal(14, seval code1 [])
 
-    let code2 = scomp (fromString "2 + x * 4") [Bound "x"]
-    Assert.Equal(14, seval code2 [3])
+    let code2 = scomp (fromString "2 + x * 4") [ Bound "x" ]
+    Assert.Equal(14, seval code2 [ 3 ])
 
     let code3 = scomp (fromString "let x = 1+2 in 2 + x * 4 end") []
     Assert.Equal(14, seval code3 [])
