@@ -26,16 +26,19 @@
 
     <Compile Include="Expr/Parse.fs" />
 
-    <!-- <Compile Include="Fun/FunAbsyn.fs" /> -->
-    <!-- <FsYacc Include="Fun/FunPar.fsy"> -->
-    <!--   <OtherFlags>-\-module FunPar</OtherFlags> -->
-    <!-- </FsYacc> -->
-    <!-- <Compile Include="FunPar.fs" /> -->
+    <Compile Include="Fun/FunAbsyn.fs" />
+    <FsYacc Include="Fun/FunPar.fsy">
+      <OtherFlags>--module FunPar</OtherFlags>
+    </FsYacc>
+    <Compile Include="FunPar.fs" />
     
-    <!-- <FsLex Include="Fun/FunLex.fsl"> -->
-    <!--   <OtherFlags>-\-unicode</OtherFlags> -->
-    <!-- </FsLex> -->
-    <!-- <Compile Include="FunLex.fs" /> -->
+    <FsLex Include="Fun/FunLex.fsl">
+      <OtherFlags>--unicode</OtherFlags>
+    </FsLex>
+    <Compile Include="FunLex.fs" />
+
+    <Compile Include="Fun/Fun.fs" />
+    <Compile Include="Fun/Parse.fs" />
 
     
     <Compile Include="Library.fs" />
