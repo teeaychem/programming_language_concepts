@@ -3,11 +3,13 @@
 module FunAbsyn
 
 type expr =
-    | CstI of int
-    | CstB of bool
-    | Var of string
-    | Let of string * expr * expr
-    | Prim of string * expr * expr
-    | If of expr * expr * expr
-    | Letfun of string * string list * expr * expr (* (f, x, fBody, letBody) *)
     | Call of expr * expr list
+    | CstB of bool
+    | CstI of int
+    | If of expr * expr * expr
+    | Let of string * expr * expr
+    | Letfun of string * string list * expr * expr (* (f, x, fBody, letBody) *)
+    | Prim of string * expr * expr
+    | Sel of int * expr
+    | Tup of expr list
+    | Var of string
