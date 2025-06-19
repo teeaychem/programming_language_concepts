@@ -14,6 +14,9 @@
 %token IF THEN ELSE
 %token EOF
 
+%left MINUS PLUS
+%left TIMES
+
 
 %start Main
 %type <Absyn.expr> Main 
