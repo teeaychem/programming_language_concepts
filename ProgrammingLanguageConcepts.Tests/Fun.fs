@@ -94,27 +94,102 @@ let ``additional parse`` () =
     (* Example: factorial *)
 
     let ex2 = fromString @"let fac x = if x=0 then 1 else x * fac(x - 1) in fac n end"
-    Assert.Equal(120, eval ex2 [("n", Int 5)])
+    Assert.Equal(120, eval ex2 [ ("n", Int 5) ])
 
     (* Example: deep recursion to check for constant-space tail recursion *)
 
     let ex3 = fromString @"let deep x = if x=0 then 1 else deep(x-1) in deep count end"
-    Assert.Equal(1, eval ex3 [("count", Int 1)])
+    Assert.Equal(1, eval ex3 [ ("count", Int 1) ])
 
     (* Example: static scope (result 14) or dynamic scope (result 25) *)
 
-    let ex4 = fromString @"let y = 11
+    let ex4 =
+        fromString
+            @"let y = 11
         in let f x = x + y
           in let y = 22 in f 3 end
           end
         end"
+
     Assert.Equal(14, run ex4)
 
     (* Example: two function definitions: a comparison and Fibonacci *)
 
-    let ex5 = fromString @"let ge2 x = 1 < x
+    let ex5 =
+        fromString
+            @"let ge2 x = 1 < x
   in let fib n = if ge2(n) then fib(n-1) + fib(n-2) else 1
     in fib 25
     end
   end"
+
     Assert.Equal(121393, run ex5)
+
+[<Fact>]
+let ``Exercise 4.2`` () =
+    let sum_expr =
+        @"
+    let sum n = if n = 1 then 1 else n + sum(n - 1) in sum 1000 end
+    "
+
+    let sum n = n * (n + 1) / 2
+
+    Assert.Equal(sum 1000, run (fromString sum_expr))
+
+    let pow_expr =
+        @"
+    let base = 3
+    in let pow n = if n = 0 then 1 else base * pow(n - 1)
+        in pow 8 end
+    end
+    "
+
+    Assert.Equal(6561, run (fromString pow_expr))
+
+    let pow_sum_expr b l =
+        (sprintf
+            "
+    let base = %d in
+        let limit = %d in
+            let pow n = if n = 0 then 1 else base * pow(n - 1) in
+                let sum n = if n = 0 then 1 else pow n + sum(n - 1) in
+                    sum limit
+                end
+            end
+        end
+    end
+    "
+            b
+            l)
+
+    // No pow on ints?
+    let pow_sum_expected b limit =
+        List.fold (fun acc next -> acc + b ** next) 0.0 [ 0.0 .. limit ]
+
+    Assert.Equal(int (pow_sum_expected 3 11.0), run (fromString (pow_sum_expr 3 11)))
+
+
+    let pow_sum2_expr e l =
+        (sprintf
+            "
+    let exp = %d in
+        let limit = %d in
+            let sum n = if n = 0 then 0 else
+                let pow m = if m = 0 then 1 else n * pow(m - 1) in
+                    pow exp + sum(n - 1)
+                end in
+                    sum limit
+            end
+        end
+    end
+    "
+            e
+            l)
+
+    let pow_sum2_expected e limit =
+        List.fold (fun acc next -> acc + next ** e) 0.0 [ 0.0 .. limit ]
+
+    let ex = 8
+    let lim = 10
+
+    Assert.Equal(int (pow_sum2_expected ex (float lim)), run (fromString (pow_sum2_expr ex lim)))
