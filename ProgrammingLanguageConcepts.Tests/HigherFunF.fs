@@ -1,7 +1,6 @@
-module TestsHigherFun
+module TestsHigherFunF
 
 open Xunit
-open TypedFun
 
 let EqualLists a b =
     List.forall (fun (ea, eb) -> ea = eb) (List.zip a b)
@@ -128,8 +127,6 @@ let ``Exercise 5.4`` () =
 
     Assert.True(EqualLists mp [ 5; 10; 3 ])
 
-
-
 type 'a tree =
     | Lf
     | Br of 'a * 'a tree * 'a tree
@@ -187,52 +184,3 @@ let ``Exercise 5.5`` () =
     Assert.True(EqualLists (List.map (fun n -> n + 1) t2pre) (treePreOrder (mapTree (fun n -> n + 1) t2)))
 
 
-[<Fact>]
-let ``Exercise 4.7`` () =
-    let list1 = Conc(CstI 2, Conc(CstI 1, CstN))
-    let list2 = Conc(CstI 4, Conc(CstI 3, Conc(CstI 2, CstN)))
-
-    let head_one l =
-        Match(
-            l,
-            CstB false,
-            ("h", "t", Letfun("f", [], If(Prim("=", Var "h", CstI 1), CstB true, CstB false), TypB, Call(Var "f", [])))
-        )
-
-
-    Assert.Equal(Bool false, eval (head_one list1) [])
-
-    let find_one l =
-        Letfun(
-            "f",
-            [ "x", TypL TypI ],
-            Match(
-                Var "x",
-                CstB false,
-                ("h", "t", If(Prim("=", Var "h", CstI 1), CstB true, Call(Var "f", [ Var "t" ])))
-            ),
-            TypB,
-            Call(Var "f", [ l ])
-        )
-
-
-
-
-    Assert.Equal(Bool true, eval (find_one list1) [])
-    Assert.Equal(Bool false, eval (find_one list2) [])
-
-    true
-
-
-[<Fact>]
-let ``Exercise 4.8 / 4.9 / 5.7`` () =
-
-    let listI = Conc(CstI 1, Conc(CstI 2, CstN))
-    let listIV = Conc(CstI 1, Conc(Var "x", CstN))
-    let listIB = Conc(CstI 1, Conc(CstB false, CstN))
-
-    Assert.Equal(TypL TypI, typ listI [])
-
-    Assert.Equal(TypL TypI, typ listIV [ "x", TypI ])
-
-    Assert.Throws<System.Exception>(fun () -> typ listIB [] |> ignore) |> ignore
