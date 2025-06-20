@@ -89,3 +89,53 @@ let ``Exercise 4.7`` () =
 
     Assert.Equal(TypI, typeCheck pow)
     Assert.Equal(Int 6561, eval pow [])
+
+[<Fact>]
+let ``Exercise 4.8`` () =
+    let list1 = Conc(CstI 2, Conc(CstI 1, CstN))
+    let list2 = Conc(CstI 4, Conc(CstI 3, Conc(CstI 2, CstN)))
+
+    let head_one l =
+        Match(
+            l,
+            CstB false,
+            ("h", "t", Letfun("f", [], If(Prim("=", Var "h", CstI 1), CstB true, CstB false), TypB, Call(Var "f", [])))
+        )
+
+
+    Assert.Equal(Bool false, eval (head_one list1) [])
+
+    let find_one l =
+        Letfun(
+            "f",
+            [ "x", TypL TypI ],
+            Match(
+                Var "x",
+                CstB false,
+                ("h", "t", If(Prim("=", Var "h", CstI 1), CstB true, Call(Var "f", [ Var "t" ])))
+            ),
+            TypB,
+            Call(Var "f", [ l ])
+        )
+
+
+
+
+    Assert.Equal(Bool true, eval (find_one list1) [])
+    Assert.Equal(Bool false, eval (find_one list2) [])
+
+    true
+
+
+[<Fact>]
+let ``Exercise 4.8 / 4.9 / 5.7`` () =
+
+    let listI = Conc(CstI 1, Conc(CstI 2, CstN))
+    let listIV = Conc(CstI 1, Conc(Var "x", CstN))
+    let listIB = Conc(CstI 1, Conc(CstB false, CstN))
+
+    Assert.Equal(TypL TypI, typ listI [])
+
+    Assert.Equal(TypL TypI, typ listIV [ "x", TypI ])
+
+    Assert.Throws<System.Exception>(fun () -> typ listIB [] |> ignore) |> ignore
