@@ -1,6 +1,7 @@
 module TestsHigherFun
 
 open Xunit
+open TypedFun
 
 let EqualLists a b =
     List.forall (fun (ea, eb) -> ea = eb) (List.zip a b)
@@ -184,3 +185,19 @@ let ``Exercise 5.5`` () =
     Assert.True(EqualLists t2post (treePostOrder t2))
 
     Assert.True(EqualLists (List.map (fun n -> n + 1) t2pre) (treePreOrder (mapTree (fun n -> n + 1) t2)))
+
+
+[<Fact>]
+let ``Exercise 5.7`` () =
+
+    let listI = [ CstI 1; CstI 2 ]
+    let listIV = [ CstI 1; Var "x" ]
+    let listIB = [ CstI 1; CstB false ]
+
+    Assert.Equal(TypI, typ (List(TypI, listI)) [])
+
+    Assert.Equal(TypI, typ (List(TypI, listIV)) [ "x", TypI ])
+
+    Assert.Throws<System.Exception>(fun () -> typ (List(TypI, listIB)) [] |> ignore) |> ignore
+
+    true

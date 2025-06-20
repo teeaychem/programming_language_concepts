@@ -34,9 +34,10 @@ let rec lookup env x =
 (* A type is int, bool or function *)
 
 type typ =
-    | TypI (* int                         *)
-    | TypB (* bool                        *)
-    | TypF of typ list * typ (* (argumenttype, resulttype)  *)
+    | TypI // int
+    | TypB // bool
+    | TypF of typ list * typ // (argumenttype, resulttype)
+    | TypL of typ // list, element type is typ
 
 (* New abstract syntax with explicit types, instead of Absyn.expr: *)
 
@@ -47,6 +48,7 @@ type tyexpr =
     | If of tyexpr * tyexpr * tyexpr
     | Let of string * tyexpr * tyexpr
     | Letfun of string * (string * typ) list * tyexpr * typ * tyexpr // (f, (x, xTyp) list , fBody,  rTyp, letBody
+    | List of typ * tyexpr list
     | Prim of string * tyexpr * tyexpr
     | Var of string
 
@@ -54,7 +56,7 @@ type tyexpr =
 
 type value =
     | Int of int
-    | Closure of string * string list * tyexpr * value env (* (f, x, fBody, fDeclEnv) *)
+    | Closure of string * string list * tyexpr * value env // (f, x, fBody, fDeclEnv)
 
 let rec eval (e: tyexpr) (env: value env) : int =
     match e with
@@ -79,6 +81,9 @@ let rec eval (e: tyexpr) (env: value env) : int =
         let xVal = Int(eval eRhs env)
         let bodyEnv = (x, xVal) :: env
         eval letBody bodyEnv
+
+    | List _ -> failwith "eval List"
+
     | If(e1, e2, e3) ->
         let b = eval e1 env
         if b <> 0 then eval e2 env else eval e3 env
@@ -117,10 +122,7 @@ let rec typ (e: tyexpr) (env: typ env) : typ =
         | "<", TypI, TypI -> TypB
         | "&", TypB, TypB -> TypB
         | _ -> failwith "unknown op, or type error"
-    | Let(x, eRhs, letBody) ->
-        let xTyp = typ eRhs env
-        let letBodyEnv = (x, xTyp) :: env
-        typ letBody letBodyEnv
+
     | If(e1, e2, e3) ->
         match typ e1 env with
         | TypB ->
@@ -128,6 +130,12 @@ let rec typ (e: tyexpr) (env: typ env) : typ =
             let t3 = typ e3 env
             if t2 = t3 then t2 else failwith "If: branch types differ"
         | _ -> failwith "If: condition not boolean"
+
+    | Let(x, eRhs, letBody) ->
+        let xTyp = typ eRhs env
+        let letBodyEnv = (x, xTyp) :: env
+        typ letBody letBodyEnv
+
     | Letfun(f, xTypL, fBody, rTyp, letBody) ->
         let argTyps = List.map (fun (_, t) -> t) xTypL
         let fTyp = TypF(argTyps, rTyp)
@@ -138,6 +146,13 @@ let rec typ (e: tyexpr) (env: typ env) : typ =
             typ letBody letBodyEnv
         else
             failwith ("Letfun: return type in " + f)
+
+    | List(elt, ele) ->
+        if List.forall (fun e -> typ e env = elt) ele then
+            elt
+        else
+            failwith "List: types differ"
+
     | Call(Var f, eArgs) ->
         match lookup env f with
         | TypF(xTypsL, rTyp) ->
