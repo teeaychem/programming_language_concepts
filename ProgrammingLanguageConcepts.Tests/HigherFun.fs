@@ -2,6 +2,9 @@ module TestsHigherFun
 
 open Xunit
 
+let EqualLists a b =
+    List.forall (fun (ea, eb) -> ea = eb) (List.zip a b)
+
 [<Fact>]
 let ``Exercise 5.1`` () =
     let rec merge (a: int list) (b: int list) : int list =
@@ -66,3 +69,60 @@ let ``Exercise 5.3`` () =
             [ 9, 100; 10, 4; 10, 5; 10, 7; 12, 0; 12, 1; 12, 2; 13, 0 ]
 
     Assert.True p_cmp
+
+[<Fact>]
+let ``Exercise 5.4`` () =
+    // Test helpers
+    let isEven n = n % 2 = 0
+    let isOdd n = n % 2 <> 0
+
+
+    // From the appendix
+    let rec foldr f xs e =
+        match xs with
+        | [] -> e
+        | x :: xr -> f x (foldr f xr e)
+
+
+    let filter (p: 'a -> bool) (l: 'a list) : 'a list =
+        foldr (fun e t -> if p e then e :: t else t) l []
+
+    Assert.True(EqualLists (List.filter isEven [ 1..10 ]) (filter isEven [ 1..10 ]))
+
+    let forall (p: 'a -> bool) (l: 'a list) : bool =
+        foldr
+            (fun e t ->
+                if not t then false
+                else if p e then true
+                else false)
+            l
+            true
+
+    Assert.Equal(List.forall isEven [ 1..10 ], forall isEven [ 1..10 ])
+    Assert.Equal(List.forall isEven (List.filter isEven [ 1..10 ]), forall isEven (filter isEven [ 1..10 ]))
+
+    let exists (p: 'a -> bool) (l: 'a list) : bool =
+        foldr
+            (fun e t ->
+                if t then true
+                else if p e then true
+                else false)
+            l
+            false
+
+    Assert.Equal(List.exists isEven [ 1..10 ], exists isEven [ 1..10 ])
+    Assert.Equal(List.exists isOdd (List.filter isEven [ 1..10 ]), exists isOdd (filter isEven [ 1..10 ]))
+
+    let mapPartial (p: 'a -> 'b option) (l: 'a list) : 'b list =
+        foldr
+            (fun e t ->
+                match p e with
+                | Some y -> y :: t
+                | None -> t)
+            l
+            []
+
+    let mp =
+        mapPartial (fun i -> if i > 7 then Some(i - 7) else None) [ 4; 12; 3; 17; 10 ]
+
+    Assert.True(EqualLists mp [ 5; 10; 3 ])
