@@ -10,7 +10,7 @@ let ``initial`` () =
     let ex1 =
         Letfun("f1", [ "x", TypI ], Prim("+", Var "x", CstI 1), TypI, Call(Var "f1", [ CstI 12 ]))
 
-    Assert.Equal(13, eval ex1 [])
+    Assert.Equal(Int 13, eval ex1 [])
 
     (* Factorial *)
 
@@ -23,21 +23,21 @@ let ``initial`` () =
             Let("n", CstI 7, Call(Var "fac", [ Var "n" ]))
         )
 
-    Assert.Equal(5040, eval ex2 [])
+    Assert.Equal(Int 5040, eval ex2 [])
 
 
 
     let ex3 = Let("b", Prim("=", CstI 1, CstI 2), If(Var "b", CstI 3, CstI 4))
 
-    Assert.Equal(4, eval ex3 [])
+    Assert.Equal(Int 4, eval ex3 [])
 
     let ex4 = Let("b", Prim("=", CstI 1, CstI 2), If(Var "b", Var "b", CstB false))
 
-    Assert.Equal(0, eval ex4 [])
+    Assert.Equal(Bool false, eval ex4 [])
 
     let ex5 = If(Prim("=", CstI 11, CstI 12), CstI 111, CstI 666)
 
-    Assert.Equal(666, eval ex5 [])
+    Assert.Equal(Int 666, eval ex5 [])
 
     let ex6 =
         Letfun("inf", [ "x", TypI ], Call(Var "inf", [ Var "x" ]), TypI, Call(Var "inf", [ CstI 0 ]))
@@ -88,4 +88,4 @@ let ``Exercise 4.7`` () =
 
 
     Assert.Equal(TypI, typeCheck pow)
-    Assert.Equal(6561, eval pow [])
+    Assert.Equal(Int 6561, eval pow [])
