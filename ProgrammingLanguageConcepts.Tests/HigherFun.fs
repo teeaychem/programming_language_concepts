@@ -126,3 +126,61 @@ let ``Exercise 5.4`` () =
         mapPartial (fun i -> if i > 7 then Some(i - 7) else None) [ 4; 12; 3; 17; 10 ]
 
     Assert.True(EqualLists mp [ 5; 10; 3 ])
+
+
+
+type 'a tree =
+    | Lf
+    | Br of 'a * 'a tree * 'a tree
+
+
+let rec treeFold f t e =
+    match t with
+    | Lf -> e
+    | Br(v, t1, t2) -> f (v, treeFold f t1 e, treeFold f t2 e)
+
+[<Fact>]
+let ``Exercise 5.5`` () =
+
+    let treeCount t =
+        treeFold (fun (_, lt, rt) -> 1 + lt + rt) t 0
+
+    let treeSum t =
+        treeFold (fun (v, lt, rt) -> v + lt + rt) t 0
+
+    let treeDepth t =
+        treeFold (fun (v, lt, rt) -> 1 + max lt rt) t 0
+
+    let treePreOrder t =
+        treeFold (fun (v, lt, rt) -> v :: lt @ rt) t []
+
+    let treeInOrder t =
+        treeFold (fun (v, lt, rt) -> lt @ [ v ] @ rt) t []
+
+    let treePostOrder t =
+        treeFold (fun (v, lt, rt) -> lt @ rt @ [ v ]) t []
+
+    let mapTree f t =
+        treeFold (fun (v, lt, rt) -> Br(f v, lt, rt)) t Lf
+
+    let t1 = Br(34, Br(23, Lf, Lf), Br(54, Lf, Br(78, Lf, Lf)))
+
+    Assert.Equal(4, treeCount t1)
+
+    Assert.Equal(189, treeSum t1)
+
+    Assert.Equal(3, treeDepth t1)
+    Assert.Equal(0, treeDepth Lf)
+
+    let t2 =
+        Br(1, Br(2, Br(3, Lf, Lf), Br(4, Lf, Lf)), Br(5, Br(6, Lf, Lf), Br(7, Lf, Lf)))
+
+    let t2pre = [ 1; 2; 3; 4; 5; 6; 7 ]
+    let t2in = [ 3; 2; 4; 1; 6; 5; 7 ]
+    let t2post = [ 3; 4; 2; 6; 7; 5; 1 ]
+
+    Assert.True(EqualLists t2pre (treePreOrder t2))
+    Assert.True(EqualLists t2in (treeInOrder t2))
+    Assert.True(EqualLists t2post (treePostOrder t2))
+
+    Assert.True(EqualLists (List.map (fun n -> n + 1) t2pre) (treePreOrder (mapTree (fun n -> n + 1) t2)))
