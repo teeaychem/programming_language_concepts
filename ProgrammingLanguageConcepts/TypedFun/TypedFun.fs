@@ -46,11 +46,12 @@ type tyexpr =
     | Call of tyexpr * tyexpr list
     | CstB of bool
     | CstI of int
+    | CstN // Nil
+    | Conc of tyexpr * tyexpr
     | If of tyexpr * tyexpr * tyexpr
     | Let of string * tyexpr * tyexpr
     | Letfun of string * (string * typ) list * tyexpr * typ * tyexpr // (f, (x, xTyp) list , fBody,  rTyp, letBody
-    | CstN // Nil
-    | Conc of tyexpr * tyexpr
+    | Match of tyexpr * tyexpr * (string * string * tyexpr)
     | Prim of string * tyexpr * tyexpr
     | Var of string
 
@@ -58,47 +59,79 @@ type tyexpr =
 
 type value =
     | Int of int
+    | Bool of bool
     | Closure of string * string list * tyexpr * value env // (f, x, fBody, fDeclEnv)
+    | List of tyexpr
 
-let rec eval (e: tyexpr) (env: value env) : int =
+let rec eval (e: tyexpr) (env: value env) : value =
     match e with
-    | CstI i -> i
+    | CstI i -> Int i
 
-    | CstB b -> if b then 1 else 0
+    | CstB b -> Bool b
+
+    | CstN -> List e
+
+    | Conc _ -> List e
 
     | Var x ->
-
         match lookup env x with
-        | Int i -> i
+        | Int i -> Int i
+        | List l -> List l
+        | Bool b -> Bool b
         | _ -> failwith "eval Var"
+
     | Prim(ope, e1, e2) ->
         let i1 = eval e1 env
         let i2 = eval e2 env
 
         match ope with
-        | "*" -> i1 * i2
-        | "+" -> i1 + i2
-        | "-" -> i1 - i2
-        | "=" -> if i1 = i2 then 1 else 0
-        | "<" -> if i1 < i2 then 1 else 0
+        | "*" ->
+            match i1, i2 with
+            | Int a, Int b -> Int(a * b)
+            | _ -> failwith "bad mul"
+        | "+" ->
+            match i1, i2 with
+            | Int a, Int b -> Int(a + b)
+            | _ -> failwith "bad add"
+
+        | "-" ->
+            match i1, i2 with
+            | Int a, Int b -> Int(a - b)
+            | _ -> failwith "bad sub"
+
+        | "=" ->
+            match i1, i2 with
+            | Bool a, Bool b -> Bool(a = b)
+            | Int a, Int b -> Bool(a = b)
+            | _ -> failwith "bad eq"
+
+        | "<" ->
+            match i1, i2 with
+            | Int a, Int b -> Bool(a < b)
+            | _ -> failwith "bad le"
+
         | _ -> failwith "unknown primitive"
-
-    | Let(x, eRhs, letBody) ->
-        let xVal = Int(eval eRhs env)
-        let bodyEnv = (x, xVal) :: env
-        eval letBody bodyEnv
-
-    | CstN -> failwith "eval Nil"
-    | Conc _ -> failwith "eval Concatenation"
 
     | If(e1, e2, e3) ->
         let b = eval e1 env
-        if b <> 0 then eval e2 env else eval e3 env
+        if b = Bool true then eval e2 env else eval e3 env
+
+    | Let(x, eRhs, letBody) ->
+        let xVal = eval eRhs env
+        let bodyEnv = (x, xVal) :: env
+        eval letBody bodyEnv
+
 
     | Letfun(f, xTypL, fBody, _, letBody) ->
         let xs = List.map (fun (x, _) -> x) xTypL
         let bodyEnv = (f, Closure(f, xs, fBody, env)) :: env
         eval letBody bodyEnv
+
+    | Match(e0, e1, (h, t, e2)) ->
+        match eval e0 env with
+        | List CstN -> eval e1 env
+        | List(Conc(hx, tx)) -> eval e2 ((h, eval hx env) :: (t, List tx) :: env)
+        | _ -> failwith (sprintf "eval malformed list: %A" e0)
 
     | Call(Var f, eArgs) ->
         let fClosure = lookup env f
@@ -106,7 +139,7 @@ let rec eval (e: tyexpr) (env: value env) : int =
         match fClosure with
         | Closure(f, xL, fBody, fDeclEnv) ->
 
-            let xVals = List.map (fun (x, eArg) -> x, Int(eval eArg env)) (List.zip xL eArgs)
+            let xVals = List.map (fun (x, eArg) -> x, eval eArg env) (List.zip xL eArgs)
             let fBodyEnv = xVals @ (f, fClosure) :: fDeclEnv
             eval fBody fBodyEnv
         | _ -> failwith "eval Call: not a function"
