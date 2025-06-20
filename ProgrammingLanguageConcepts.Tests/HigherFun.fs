@@ -150,7 +150,7 @@ let ``Exercise 5.5`` () =
         treeFold (fun (v, lt, rt) -> v + lt + rt) t 0
 
     let treeDepth t =
-        treeFold (fun (v, lt, rt) -> 1 + max lt rt) t 0
+        treeFold (fun (_, lt, rt) -> 1 + max lt rt) t 0
 
     let treePreOrder t =
         treeFold (fun (v, lt, rt) -> v :: lt @ rt) t []
@@ -187,17 +187,18 @@ let ``Exercise 5.5`` () =
     Assert.True(EqualLists (List.map (fun n -> n + 1) t2pre) (treePreOrder (mapTree (fun n -> n + 1) t2)))
 
 
+
 [<Fact>]
-let ``Exercise 5.7`` () =
+let ``Exercise 4.8 / 4.9 / 5.7`` () =
 
-    let listI = [ CstI 1; CstI 2 ]
-    let listIV = [ CstI 1; Var "x" ]
-    let listIB = [ CstI 1; CstB false ]
+    let listI = Conc(CstI 1, Conc(CstI 2, CstN))
+    let listIV = Conc(CstI 1, Conc(Var "x", CstN))
+    let listIB = Conc(CstI 1, Conc(CstB false, CstN))
 
-    Assert.Equal(TypI, typ (List(TypI, listI)) [])
+    Assert.Equal(TypL TypI, typ listI [])
 
-    Assert.Equal(TypI, typ (List(TypI, listIV)) [ "x", TypI ])
+    Assert.Equal(TypL TypI, typ listIV [ "x", TypI ])
 
-    Assert.Throws<System.Exception>(fun () -> typ (List(TypI, listIB)) [] |> ignore) |> ignore
+    Assert.Throws<System.Exception>(fun () -> typ listIB [] |> ignore) |> ignore
 
     true
