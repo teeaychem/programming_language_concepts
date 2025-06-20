@@ -41,6 +41,8 @@
     <Compile Include="Fun/Parse.fs" />
 
     <Compile Include="TypedFun/TypedFun.fs" />
+
+    <Compile Include="Fun/HigherFun.fs" />
     
     <Compile Include="Library.fs" />
   </ItemGroup>
