@@ -37,6 +37,7 @@ type typ =
     | TypI // int
     | TypB // bool
     | TypF of typ list * typ // (argumenttype, resulttype)
+    | TypN // nil
     | TypL of typ // list, element type is typ
 
 (* New abstract syntax with explicit types, instead of Absyn.expr: *)
@@ -48,7 +49,8 @@ type tyexpr =
     | If of tyexpr * tyexpr * tyexpr
     | Let of string * tyexpr * tyexpr
     | Letfun of string * (string * typ) list * tyexpr * typ * tyexpr // (f, (x, xTyp) list , fBody,  rTyp, letBody
-    | List of typ * tyexpr list
+    | CstN // Nil
+    | Conc of tyexpr * tyexpr
     | Prim of string * tyexpr * tyexpr
     | Var of string
 
@@ -61,8 +63,11 @@ type value =
 let rec eval (e: tyexpr) (env: value env) : int =
     match e with
     | CstI i -> i
+
     | CstB b -> if b then 1 else 0
+
     | Var x ->
+
         match lookup env x with
         | Int i -> i
         | _ -> failwith "eval Var"
@@ -77,20 +82,24 @@ let rec eval (e: tyexpr) (env: value env) : int =
         | "=" -> if i1 = i2 then 1 else 0
         | "<" -> if i1 < i2 then 1 else 0
         | _ -> failwith "unknown primitive"
+
     | Let(x, eRhs, letBody) ->
         let xVal = Int(eval eRhs env)
         let bodyEnv = (x, xVal) :: env
         eval letBody bodyEnv
 
-    | List _ -> failwith "eval List"
+    | CstN -> failwith "eval Nil"
+    | Conc _ -> failwith "eval Concatenation"
 
     | If(e1, e2, e3) ->
         let b = eval e1 env
         if b <> 0 then eval e2 env else eval e3 env
+
     | Letfun(f, xTypL, fBody, _, letBody) ->
         let xs = List.map (fun (x, _) -> x) xTypL
         let bodyEnv = (f, Closure(f, xs, fBody, env)) :: env
         eval letBody bodyEnv
+
     | Call(Var f, eArgs) ->
         let fClosure = lookup env f
 
@@ -147,11 +156,16 @@ let rec typ (e: tyexpr) (env: typ env) : typ =
         else
             failwith ("Letfun: return type in " + f)
 
-    | List(elt, ele) ->
-        if List.forall (fun e -> typ e env = elt) ele then
-            elt
-        else
-            failwith "List: types differ"
+    | CstN -> TypN
+
+    | Conc(h, t) ->
+        let head_type = TypL(typ h env)
+
+        match t with
+        | CstN -> head_type
+        | Conc _ when head_type = typ t env -> head_type
+        | Conc _ -> failwith "Conc: mismatched types"
+        | _ -> failwith "Conc: malformed list"
 
     | Call(Var f, eArgs) ->
         match lookup env f with
