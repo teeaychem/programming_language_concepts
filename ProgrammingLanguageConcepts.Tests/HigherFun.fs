@@ -176,3 +176,13 @@ let ``Exercise 6.2`` () =
 
     let e3 = Call(Fun([ "x"; "y" ], Prim("*", Var "y", Var "x")), [ CstI 2; CstI 3 ])
     Assert.Equal(Int 6, eval e3 [])
+
+[<Fact>]
+let ``Exercise 6.3`` () =
+
+    let e1 = fromString "let add x = fun y -> x+y in (add 2) 5 end"
+
+    let e2 = fromString "let add = fun x -> fun y -> x+y in (add 2) 5 end"
+
+    Assert.Equal(Int 7, eval e1 [])
+    Assert.Equal(Int 7, eval e2 [])
