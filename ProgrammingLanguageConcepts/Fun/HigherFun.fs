@@ -29,7 +29,8 @@ let rec lookup env x =
 
 type value =
     | Int of int
-    | Closure of string * string list * expr * value env (* (f, x, fBody, fDeclEnv) *)
+    | Closure of string * string list * expr * value env // (f, x, fBody, fDeclEnv)
+    | Clos of string list * expr * value env // (x,body,declEnv)
     | TupV of expr list
 
 let rec eval (e: expr) (env: value env) : value =
@@ -67,6 +68,9 @@ let rec eval (e: expr) (env: value env) : value =
         let bodyEnv = (f, Closure(f, x, fBody, env)) :: env
         eval letBody bodyEnv
 
+
+    | Fun(arg, expr) -> Clos(arg, expr, env)
+
     | Call(eFun, eArgs) ->
         let fClosure = eval eFun env
 
@@ -77,6 +81,13 @@ let rec eval (e: expr) (env: value env) : value =
 
             let fBodyEnv = envAdd @ (f, fClosure) :: fDeclEnv in
             eval fBody fBodyEnv
+        | Clos(x, fBody, fDeclEnv) ->
+            let envAdd =
+                List.fold (fun acc (x, eArg) -> (x, eval eArg env) :: acc) [] (List.zip x eArgs)
+            let fBodyEnv = envAdd @ fDeclEnv in
+
+            eval fBody fBodyEnv
+
         | _ -> failwith "eval Call: not a function"
 
     | Sel(i, t) ->

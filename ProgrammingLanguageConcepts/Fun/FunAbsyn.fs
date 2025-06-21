@@ -6,6 +6,7 @@ type expr =
     | Call of expr * expr list
     | CstB of bool
     | CstI of int
+    | Fun of string list * expr
     | If of expr * expr * expr
     | Let of string * expr * expr
     | Letfun of string * string list * expr * expr (* (f, x, fBody, letBody) *)
