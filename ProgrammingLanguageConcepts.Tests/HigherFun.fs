@@ -46,43 +46,51 @@ let ``setup`` () =
 
 
     Assert.Equal(Int 13, eval ex1 [])
-    Assert.Equal(Int 3628800, eval ex2 [("n", Int 10)])
+    Assert.Equal(Int 3628800, eval ex2 [ ("n", Int 10) ])
     Assert.Equal(Int 99, eval ex3 [])
-    // Assert.Equal(..., eval ex4 [])
+// Assert.Equal(..., eval ex4 [])
 
 
 [<Fact>]
 let ``Exercise 6.1`` () =
-    let e1 = fromString "
+    let e1 =
+        fromString
+            "
 let add x = let f y = x+y in f end in (add 2) 5 end
 "
-    printfn "%A" e1
 
-    let e2 = fromString "
+    let e2 =
+        fromString
+            "
 let add x = let f y = x+y in f end
 in let addtwo = add 2
     in addtwo 5 end
 end"
 
-    let e3 = fromString "let add x = let f y = x+y in f end
+    let e3 =
+        fromString
+            "let add x = let f y = x+y in f end
 in let addtwo = add 2
 in let x = 77 in addtwo 5 end
-end
+    end
 end"
 
-// let add x = let f y = x + y in f
-// let addTwo = add 2
-// add 2 >> let f y = 2 + y in f >> f y
-// addtwo 5 >> f 5 >> 7
+    // let add x = let f y = x + y in f
+    // let addTwo = add 2
+    // add 2 >> let f y = 2 + y in f >> f y
+    // addtwo 5 >> f 5 >> 7
 
-// addtwo 5
-// (add 2) 5
-// f 5
-// 2 + 5
+    // addtwo 5
+    // (add 2) 5
+    // f 5
+    // 2 + 5
 
-// etc.
+    // etc.
 
-    let _e4 = fromString "let add x = let f y = x+y in f end
+    let _e4 =
+        fromString
+            "
+let add x = let f y = x+y in f end
 in add 2 end"
 
     Assert.Equal(Int 7, eval e1 [])
@@ -91,3 +99,20 @@ in add 2 end"
     // Assert.Equal(..., eval e4 [])
 
     true
+
+[<Fact>]
+let ``Exercise 6.2`` () =
+    let e1 = Fun([ "x" ], Prim("*", CstI 2, Var "x"))
+    let e1expected = Clos([ "x" ], Prim("*", CstI 2, Var "x"), [])
+
+    let e2 = Let("y", CstI 22, Fun([ "z" ], Prim("+", Var "z", Var "y")))
+    let e2expected = Clos([ "z" ], Prim("+", Var "z", Var "y"), [ ("y", Int 22) ])
+
+    Assert.Equal(e1expected, eval e1 [])
+    Assert.Equal(e2expected, eval e2 [])
+
+    let e1c = Call(e1, [ CstI 2 ])
+    Assert.Equal(Int 4, eval e1c [])
+
+    let e3 = Call(Fun([ "x"; "y" ], Prim("*", Var "y", Var "x")), [ CstI 2; CstI 3 ])
+    Assert.Equal(Int 6, eval e3 [])
