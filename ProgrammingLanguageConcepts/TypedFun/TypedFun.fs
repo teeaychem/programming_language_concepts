@@ -209,5 +209,6 @@ let rec typ (e: tyexpr) (env: typ env) : typ =
                 failwith "Call: wrong argument type(s)"
         | _ -> failwith "Call: unknown function"
     | Call(_, _) -> failwith "Call: illegal function in call"
+    | Match(_, _, _) -> failwith "Not Implemented"
 
 let typeCheck e = typ e []
