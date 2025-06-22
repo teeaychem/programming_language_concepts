@@ -59,13 +59,13 @@ type typescheme = TypeScheme of typevar list * typ // type variables and type
 
 (* *)
 
-let setTvKind tyvar newKind =
-    let _, lvl = !tyvar
-    tyvar := newKind, lvl
+let setTvKind (tyvar: (tyvarkind * int) ref) newKind =
+    let _, lvl = tyvar.Value
+    tyvar.Value <- newKind, lvl
 
-let setTvLevel tyvar newLevel =
-    let kind, _ = !tyvar
-    tyvar := kind, newLevel
+let setTvLevel (tyvar: (tyvarkind * int) ref) newLevel =
+    let kind, _ = tyvar.Value
+    tyvar.Value <- kind, newLevel
 
 (* Normalize a type; make type variable point directly to the
    associated type (if any).  This is the `find' operation, with path
@@ -74,7 +74,7 @@ let setTvLevel tyvar newLevel =
 let rec normType t0 =
     match t0 with
     | TypV tyvar ->
-        match !tyvar with
+        match tyvar.Value with
         | LinkTo t1, _ ->
             let t2 = normType t1
             setTvKind tyvar (LinkTo t2)
@@ -100,8 +100,8 @@ let occurCheck tyvar tyvars =
         ()
 
 let pruneLevel maxLevel tvs =
-    let reducelevel tyvar =
-        let _, level = !tyvar
+    let reducelevel (tyvar: (tyvarkind * int) ref) =
+        let _, level = tyvar.Value
         setTvLevel tyvar (min level maxLevel)
 
     List.iter reducelevel tvs
@@ -111,8 +111,8 @@ let pruneLevel maxLevel tvs =
    of all type variables in t to that of tyvar.  This is the `union'
    operation in the union-find algorithm.  *)
 
-let rec linkVarToType tyvar t =
-    let _, level = !tyvar
+let rec linkVarToType (tyvar: typevar) t =
+    let _, level = tyvar.Value
     let fvs = freeTypeVars t
     occurCheck tyvar fvs
     pruneLevel level fvs
@@ -140,8 +140,8 @@ let rec unify t1 t2 : unit =
         unify t1r t2r
 
     | TypV tv1, TypV tv2 ->
-        let _, tv1level = !tv1
-        let _, tv2level = !tv2
+        let _, tv1level = tv1.Value
+        let _, tv2level = tv2.Value
 
         if tv1 = tv2 then ()
         else if tv1level < tv2level then linkVarToType tv1 t2'
@@ -154,7 +154,7 @@ let rec unify t1 t2 : unit =
 
 (* Generate fresh type variables *)
 
-let tyvarno = ref 0
+let tyvarno: int ref = ref 0
 
 let newTypeVar level : typevar =
     let rec mkname i res =
@@ -166,15 +166,15 @@ let newTypeVar level : typevar =
     let intToName i =
         new System.String(Array.ofList ('\'' :: mkname i []))
 
-    tyvarno := !tyvarno + 1
-    ref (NoLink(intToName !tyvarno), level)
+    tyvarno.Value <- tyvarno.Value + 1
+    ref (NoLink(intToName tyvarno.Value), level)
 
 (* Generalize over type variables not free in the context; that is,
    over those whose level is higher than the current level: *)
 
 let rec generalize level (t: typ) : typescheme =
-    let notfreeincontext tyvar =
-        let _, linkLevel = !tyvar
+    let notfreeincontext (tyvar: (tyvarkind * int) ref) =
+        let _, linkLevel = tyvar.Value
         linkLevel > level
 
     let tvs = List.filter notfreeincontext (freeTypeVars t)
@@ -190,7 +190,7 @@ let rec copyType subst t : typ =
             match subst1 with
             | (tyvar1, type1) :: rest -> if tyvar1 = tyvar then type1 else loop rest
             | [] ->
-                match !tyvar with
+                match tyvar.Value with
                 | NoLink _, _ -> t
                 | LinkTo t1, _ -> copyType subst t1
 
@@ -225,7 +225,7 @@ let rec showType t : string =
         | TypI -> "int"
         | TypB -> "bool"
         | TypV tyvar ->
-            match !tyvar with
+            match tyvar.Value with
             | NoLink name, _ -> name
             | _ -> failwith "showType impossible"
 
@@ -332,5 +332,5 @@ let rec typ (lvl: int) (env: tenv) (e: expr) : typ =
 let rec tyinf e0 = typ 0 [] e0
 
 let inferType e =
-    tyvarno := 0
+    tyvarno.Value <- 0
     showType (tyinf e)
