@@ -150,10 +150,11 @@ let rec freevars e : string list =
     | Lets(lets, ebody) ->
 
         let free, bound =
-            List.fold
-                (fun (free, bound) (xvar, xval) -> union (freevars xval, minus (free, [ xvar ])), xvar :: bound)
+            List.foldBack
+                (fun (xvar, xval) (free, bound) -> union (freevars xval, minus (free, [ xvar ])), xvar :: bound)
+                lets
                 ([], [])
-                (List.rev lets)
+
 
         union (free, minus (freevars ebody, bound))
 
