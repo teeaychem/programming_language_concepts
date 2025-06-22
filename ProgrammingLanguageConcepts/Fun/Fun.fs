@@ -92,7 +92,8 @@ let rec eval (e: expr) (env: value env) : int =
 
 
 
-    | Tup t -> failwith "eval Tup"
+    | Tup _ -> failwith "eval Tup"
+    | Fun(_, _) -> failwith "Not Implemented"
 
 (* Evaluate in empty environment: program must have no free variables: *)
 
