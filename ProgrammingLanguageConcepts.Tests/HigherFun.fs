@@ -6,6 +6,7 @@ open Xunit
 open FunParse
 open FunAbsyn
 open HigherFun
+open TypeInference
 
 [<Fact>]
 let ``setup`` () =
@@ -186,3 +187,47 @@ let ``Exercise 6.3`` () =
 
     Assert.Equal(Int 7, eval e1 [])
     Assert.Equal(Int 7, eval e2 [])
+
+[<Fact>]
+let ``Exercise 6.5`` () =
+    let e1s = "let f x = 1 in f f end"
+    let e1 = fromString e1s
+
+    let e2s = "let f g = g g in f end"
+    let e2 = fromString e2s
+
+    let e3s = "let f x = let g y = y in g false end in f 42 end"
+    let e3 = fromString e3s
+
+    let e3xs = "let f x = let g y = y in g 1 end in f true end"
+    let e3x = fromString e3xs
+
+    let e4s = "let f x = let g y = if true then y else x in g false end in f 42 end"
+    let e4 = fromString e4s
+
+    let e5s = "let f x = let g y = if true then y else x in g false end in f true end"
+    let e5 = fromString e5s
+
+    let em1s = "let add x y = x + y in add 3 4 end"
+    let em1 = fromString em1s
+
+    let em2s = "let add x y = x + y in add 3 false end"
+    let em2 = fromString em2s
+
+    Assert.Equal("int", inferType e1)
+
+    let e2em = Assert.Throws<System.Exception>(fun () -> inferType e2 |> ignore)
+    Assert.Equal("type error: circularity", e2em.Message)
+
+    Assert.Equal("bool", inferType e3)
+    Assert.Equal("int", inferType e3x)
+
+    let e4em = Assert.Throws<System.Exception>(fun () -> inferType e4 |> ignore)
+    Assert.Equal("type error: bool and int", e4em.Message)
+
+    Assert.Equal("bool", inferType e5)
+
+    Assert.Equal("int", inferType em1)
+
+    let em2em = Assert.Throws<System.Exception>(fun () -> inferType em2 |> ignore)
+    Assert.Equal("type error: int and bool", em2em.Message)
