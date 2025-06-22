@@ -139,7 +139,7 @@ let rec eval (e: tyexpr) (env: value env) : value =
         match fClosure with
         | Closure(f, xL, fBody, fDeclEnv) ->
 
-            let xVals = List.map (fun (x, eArg) -> x, eval eArg env) (List.zip xL eArgs)
+            let xVals = List.map2 (fun x eArg -> x, eval eArg env) xL eArgs
             let fBodyEnv = xVals @ (f, fClosure) :: fDeclEnv
             eval fBody fBodyEnv
         | _ -> failwith "eval Call: not a function"
@@ -203,7 +203,7 @@ let rec typ (e: tyexpr) (env: typ env) : typ =
     | Call(Var f, eArgs) ->
         match lookup env f with
         | TypF(xTypsL, rTyp) ->
-            if List.forall (fun (eArg, xTyp) -> typ eArg env = xTyp) (List.zip eArgs xTypsL) then
+            if List.forall2 (fun eArg xTyp -> typ eArg env = xTyp) eArgs xTypsL then
                 rTyp
             else
                 failwith "Call: wrong argument type(s)"

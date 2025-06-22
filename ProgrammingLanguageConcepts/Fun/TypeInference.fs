@@ -295,7 +295,7 @@ let rec typ (lvl: int) (env: tenv) (e: expr) : typ =
         let pTypes = List.map (fun _ -> TypV(newTypeVar lvl1)) tvs
 
         let pTypeMap =
-            List.fold (fun acc (a, b) -> (a, TypeScheme([], b)) :: acc) [] (List.zip tvs pTypes)
+            List.fold2 (fun acc a b -> (a, TypeScheme([], b)) :: acc) [] tvs pTypes
 
         let fBodyEnv = pTypeMap @ (f, TypeScheme([], fTyp)) :: env
 
@@ -326,7 +326,7 @@ let rec typ (lvl: int) (env: tenv) (e: expr) : typ =
         let pTypes = List.map (fun _ -> TypV(newTypeVar lvl1)) tvs
 
         let pTypeMap =
-            List.fold (fun acc (a, b) -> (a, TypeScheme([], b)) :: acc) [] (List.zip tvs pTypes)
+            List.fold2 (fun acc a b -> (a, TypeScheme([], b)) :: acc) []  tvs pTypes
 
         let fBodyEnv = pTypeMap @ env
 

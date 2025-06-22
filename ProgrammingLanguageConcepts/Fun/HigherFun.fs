@@ -76,14 +76,13 @@ let rec eval (e: expr) (env: value env) : value =
 
         match fClosure with
         | Closure(f, x, fBody, fDeclEnv) ->
-            let envAdd =
-                List.fold (fun acc (x, eArg) -> (x, eval eArg env) :: acc) [] (List.zip x eArgs)
+            let envAdd = List.fold2 (fun acc x eArg -> (x, eval eArg env) :: acc) [] x eArgs
 
             let fBodyEnv = envAdd @ (f, fClosure) :: fDeclEnv in
             eval fBody fBodyEnv
         | Clos(x, fBody, fDeclEnv) ->
-            let envAdd =
-                List.fold (fun acc (x, eArg) -> (x, eval eArg env) :: acc) [] (List.zip x eArgs)
+            let envAdd = List.fold2 (fun acc x eArg -> (x, eval eArg env) :: acc) [] x eArgs
+
             let fBodyEnv = envAdd @ fDeclEnv in
 
             eval fBody fBodyEnv

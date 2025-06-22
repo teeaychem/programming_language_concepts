@@ -67,13 +67,14 @@ let rec eval (e: expr) (env: value env) : int =
         match fClosure with
         | Closure(f, x, fBody, fDeclEnv) ->
             let fBodyEnv =
-                List.fold
-                    (fun acc (nv, na) ->
+                List.fold2
+                    (fun acc nv na ->
                         match na with
                         | Tup t -> (nv, TupV t) :: acc
                         | _ -> (nv, Int(eval na env)) :: acc)
                     ((f, fClosure) :: fDeclEnv)
-                    (List.zip x eArgs)
+                    x
+                    eArgs
 
             eval fBody fBodyEnv
         | _ -> failwith "eval Call: not a function"
