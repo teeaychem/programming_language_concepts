@@ -4,7 +4,7 @@ open Xunit
 open System
 open System.Text.RegularExpressions
 
-open Parse
+open ExprParse
 open Expr
 
 
