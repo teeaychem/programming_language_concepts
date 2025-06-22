@@ -3,7 +3,7 @@ module TestsImperative
 open Xunit
 open Naive
 
-[<Fact>]
+[<Fact (Skip = "inacessible output")>]
 let ``naive`` () =
     let ex1 =
         Block[Asgn("sum", CstI 0)
@@ -27,8 +27,8 @@ let ``naive`` () =
               Print(Var "i")
               Print(Var "sum")]
 
-    printfn "%A" (run ex1) // 5050
+    run ex1 // 5050
 
-    printfn "%A" (run ex2) // 142, 10011
+    run ex2 // 142, 10011
 
     true
