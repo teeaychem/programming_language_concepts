@@ -230,7 +230,6 @@ let rec showType t : string =
             | _ -> failwith "showType impossible"
 
         | TypF(tp, tr) ->
-            // TODO: Likely in reverse order.
             let tps = List.fold (fun acc next -> acc + " " + pr next) "" tp
 
             "(" + tps + " -> " + pr tr + " )"
@@ -328,6 +327,7 @@ let rec typ (lvl: int) (env: tenv) (e: expr) : typ =
 
         let pTypeMap =
             List.fold (fun acc (a, b) -> (a, TypeScheme([], b)) :: acc) [] (List.zip tvs pTypes)
+
         let fBodyEnv = pTypeMap @ env
 
         let rTyp = typ lvl1 fBodyEnv fBody
