@@ -1,4 +1,4 @@
-(* Polymorphic type inference for a higher-order functional language    *)
+(* Polymorphic inference for a higher-order functional language    *)
 (* The operator (=) only requires that the arguments have the same type *)
 (* sestoft@itu.dk 2010-01-07 *)
 
@@ -44,7 +44,7 @@ let rec unique xs =
 type typ =
     | TypI // integers
     | TypB // booleans
-    | TypF of typ * typ // (argumenttype, resulttype)
+    | TypF of typ list * typ // (argumenttype, resulttype)
     | TypV of typevar // type variable
 
 and tyvarkind =
@@ -87,7 +87,11 @@ let rec freeTypeVars t : typevar list =
     | TypI
     | TypB -> []
     | TypV tv -> [ tv ]
-    | TypF(t1, t2) -> union (freeTypeVars t1, freeTypeVars t2)
+    | TypF(tp, tr) -> // Union parameter and return types
+        let freeTypeParams =
+            List.fold (fun acc next -> union (acc, freeTypeVars next)) [] tp
+
+        union (freeTypeParams, freeTypeVars tr)
 
 let occurCheck tyvar tyvars =
     if mem tyvar tyvars then
@@ -130,9 +134,11 @@ let rec unify t1 t2 : unit =
     match t1', t2' with
     | TypI, TypI -> ()
     | TypB, TypB -> ()
-    | TypF(t11, t12), TypF(t21, t22) ->
-        unify t11 t21
-        unify t12 t22
+    | TypF(t1p, t1r), TypF(t2p, t2r) ->
+        // Unify paired parameter types.
+        let _ = List.map2 (fun t1 t2 -> unify t1 t2) t1p t2p
+        unify t1r t2r
+
     | TypV tv1, TypV tv2 ->
         let _, tv1level = !tv1
         let _, tv2level = !tv2
@@ -189,7 +195,13 @@ let rec copyType subst t : typ =
                 | LinkTo t1, _ -> copyType subst t1
 
         loop subst
-    | TypF(t1, t2) -> TypF(copyType subst t1, copyType subst t2)
+
+    | TypF(tp, tr) ->
+        // Copy the type to all parameters
+        let tpc = List.map (fun t1 -> copyType subst t1) tp
+
+        TypF(tpc, copyType subst tr)
+
     | TypI -> TypI
     | TypB -> TypB
 
@@ -216,7 +228,12 @@ let rec showType t : string =
             match !tyvar with
             | NoLink name, _ -> name
             | _ -> failwith "showType impossible"
-        | TypF(t1, t2) -> "(" + pr t1 + " -> " + pr t2 + ")"
+
+        | TypF(tp, tr) ->
+            // TODO: Likely in reverse order.
+            let tps = List.fold (fun acc next -> acc + " " + pr next) " " tp
+
+            "(" + tps + " -> " + pr tr + ")"
 
     pr t
 
@@ -270,21 +287,38 @@ let rec typ (lvl: int) (env: tenv) (e: expr) : typ =
         unify t2 t3
         t2
 
-    | Letfun(f, x, fBody, letBody) ->
+    | Letfun(f, tvs, fBody, letBody) ->
+
         let lvl1 = lvl + 1
         let fTyp = TypV(newTypeVar lvl1)
-        let xTyp = TypV(newTypeVar lvl1)
-        let fBodyEnv = (x, TypeScheme([], xTyp)) :: (f, TypeScheme([], fTyp)) :: env
+
+
+        let pTypes = List.map (fun _ -> TypV(newTypeVar lvl1)) tvs
+
+        let pTypeMap =
+            List.fold (fun acc (a, b) -> (a, TypeScheme([], b)) :: acc) [] (List.zip tvs pTypes)
+
+        let fBodyEnv = pTypeMap @ (f, TypeScheme([], fTyp)) :: env
+
         let rTyp = typ lvl1 fBodyEnv fBody
-        let _ = unify fTyp (TypF(xTyp, rTyp))
+
+        let _ = unify fTyp (TypF(pTypes, rTyp))
+
         let bodyEnv = (f, generalize lvl fTyp) :: env
+
         typ lvl bodyEnv letBody
 
-    | Call(eFun, eArg) ->
+    | Call(eFun, eArgs) ->
+
         let tf = typ lvl env eFun
-        let tx = typ lvl env eArg
+
+        // Map each parameter to its type.
+        let tx = List.map (fun ex -> typ lvl env ex) eArgs
+
         let tr = TypV(newTypeVar lvl)
+
         unify tf (TypF(tx, tr))
+
         tr
 
     | Fun(_, _) -> failwith "Not Implemented"
