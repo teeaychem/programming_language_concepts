@@ -113,6 +113,59 @@ let ``parse and run`` () =
 
 
 [<Fact>]
+let ``parse and type`` () =
+
+    let tex1 = inferType (fromString "let f x = 1 in f 7 + f false end")
+    Assert.Equal("int", tex1)
+
+    let tex2 =
+        inferType (fromString "let g = let f x = 1 in f end in g 7 + g false end")
+
+    Assert.Equal("int", tex2)
+
+    let tex3 =
+        inferType (fromString "let g y = let f x = (x=y) in f 1 = f 3 end in g 7 end")
+
+    Assert.Equal("bool", tex3)
+
+    let tex4 =
+        inferType (
+            fromString
+                @"let tw g = let app x = g (g x) in app end
+                     in let triple y = 3 * y in (tw triple) 11 end
+                     end"
+        )
+
+    Assert.Equal("int", tex4)
+
+    let tex5 =
+        inferType (
+            fromString
+                @"let tw g = let app x = g (g x) in app end
+                     in tw end"
+        )
+
+    Assert.Equal("( ( 'h -> 'h ) -> ( 'h -> 'h ) )", tex5)
+
+    // (* Declaring a polymorphic function and rebinding it *)
+
+    let tex6 =
+        inferType (
+            fromString
+                @"let id x = x
+                     in let i1 = id
+                     in let i2 = id
+                     in let k x = let k2 y = x in k2 end
+                     in (k 2) (i1 false) = (k 4) (i1 i2) end end end end "
+        )
+
+    Assert.Equal("bool", tex6)
+
+    let tex8 = inferType (fromString "let f x = x in f f end")
+    Assert.Equal("( 'e -> 'e )", tex8)
+
+
+[<Fact>]
 let ``Exercise 6.1`` () =
     let e1 =
         fromString
