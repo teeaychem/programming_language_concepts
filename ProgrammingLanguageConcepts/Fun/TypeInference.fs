@@ -231,9 +231,9 @@ let rec showType t : string =
 
         | TypF(tp, tr) ->
             // TODO: Likely in reverse order.
-            let tps = List.fold (fun acc next -> acc + " " + pr next) " " tp
+            let tps = List.fold (fun acc next -> acc + " " + pr next) "" tp
 
-            "(" + tps + " -> " + pr tr + ")"
+            "(" + tps + " -> " + pr tr + " )"
 
     pr t
 
@@ -321,7 +321,20 @@ let rec typ (lvl: int) (env: tenv) (e: expr) : typ =
 
         tr
 
-    | Fun(_, _) -> failwith "Not Implemented"
+    | Fun(tvs, fBody) ->
+        let lvl1 = lvl + 1
+
+        let pTypes = List.map (fun _ -> TypV(newTypeVar lvl1)) tvs
+
+        let pTypeMap =
+            List.fold (fun acc (a, b) -> (a, TypeScheme([], b)) :: acc) [] (List.zip tvs pTypes)
+        let fBodyEnv = pTypeMap @ env
+
+        let rTyp = typ lvl1 fBodyEnv fBody
+
+        TypF(pTypes, rTyp)
+
+
 
     | Sel(_, _) -> failwith "Not Implemented"
 

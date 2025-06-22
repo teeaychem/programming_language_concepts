@@ -189,7 +189,7 @@ let ``Exercise 6.3`` () =
     Assert.Equal(Int 7, eval e2 [])
 
 [<Fact>]
-let ``Exercise 6.5`` () =
+let ``Exercise 6.5(1)`` () =
     let e1s = "let f x = 1 in f f end"
     let e1 = fromString e1s
 
@@ -231,3 +231,24 @@ let ``Exercise 6.5`` () =
 
     let em2em = Assert.Throws<System.Exception>(fun () -> inferType em2 |> ignore)
     Assert.Equal("type error: int and bool", em2em.Message)
+
+[<Fact>]
+let ``Exercise 6.5(2)`` () =
+
+    let bbb = Fun([ "x"; "y" ], If(Var "x", Var "x", Var "y"))
+    Assert.Equal("( bool bool -> bool )", inferType bbb)
+
+    let bi = Fun([ "x" ], If(Var "x", CstI 1, CstI 0))
+    Assert.Equal("( bool -> int )", inferType bi)
+
+    let a1 = Fun([ "x" ], Var "x")
+    Assert.Equal("( 'b -> 'b )", inferType a1)
+
+    let a2 = Fun([ "x"; "y" ], Var "x")
+    Assert.Equal("( 'b 'c -> 'b )", inferType a2)
+
+    let a3 = Fun([ "x"; "y" ], Prim("=", Var "y", Var "x"))
+    Assert.Equal("( 'c 'c -> bool )", inferType a3)
+
+    let a4 = Fun([ "x" ], Fun([ "y" ], Var "x"))
+    Assert.Equal("( 'b -> ( 'c -> 'b ) )", inferType a4)
