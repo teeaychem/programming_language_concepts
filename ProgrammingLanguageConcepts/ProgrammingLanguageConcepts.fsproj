@@ -43,6 +43,7 @@
     <Compile Include="TypedFun/TypedFun.fs" />
 
     <Compile Include="Fun/HigherFun.fs" />
+    <Compile Include="Fun/TypeInference.fs" />
     
     <Compile Include="Library.fs" />
   </ItemGroup>
