@@ -44,6 +44,8 @@
 
     <Compile Include="Fun/HigherFun.fs" />
     <Compile Include="Fun/TypeInference.fs" />
+
+    <Compile Include="Imp/Naive.fs" />
     
     <Compile Include="Library.fs" />
   </ItemGroup>
