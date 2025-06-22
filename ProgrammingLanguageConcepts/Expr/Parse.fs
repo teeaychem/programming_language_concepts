@@ -1,7 +1,7 @@
 (* File Expr/Parse.fs *)
 (* Lexing and parsing of simple expressions using fslex and fsyacc *)
 
-module Parse
+module ExprParse
 
 open System.IO
 open FSharp.Text.Lexing
