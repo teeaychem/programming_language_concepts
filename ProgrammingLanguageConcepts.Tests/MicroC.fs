@@ -214,3 +214,56 @@ void main() {
     out.Value <- out.Value.Trim()
 
     Assert.Equal("4950 45", out.Value)
+
+[<Fact>]
+let ``Exercise 7.6`` () =
+
+    let out = ref ""
+
+    // for (i=0; i<10; ) { sum = sum + --i; }, roughly
+    let a =
+        Prog
+            [ Fundec(
+                  None,
+                  "main",
+                  [],
+                  Block
+                      [ Dec(TypI, "s")
+                        Stmt(Expr(Assign(AccVar "s", CstI 0)))
+                        Dec(TypI, "i")
+                        Stmt(Expr(Assign(AccVar "i", CstI 0)))
+                        Stmt(
+                            While(
+                                Prim2("<", Access(AccVar "i"), CstI 10),
+                                Block[Stmt(Expr(AccessAssign("+", AccVar "s", Access(AccVar "i"))))
+                                      Stmt(Expr(PreInc(AccVar "i")))]
+                            )
+                        )
+                        Stmt(Expr(Prim1("printi", Access(AccVar "s")))) ]
+              ) ]
+
+    let _ = run a [] out
+    out.Value <- out.Value.Trim()
+
+    Assert.Equal("45", out.Value)
+
+    let src =
+        @"
+void main() {
+
+  int sum; sum = 0;
+  int i;
+
+  for (i = 1; i < 5; ++i) {
+    print 0 - (sum += i);
+  }
+  print sum;
+}
+"
+
+    let out = ref ""
+    let a = fromString src
+    let _ = run a [] out
+    out.Value <- out.Value.Trim()
+
+    Assert.Equal("-1 -3 -6 -10 10", out.Value)
