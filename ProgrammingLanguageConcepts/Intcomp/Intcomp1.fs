@@ -169,9 +169,9 @@ let closed2 e = freevars e = []
 
 type texpr = (* target expressions *)
     | TCstI of int
-    | TVar of int (* index into runtime environment *)
-    | TLet of texpr * texpr (* erhs and ebody *)
-    | TLets of (texpr list) * texpr (* erhs and ebody *)
+    | TVar of int // index into runtime environment
+    | TLet of texpr * texpr // erhs and ebody
+    | TLets of (texpr list) * texpr // erhs and ebody
     | TPrim of string * texpr * texpr
 
 
@@ -273,13 +273,13 @@ let rec rcomp (e: expr) : rinstr list =
 (* Storing intermediate results and variable bindings in the same stack *)
 
 type sinstr =
-    | SCstI of int (* push integer           *)
-    | SVar of int (* push variable from env *)
-    | SAdd (* pop args, push sum     *)
-    | SSub (* pop args, push diff.   *)
-    | SMul (* pop args, push product *)
-    | SPop (* pop value/unbind var   *)
-    | SSwap (* exchange top and next  *)
+    | SCstI of int // push integer
+    | SVar of int // push variable from env
+    | SAdd // pop args, push sum
+    | SSub // pop args, push diff.
+    | SMul // pop args, push product
+    | SPop // pop value/unbind var
+    | SSwap // exchange top and next
 
 
 let rec seval (inss: sinstr list) (stack: int list) =
