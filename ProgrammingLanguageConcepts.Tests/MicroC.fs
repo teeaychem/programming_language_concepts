@@ -185,3 +185,32 @@ let ``Exercise 7.4`` () =
     out.Value <- out.Value.Trim()
 
     Assert.Equal("55", out.Value)
+
+[<Fact>]
+let ``Exercise 7.5`` () =
+    let src =
+        @"
+void main() {
+
+  int sum; sum = 0;
+  int i;
+
+  for (i = 0; i < 100; ++i) {
+    sum = sum + i;
+  }
+  print sum;
+
+  sum = 0;
+  for (i = 9; i != 0; --i) {
+    sum = sum + i;
+  }
+  print sum;
+}
+"
+
+    let out = ref ""
+    let a = fromString src
+    let _ = run a [] out
+    out.Value <- out.Value.Trim()
+
+    Assert.Equal("4950 45", out.Value)
