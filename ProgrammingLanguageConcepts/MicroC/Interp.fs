@@ -167,12 +167,16 @@ and eval e locEnv gloEnv store out : int * store =
     | Access acc ->
         let loc, store1 = access acc locEnv gloEnv store out
         getSto store1 loc, store1
+
     | Assign(acc, e) ->
         let loc, store1 = access acc locEnv gloEnv store out
         let res, store2 = eval e locEnv gloEnv store1 out
         res, setSto store2 loc res
+
     | CstI i -> i, store
+
     | Addr acc -> access acc locEnv gloEnv store out
+
     | Prim1(ope, e1) ->
         let i1, store1 = eval e1 locEnv gloEnv store out
 
@@ -188,6 +192,7 @@ and eval e locEnv gloEnv store out : int * store =
             | _ -> failwith ("unknown primitive " + ope)
 
         res, store1
+
     | Prim2(ope, e1, e2) ->
         let i1, store1 = eval e1 locEnv gloEnv store out
         let i2, store2 = eval e2 locEnv gloEnv store1 out
@@ -208,13 +213,17 @@ and eval e locEnv gloEnv store out : int * store =
             | _ -> failwith ("unknown primitive " + ope)
 
         res, store2
+
     | Andalso(e1, e2) ->
         let i1, store1 as res = eval e1 locEnv gloEnv store out
         if i1 <> 0 then eval e2 locEnv gloEnv store1 out else res
+
     | Orelse(e1, e2) ->
         let i1, store1 as res = eval e1 locEnv gloEnv store out
         if i1 <> 0 then res else eval e2 locEnv gloEnv store1 out
+
     | Call(f, es) -> callfun f es locEnv gloEnv store out
+
     | PreInc acc ->
         let loc, store1 = access acc locEnv gloEnv store out
         let v = getSto store1 loc + 1
@@ -224,6 +233,22 @@ and eval e locEnv gloEnv store out : int * store =
         let loc, store1 = access acc locEnv gloEnv store out
         let v = getSto store1 loc - 1
         v, setSto store1 loc v
+
+    | AccessAssign(ope, acc, e1) ->
+        let i1, store1 = eval e1 locEnv gloEnv store out
+        let loc, store2 = access acc locEnv gloEnv store1 out
+        let v = getSto store2 loc
+
+        let v =
+            match ope with
+            | "*" -> v * i1
+            | "+" -> v + i1
+            | "-" -> v - i1
+            | "/" -> v / i1
+            | "%" -> v % i1
+            | _ -> failwith (sprintf "Unexpected access-assign: `%s`" ope)
+
+        v, setSto store2 loc v
 
 and access acc locEnv gloEnv store out : int * store =
     match acc with

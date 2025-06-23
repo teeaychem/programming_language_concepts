@@ -52,12 +52,17 @@ rule Token = parse
   | ['a'-'z''A'-'Z']['a'-'z''A'-'Z''0'-'9']*
                     { keyword (lexemeAsString lexbuf) }
   | '+'             { PLUS }
+  | "+="            { PLUS_ASSIGN }
   | "++"            { INC }
   | '-'             { MINUS }
+  | "-="            { MINUS_ASSIGN }
   | "--"            { DEC }
   | '*'             { TIMES }
+  | "*="            { TIMES_ASSIGN }
   | '/'             { DIV }
+  | "/="            { DIV_ASSIGN }
   | '%'             { MOD }
+  | "%="            { MOD_ASSIGN }
   | '='             { ASSIGN }
   | "=="            { EQ }
   | "!="            { NE }
