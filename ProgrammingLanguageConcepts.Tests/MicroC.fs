@@ -2,6 +2,7 @@ module TestsMicroC
 
 open Xunit
 
+open CAbsyn
 open MicroCParse
 
 let run = Interp.run
@@ -134,13 +135,13 @@ void main() {
   int i;
 
   for (i=0; i<100; i=i+1) {
-    sum = sum+i;
+    sum = sum + i;
   }
   print sum;
 
   sum = 0;
   for (i=0; i<10; i=i+1) {
-    sum = sum+i;
+    sum = sum + i;
   }
   print sum;
 }
@@ -152,3 +153,35 @@ void main() {
     out.Value <- out.Value.Trim()
 
     Assert.Equal("4950 45", out.Value)
+
+
+[<Fact>]
+let ``Exercise 7.4`` () =
+
+    let out = ref ""
+
+    // for (i=0; i<10; ) { sum = sum + --i; }, roughly
+    let a =
+        Prog
+            [ Fundec(
+                  None,
+                  "main",
+                  [],
+                  Block
+                      [ Dec(TypI, "s")
+                        Stmt(Expr(Assign(AccVar "s", CstI 0)))
+                        Dec(TypI, "i")
+                        Stmt(Expr(Assign(AccVar "i", CstI 0)))
+                        Stmt(
+                            While(
+                                Prim2("<", Access(AccVar "i"), CstI 10),
+                                Expr(Assign(AccVar "s", Prim2("+", Access(AccVar "s"), PreInc(AccVar "i"))))
+                            )
+                        )
+                        Stmt(Expr(Prim1("printi", Access(AccVar "s")))) ]
+              ) ]
+
+    let _ = run a [] out
+    out.Value <- out.Value.Trim()
+
+    Assert.Equal("55", out.Value)

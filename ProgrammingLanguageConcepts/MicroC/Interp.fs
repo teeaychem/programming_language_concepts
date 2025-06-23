@@ -65,9 +65,10 @@ let emptyStore = Map.empty<address, int>
 let setSto (store: store) addr value = store.Add(addr, value)
 
 let getSto (store: store) addr =
-    if store.ContainsKey addr
-    then store.Item addr
-    else failwith (sprintf "Store does not contain: `%A`" addr)
+    if store.ContainsKey addr then
+        store.Item addr
+    else
+        failwith (sprintf "Store does not contain: `%A`" addr)
 
 
 
@@ -214,6 +215,15 @@ and eval e locEnv gloEnv store out : int * store =
         let i1, store1 as res = eval e1 locEnv gloEnv store out
         if i1 <> 0 then res else eval e2 locEnv gloEnv store1 out
     | Call(f, es) -> callfun f es locEnv gloEnv store out
+    | PreInc acc ->
+        let loc, store1 = access acc locEnv gloEnv store out
+        let v = getSto store1 loc + 1
+        v, setSto store1 loc v
+
+    | PreDec acc ->
+        let loc, store1 = access acc locEnv gloEnv store out
+        let v = getSto store1 loc - 1
+        v, setSto store1 loc v
 
 and access acc locEnv gloEnv store out : int * store =
     match acc with
