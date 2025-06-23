@@ -122,3 +122,33 @@ void main() {
     out.Value <- out.Value.Trim()
 
     Assert.Equal("1 4 2 0", out.Value)
+
+
+[<Fact>]
+let ``Exercise 7.3`` () =
+    let src =
+        @"
+void main() {
+
+  int sum; sum = 0;
+  int i;
+
+  for (i=0; i<100; i=i+1) {
+    sum = sum+i;
+  }
+  print sum;
+
+  sum = 0;
+  for (i=0; i<10; i=i+1) {
+    sum = sum+i;
+  }
+  print sum;
+}
+"
+
+    let out = ref ""
+    let a = fromString src
+    let _ = run a [] out
+    out.Value <- out.Value.Trim()
+
+    Assert.Equal("4950 45", out.Value)
