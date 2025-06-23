@@ -26,3 +26,99 @@ let ``Exercise 7.1`` () =
     let e2expected = "-1 -1 1 -999 1 227 12 12 14 114 2 1 1"
 
     Assert.Equal(e2expected, e2out.Value)
+
+[<Fact>]
+let ``Exercise 7.2, arrsum, squares`` () =
+    let src =
+        @"
+void arrsum(int n, int arr[], int *sump) {
+
+  int idx; idx = 0;
+
+  while (idx < n) {
+    *sump = *sump + arr[idx];
+    idx = idx + 1;
+  }
+}
+
+
+void squares(int n, int arr[]) {
+
+  int idx; idx = 0;
+
+  while (idx < n) {
+    arr[idx] = arr[idx] * arr[idx];
+    idx = idx + 1;
+  }
+}
+
+
+void main() {
+
+  int arr[4]; arr[0] = 7; arr[1] = 13;
+  arr[2] = 9; arr[3] = 8;
+
+  int sum; sum = 0;
+
+  arrsum(4, arr, &sum);
+
+  print sum;
+
+  sum = 0;
+
+  squares(3, arr);
+  arrsum(4, arr, &sum);
+
+  print sum;
+}
+"
+
+    let out = ref ""
+    let a = fromString src
+    let _ = run a [] out
+    out.Value <- out.Value.Trim()
+
+    Assert.Equal("37 307", out.Value)
+
+[<Fact>]
+let ``Exercise 7.2, histogram`` () =
+    let src =
+        @"
+void cleararr(int n, int arr[]) { int idx; idx = 0; while (idx < n) { arr[idx] = 0; idx = idx + 1; } }
+
+void printarr(int n, int arr[]) { int idx; idx = 0; while (idx < n) { print arr[idx]; idx = idx + 1; } }
+
+void histogram(int n, int ns[], int max, int freq[]) {
+
+  int idx; idx = 0;
+
+  while (idx <= n) {
+    int v; v = ns[idx];
+    if (v < max) { freq[v] = freq[v] + 1; }
+    idx = idx + 1;
+  }
+}
+
+void main() {
+
+  int freq[10];
+  cleararr(10, freq);
+
+  int arr[7];
+  arr[0] = 1; arr[1] = 2; arr[2] = 1;
+  arr[3] = 1; arr[4] = 1; arr[5] = 2;
+  arr[6] = 0;
+
+  histogram(7, arr, 3, freq);
+
+  printarr(4, freq);
+
+}
+"
+
+    let out = ref ""
+    let a = fromString src
+    let _ = run a [] out
+    out.Value <- out.Value.Trim()
+
+    Assert.Equal("1 4 2 0", out.Value)
