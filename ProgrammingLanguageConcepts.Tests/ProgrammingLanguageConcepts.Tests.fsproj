@@ -17,6 +17,7 @@
     <Compile Include="HigherFun.fs" />
     <Compile Include="Imperative.fs" />
     <Compile Include="MicroC.fs" />
+    <Compile Include="MicroCComp.fs" />
 
     <Compile Include="Program.fs" />
   </ItemGroup>
