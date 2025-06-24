@@ -61,6 +61,8 @@
 
     <Compile Include="MicroC/Parse.fs" />
     <Compile Include="MicroC/Interp.fs" />
+    <Compile Include="MicroC/Machine.fs" />
+    <Compile Include="MicroC/Comp.fs" />
 
 
     <Compile Include="Library.fs" />
