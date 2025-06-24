@@ -99,33 +99,33 @@ let CODESTOP = 25
 
 let makelabenv (addr, labenv) instr =
     match instr with
-    | Label lab -> addr, (lab, addr) :: labenv
-    | CSTI _i -> addr + 2, labenv
     | ADD -> addr + 1, labenv
-    | SUB -> addr + 1, labenv
-    | MUL -> addr + 1, labenv
+    | CALL(_m, _lab) -> addr + 3, labenv
+    | CSTI _i -> addr + 2, labenv
     | DIV -> addr + 1, labenv
-    | MOD -> addr + 1, labenv
-    | EQ -> addr + 1, labenv
-    | LT -> addr + 1, labenv
-    | NOT -> addr + 1, labenv
     | DUP -> addr + 1, labenv
-    | SWAP -> addr + 1, labenv
-    | LDI -> addr + 1, labenv
-    | STI -> addr + 1, labenv
+    | EQ -> addr + 1, labenv
     | GETBP -> addr + 1, labenv
     | GETSP -> addr + 1, labenv
-    | INCSP _m -> addr + 2, labenv
     | GOTO _lab -> addr + 2, labenv
-    | IFZERO _lab -> addr + 2, labenv
     | IFNZRO _lab -> addr + 2, labenv
-    | CALL(_m, _lab) -> addr + 3, labenv
-    | TCALL(_m, _n, _lab) -> addr + 4, labenv
-    | RET _m -> addr + 2, labenv
-    | PRINTI -> addr + 1, labenv
-    | PRINTC -> addr + 1, labenv
+    | IFZERO _lab -> addr + 2, labenv
+    | INCSP _m -> addr + 2, labenv
     | LDARGS -> addr + 1, labenv
+    | LDI -> addr + 1, labenv
+    | LT -> addr + 1, labenv
+    | Label lab -> addr, (lab, addr) :: labenv
+    | MOD -> addr + 1, labenv
+    | MUL -> addr + 1, labenv
+    | NOT -> addr + 1, labenv
+    | PRINTC -> addr + 1, labenv
+    | PRINTI -> addr + 1, labenv
+    | RET _m -> addr + 2, labenv
+    | STI -> addr + 1, labenv
     | STOP -> addr + 1, labenv
+    | SUB -> addr + 1, labenv
+    | SWAP -> addr + 1, labenv
+    | TCALL(_m, _n, _lab) -> addr + 4, labenv
 
 (* Bytecode emission, second pass: output bytecode as integers *)
 
