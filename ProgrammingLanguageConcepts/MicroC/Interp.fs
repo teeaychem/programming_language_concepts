@@ -47,7 +47,6 @@ type locEnv = int env * int
 (* A function environment maps a function name to parameter list and body *)
 
 type paramdecs = (typ * string) list
-
 type funEnv = (paramdecs * stmt) env
 
 (* A global environment consists of a global variable environment and a global function environment *)
