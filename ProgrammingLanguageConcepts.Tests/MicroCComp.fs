@@ -47,3 +47,55 @@ let ``machine call`` () =
     let e1e = "10 9 8 7 6 5 4 3 2 1"
 
     Assert.Equal(e1e, e1r)
+
+
+[<Fact>]
+let ``Exercise 8.3`` () =
+
+    // print (countdown ^ value)
+    let src =
+        @"
+void main() {
+
+  int sum; sum = 0;
+  int i;
+
+  int countdown; countdown = 5;
+
+  for (i = 1; i < 5; ++i) {
+    print --countdown;
+    print (sum = sum + i);
+  }
+}
+"
+
+    let ep = fromString src
+    let er = call_machine ep []
+    let ee = "4 1 3 3 2 6 1 10"
+
+    Assert.Equal(ee, er)
+
+
+    let src =
+        @"
+void main() {
+
+    int arr[2];
+    arr[0] = 111;
+    arr[1] = 222;
+
+    int idx; idx = 0;
+
+    ++arr[++idx];
+
+    print arr[0];
+    print arr[1];
+}
+"
+
+    let ep = fromString src
+
+    let er = call_machine ep []
+    let ee = "111 223"
+
+    Assert.Equal(ee, er)
