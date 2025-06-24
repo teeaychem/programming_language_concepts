@@ -499,3 +499,5 @@ $RECYCLE.BIN/
 /ProgrammingLanguageConcepts/CPar.fsi
 
 /ProgrammingLanguageConcepts/MicroC/ex/
+/ProgrammingLanguageConcepts/MicroC/prog*
+/ProgrammingLanguageConcepts.Tests/MicroC/
