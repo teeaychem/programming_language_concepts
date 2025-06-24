@@ -348,7 +348,7 @@ int execute(int argc, char **argv, bool trace) {
 }
 
 int exit_with_usage() {
-  printf("Usage: machine [--trace] <programfile> [argument count] [arguments]\n");
+  printf("Usage: machine [--trace] <programfile> [arguments]\n");
   return -1;
 };
 
