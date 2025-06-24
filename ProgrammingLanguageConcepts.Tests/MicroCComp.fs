@@ -24,24 +24,19 @@ let call_machine prg (args: int list) =
 
     use proc = Process.Start info
 
-    let out = proc.StandardOutput.ReadToEnd()
+    let out = ref (proc.StandardOutput.ReadToEnd())
 
     // Tidy output
-    let out = out.Remove(out.Length - 1) // Closing '\n'
-    let out = out.Remove(out.LastIndexOf System.Environment.NewLine) // Time info
-    let out = out.Trim() // Trailing spaces
+    out.Value <- out.Value.Trim() // Trailing spaces
 
     proc.WaitForExit()
 
     File.Delete pf
 
-    // printfn "Exit: %A" proc.ExitCode
-
-    out
+    out.Value
 
 [<Fact>]
-let ``machine exists``() =
-    Assert.True(File.Exists MACHINE)
+let ``machine exists`` () = Assert.True(File.Exists MACHINE)
 
 
 [<Fact>]
