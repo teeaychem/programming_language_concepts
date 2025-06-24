@@ -48,21 +48,21 @@ type stmt =
     | While of expr * stmt
     | Print of expr
 
-let rec exec stmt (store: naivestore) : naivestore =
+let rec exec stmt (store: naivestore) (out: string ref) : naivestore =
     match stmt with
     | Asgn(x, e) -> setSto store (x, eval e store)
 
     | If(e1, stmt1, stmt2) ->
         if eval e1 store <> 0 then
-            exec stmt1 store
+            exec stmt1 store out
         else
-            exec stmt2 store
+            exec stmt2 store out
 
     | Block stmts ->
         let rec loop ss sto =
             match ss with
             | [] -> sto
-            | s1 :: sr -> loop sr (exec s1 sto)
+            | s1 :: sr -> loop sr (exec s1 sto out)
 
         loop stmts store
 
@@ -74,20 +74,21 @@ let rec exec stmt (store: naivestore) : naivestore =
             if i > stop then
                 sto
             else
-                loop (i + 1) (exec stmt (setSto sto (x, i)))
+                loop (i + 1) (exec stmt (setSto sto (x, i)) out)
 
         loop start store
 
     | While(e, stmt) ->
         let rec loop sto =
-            if eval e sto = 0 then sto else loop (exec stmt sto)
+            if eval e sto = 0 then sto else loop (exec stmt sto out)
 
         loop store
 
     | Print e ->
-        printf "%d\n" (eval e store)
+        out.Value <- sprintf "%d\n" (eval e store)
         store
 
 let run stmt =
-    let _ = exec stmt emptystore
-    ()
+    let out = ref ""
+    let _ = exec stmt emptystore out
+    out.Value.Trim()
