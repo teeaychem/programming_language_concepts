@@ -158,7 +158,7 @@ void readInst(int p[], int *pc, char buf[]) {
 
 void printPrg(IntVec *insts) {
   int pc = 0;
-  char ibuf[100];
+  char ibuf[256];
   while (pc < insts->size) {
     readInst(insts->array, &pc, ibuf);
     printf("%d:\t%s\n", pc - 1, ibuf);
