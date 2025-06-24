@@ -347,9 +347,9 @@ int execute(int argc, char **argv, bool trace) {
   return res;
 }
 
-int exit_with_usage() {
+bool exit_with_usage() {
   printf("Usage: machine [--trace] <programfile> [arguments]\n");
-  return -1;
+  exit(-1);
 };
 
 // Read code from file and execute it
@@ -359,14 +359,8 @@ int main(int argc, char **argv) {
   } else {
     bool trace = false;
 
-    if (argc > 1) {
-      if (strncmp(argv[1], "--trace", 7) == 0) {
-        if (argc > 2) {
-          trace = true;
-        } else {
-          exit_with_usage();
-        }
-      }
+    if (strncmp(argv[1], "--trace", 7) == 0) {
+      trace = argc > 2 ? true : exit_with_usage();
     }
 
     return execute(argc, argv, trace);
