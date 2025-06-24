@@ -224,9 +224,9 @@ and cExpr (e: expr) (varEnv: varEnv) (funEnv: funEnv) : instr list =
 
     | Call(f, es) -> callfun f es varEnv funEnv
 
-    | PreInc _ -> failwith "Not Implemented"
+    | PreInc acc -> cAccess acc varEnv funEnv @ [ DUP; LDI; CSTI 1; ADD; STI ]
 
-    | PreDec _ -> failwith "Not Implemented"
+    | PreDec acc -> cAccess acc varEnv funEnv @ [ DUP; LDI; CSTI 1; SUB; STI ]
 
     | AccessAssign(_, _, _) -> failwith "Not Implemented"
 
