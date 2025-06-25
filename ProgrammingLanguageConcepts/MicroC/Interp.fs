@@ -159,9 +159,16 @@ and stmtordec stmtordec locEnv gloEnv store out =
     | Stmt stmt -> locEnv, exec stmt locEnv gloEnv store out
     | Dec(typ, x) -> allocate (typ, x) locEnv store
     | DecA(typ, var, expr) ->
-        let locEnv, store = allocate (typ, var) locEnv store
+
+        let v =
+            match var with
+            | AccVar v -> v
+            | AccDeref _ -> failwith "Not Implemented"
+            | AccIndex _ -> failwith "Not Implemented"
+
+        let locEnv, store = allocate (typ, v) locEnv store
         let res, store = eval expr locEnv gloEnv store out
-        let loc, store = access (AccVar var) locEnv gloEnv store out
+        let loc, store = access var locEnv gloEnv store out
         let _, store = res, setSto store loc res
         locEnv, store
 

@@ -158,6 +158,20 @@ and cStmtOrDec stmtOrDec (varEnv: varEnv) (funEnv: funEnv) : varEnv * instr list
     | Stmt stmt -> varEnv, cStmt stmt varEnv funEnv
 
     | Dec(typ, x) -> allocate Locvar (typ, x) varEnv
+    | DecA(typ, var, expr) ->
+
+        let v =
+            match var with
+            | AccVar v -> v
+            | AccDeref _ -> failwith "Not Implemented"
+            | AccIndex _ -> failwith "Not Implemented"
+
+        let varEnv, code = allocate Locvar (typ, v) varEnv
+
+        let code = code @ cAccess var varEnv funEnv @ cExpr expr varEnv funEnv @ [ STI ]
+
+        varEnv, code
+
 
 (* Compiling micro-C expressions:
 
@@ -244,7 +258,7 @@ and cExpr (e: expr) (varEnv: varEnv) (funEnv: funEnv) : instr list =
 (* Generate code to access variable, dereference pointer or index array.
    The effect of the compiled code is to leave an lvalue on the stack.   *)
 
-and cAccess access varEnv funEnv : instr list =
+and cAccess (access: access) (varEnv: varEnv) (funEnv: funEnv) : instr list =
     match access with
     | AccVar x ->
         match lookup (fst varEnv) x with
