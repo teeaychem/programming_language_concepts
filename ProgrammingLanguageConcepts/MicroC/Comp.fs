@@ -156,6 +156,7 @@ let rec cStmt stmt (varEnv: varEnv) (funEnv: funEnv) : instr list =
 and cStmtOrDec stmtOrDec (varEnv: varEnv) (funEnv: funEnv) : varEnv * instr list =
     match stmtOrDec with
     | Stmt stmt -> varEnv, cStmt stmt varEnv funEnv
+
     | Dec(typ, x) -> allocate Locvar (typ, x) varEnv
 
 (* Compiling micro-C expressions:

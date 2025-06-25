@@ -158,6 +158,14 @@ and stmtordec stmtordec locEnv gloEnv store out =
     match stmtordec with
     | Stmt stmt -> locEnv, exec stmt locEnv gloEnv store out
     | Dec(typ, x) -> allocate (typ, x) locEnv store
+    | DecA(typ, var, expr) ->
+        let locEnv, store = allocate (typ, var) locEnv store
+        let res, store = eval expr locEnv gloEnv store out
+        let loc, store = access (AccVar var) locEnv gloEnv store out
+        let _, store = res, setSto store loc res
+        locEnv, store
+
+
 
 (* Evaluating micro-C expressions *)
 
@@ -242,7 +250,7 @@ and eval e locEnv gloEnv store out : int * store =
             eval n locEnv gloEnv store out
 
 
-and access acc locEnv gloEnv store out : int * store =
+and access (acc: access) (locEnv: locEnv) (gloEnv: gloEnv) (store: store) (out: string ref) : int * store =
     match acc with
     | AccVar x -> lookup (fst locEnv) x, store
     | AccDeref e -> eval e locEnv gloEnv store out

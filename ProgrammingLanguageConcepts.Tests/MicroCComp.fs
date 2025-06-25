@@ -223,3 +223,31 @@ void main() {
     let ee = "-1 -3 -6 -10 10"
 
     Assert.Equal(ee, er)
+
+
+[<Fact>]
+let ``Declare assign`` () =
+
+    let src =
+        @"
+
+void main() {
+
+  int sum = 12;
+  int* sumaddr = &sum;
+  int sumdbl = *sumaddr * 2;
+
+  print sum;
+  print *sumaddr;
+  print sumdbl;
+}
+"
+
+    let ep = fromString src
+
+    let out = ref ""
+    let a = fromString src
+    let _ = Interp.run a [] out
+    out.Value <- out.Value.Trim()
+
+    Assert.Equal("12 12 24", out.Value)
