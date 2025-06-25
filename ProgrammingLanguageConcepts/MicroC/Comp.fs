@@ -228,8 +228,6 @@ and cExpr (e: expr) (varEnv: varEnv) (funEnv: funEnv) : instr list =
 
     | PreDec acc -> cAccess acc varEnv funEnv @ [ DUP; LDI; CSTI 1; SUB; STI ]
 
-    | AccessAssign(_, _, _) -> failwith "Not Implemented"
-
     | Ite(c, y, n) ->
 
         let labn = newLabel ()

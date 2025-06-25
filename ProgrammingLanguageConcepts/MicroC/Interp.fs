@@ -233,22 +233,6 @@ and eval e locEnv gloEnv store out : int * store =
         let v = getSto store1 loc - 1
         v, setSto store1 loc v
 
-    | AccessAssign(ope, acc, e1) ->
-        let i1, store1 = eval e1 locEnv gloEnv store out
-        let loc, store2 = access acc locEnv gloEnv store1 out
-        let v = getSto store2 loc
-
-        let v =
-            match ope with
-            | "*" -> v * i1
-            | "+" -> v + i1
-            | "-" -> v - i1
-            | "/" -> v / i1
-            | "%" -> v % i1
-            | _ -> failwith (sprintf "Unexpected access-assign: `%s`" ope)
-
-        v, setSto store2 loc v
-
     | Ite(c, y, n) ->
         let ce, store = eval c locEnv gloEnv store out
 

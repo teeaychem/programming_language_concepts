@@ -199,3 +199,27 @@ void main() {
     let ee = "0 1 1 0"
 
     Assert.Equal(ee, er)
+
+
+[<Fact>]
+let ``Access assign comp`` () =
+
+    let src =
+        @"
+void main() {
+
+  int sum; sum = 0;
+  int i;
+
+  for (i = 1; i < 5; ++i) {
+    print 0 - (sum += i);
+  }
+  print sum;
+}
+"
+
+    let ep = fromString src
+    let er = call_machine ep []
+    let ee = "-1 -3 -6 -10 10"
+
+    Assert.Equal(ee, er)
