@@ -99,3 +99,31 @@ void main() {
     let ee = "111 223"
 
     Assert.Equal(ee, er)
+
+[<Fact>]
+let ``Exercise 8.5, compilation`` () =
+    let src =
+        @"
+void main() {
+
+    int i; i = 0;
+    int j;
+    int k;
+
+    j = (i == 0 ? ++i : 2);
+    --i;
+
+    k = (i == j ? i : 2);
+
+    print i;
+    print j;
+    print k;
+}
+"
+
+
+    let ep = fromString src
+    let er = call_machine ep []
+
+
+    Assert.Equal("0 1 2", er)

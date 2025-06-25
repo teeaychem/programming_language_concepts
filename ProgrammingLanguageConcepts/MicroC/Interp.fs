@@ -249,6 +249,15 @@ and eval e locEnv gloEnv store out : int * store =
 
         v, setSto store2 loc v
 
+    | Ite(c, y, n) ->
+        let ce, store = eval c locEnv gloEnv store out
+
+        if ce <> 0 then
+            eval y locEnv gloEnv store out
+        else
+            eval n locEnv gloEnv store out
+
+
 and access acc locEnv gloEnv store out : int * store =
     match acc with
     | AccVar x -> lookup (fst locEnv) x, store

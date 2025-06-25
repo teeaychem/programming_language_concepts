@@ -230,6 +230,18 @@ and cExpr (e: expr) (varEnv: varEnv) (funEnv: funEnv) : instr list =
 
     | AccessAssign(_, _, _) -> failwith "Not Implemented"
 
+    | Ite(c, y, n) ->
+
+        let labn = newLabel ()
+        let labend = newLabel ()
+
+        cExpr c varEnv funEnv // Evaluate the condition.
+        @ [ IFZERO labn ] // If false (0), go to the `n` case.
+        @ cExpr y varEnv funEnv // Otherwise, evaluate the `y` case.
+        @ [ GOTO labend; Label labn ] // Jump to the end after the `y` case, label the `n` case start.
+        @ cExpr n varEnv funEnv // Evaluate the `n` case.
+        @ [ Label labend ] // Set the end label for the `y` case to jump to.
+
 (* Generate code to access variable, dereference pointer or index array.
    The effect of the compiled code is to leave an lvalue on the stack.   *)
 

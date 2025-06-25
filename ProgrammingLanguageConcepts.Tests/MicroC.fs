@@ -267,3 +267,28 @@ void main() {
     out.Value <- out.Value.Trim()
 
     Assert.Equal("-1 -3 -6 -10 10", out.Value)
+
+
+[<Fact>]
+let ``Exercise 8.5, interpretation`` () =
+    let src =
+        @"
+void main() {
+
+    int i; i = 0;
+    int j;
+
+    j = (i == 0 ? ++i : 2);
+    --i;
+
+    print i;
+    print j;
+}
+"
+
+    let out = ref ""
+    let a = fromString src
+    let _ = run a [] out
+    out.Value <- out.Value.Trim()
+
+    Assert.Equal("0 1", out.Value)
