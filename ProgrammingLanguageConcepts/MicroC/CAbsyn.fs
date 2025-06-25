@@ -8,36 +8,37 @@
 module CAbsyn
 
 type typ =
-    | TypI // Type int
-    | TypC // Type char
     | TypA of typ * int option // Array type
+    | TypC // Type char
+    | TypI // Type int
     | TypP of typ // Pointer type
 
 and expr =
     | Access of access // x    or  *p    or  a[e]
-    | Assign of access * expr // x=e  or  *p=e  or  a[e]=e
+    | AccessAssign of string * access * expr // a[i] *= 2, etc
     | Addr of access // &x   or  &*p   or  &a[e]
+    | Andalso of expr * expr // Sequential and
+    | Assign of access * expr // x=e  or  *p=e  or  a[e]=e
+    | Call of string * expr list // Function call f(...)
     | CstI of int // Constant
+    | Ite of expr * expr * expr
+    | Orelse of expr * expr // Sequential or
+    | PreDec of access // --i or --a[e]
+    | PreInc of access // ++i or ++a[e]
     | Prim1 of string * expr // Unary primitive operator
     | Prim2 of string * expr * expr // Binary primitive operator
-    | Andalso of expr * expr // Sequential and
-    | Orelse of expr * expr // Sequential or
-    | Call of string * expr list // Function call f(...)
-    | PreInc of access // ++i or ++a[e]
-    | PreDec of access // --i or --a[e]
-    | AccessAssign of string * access * expr // a[i] *= 2, etc
 
 and access =
-    | AccVar of string // Variable access        x
-    | AccDeref of expr // Pointer dereferencing  *p
-    | AccIndex of access * expr // Array indexing         a[e]
+    | AccDeref of expr // Pointer dereferencing *p
+    | AccIndex of access * expr // Array indexing a[e]
+    | AccVar of string // Variable access x
 
 and stmt =
-    | If of expr * stmt * stmt // Conditional
-    | While of expr * stmt // While loop
-    | Expr of expr // Expression statement   e;
-    | Return of expr option // Return from method
     | Block of stmtordec list // Block: grouping and scope
+    | Expr of expr // Expression statement   e;
+    | If of expr * stmt * stmt // Conditional
+    | Return of expr option // Return from method
+    | While of expr * stmt // While loop
 
 and stmtordec =
     | Dec of typ * string // Local variable declaration
