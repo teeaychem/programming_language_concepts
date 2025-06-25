@@ -41,7 +41,7 @@ and stmt =
 
 and stmtordec =
     | Dec of typ * string // Local variable declaration
-    | DecA of typ * string * expr // Local variable declaration and assignment
+    | DecA of typ * access * expr // Local variable declaration and assignment
     | Stmt of stmt // A statement
 
 and topdec =

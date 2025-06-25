@@ -251,3 +251,7 @@ void main() {
     out.Value <- out.Value.Trim()
 
     Assert.Equal("12 12 24", out.Value)
+
+    let er = call_machine ep []
+
+    Assert.Equal("12 12 24", er)

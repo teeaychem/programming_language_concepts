@@ -61,8 +61,8 @@ Vardec:
 ;
 
 VardecA:
-  | Type NAME ASSIGN Expr               { ($1, $2, $4)                            }
-  | Type TIMES NAME ASSIGN AMP Access   { (TypP $1, $3, Addr $6)                  }
+  | Type NAME ASSIGN Expr               { ($1, AccVar $2, $4)                     }
+  | Type TIMES NAME ASSIGN AMP Access   { (TypP $1, AccVar $3, Addr $6)}
 ;
 
 Vardesc:
