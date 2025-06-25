@@ -15,7 +15,6 @@ type typ =
 
 and expr =
     | Access of access // x    or  *p    or  a[e]
-    | AccessAssign of string * access * expr // a[i] *= 2, etc
     | Addr of access // &x   or  &*p   or  &a[e]
     | Andalso of expr * expr // Sequential and
     | Assign of access * expr // x=e  or  *p=e  or  a[e]=e

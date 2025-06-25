@@ -218,35 +218,6 @@ void main() {
 [<Fact>]
 let ``Exercise 7.6`` () =
 
-    let out = ref ""
-
-    // for (i=0; i<10; ) { sum = sum + --i; }, roughly
-    let a =
-        Prog
-            [ Fundec(
-                  None,
-                  "main",
-                  [],
-                  Block
-                      [ Dec(TypI, "s")
-                        Stmt(Expr(Assign(AccVar "s", CstI 0)))
-                        Dec(TypI, "i")
-                        Stmt(Expr(Assign(AccVar "i", CstI 0)))
-                        Stmt(
-                            While(
-                                Prim2("<", Access(AccVar "i"), CstI 10),
-                                Block[Stmt(Expr(AccessAssign("+", AccVar "s", Access(AccVar "i"))))
-                                      Stmt(Expr(PreInc(AccVar "i")))]
-                            )
-                        )
-                        Stmt(Expr(Prim1("printi", Access(AccVar "s")))) ]
-              ) ]
-
-    let _ = run a [] out
-    out.Value <- out.Value.Trim()
-
-    Assert.Equal("45", out.Value)
-
     let src =
         @"
 void main() {
