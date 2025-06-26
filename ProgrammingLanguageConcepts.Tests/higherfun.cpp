@@ -93,7 +93,7 @@ std::vector<int> merge_sorted_arrays(std::vector<int> const &a,
   return out;
 }
 
-// Exercise 5.1
+// Exercise 5.2
 LinkedList<int> merge(LinkedList<int> const &a, LinkedList<int> const &b) {
 
   Node<int> *ah = a.head();
@@ -155,6 +155,7 @@ LinkedList<T> mergep(LinkedList<T> const &a, LinkedList<T> const &b) {
   return out;
 }
 
+// Exercise 5.3
 template <typename T>
 LinkedList<T> mergec(LinkedList<T> const &a, LinkedList<T> const &b,
                      std::function<int(T, T)> cmp) {
