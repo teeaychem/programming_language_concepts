@@ -104,9 +104,9 @@ let rec allocate (typ, x) (env0, nextloc) sto0 : locEnv * store =
 
     bindVar x v (env0, nextloc1) sto1
 
-(* Build global environment of variables and functions.  For global
-   variables, store locations are reserved; for global functions, just
-   add to global function environment. *)
+(* Build global environment of variables and functions.
+    For global variables, store locations are reserved;
+    for global functions, just add to global function environment. *)
 
 let initEnvAndStore (topdecs: topdec list) : locEnv * funEnv * store =
     let rec addv decs locEnv funEnv store =
@@ -115,6 +115,8 @@ let initEnvAndStore (topdecs: topdec list) : locEnv * funEnv * store =
         | Vardec(typ, x) :: decr ->
             let locEnv1, sto1 = allocate (typ, x) locEnv store
             addv decr locEnv1 funEnv sto1
+        | VardecA _ :: _ -> failwith "Gloabl initialisation is only supported when compiling"
+
         | Fundec(_, f, xs, body) :: decr -> addv decr locEnv ((f, (xs, body)) :: funEnv) store
 
     addv topdecs ([], 0) [] emptyStore
@@ -157,21 +159,16 @@ let rec exec stmt (locEnv: locEnv) (gloEnv: gloEnv) (store: store) (out: string 
 and stmtordec stmtordec locEnv gloEnv store out =
     match stmtordec with
     | Stmt stmt -> locEnv, exec stmt locEnv gloEnv store out
+
     | Dec(typ, x) -> allocate (typ, x) locEnv store
+
     | DecA(typ, var, expr) ->
 
-        let v =
-            match var with
-            | AccVar v -> v
-            | AccDeref _ -> failwith "Not Implemented"
-            | AccIndex _ -> failwith "Not Implemented"
-
-        let locEnv, store = allocate (typ, v) locEnv store
+        let locEnv, store = allocate (typ, var) locEnv store
         let res, store = eval expr locEnv gloEnv store out
-        let loc, store = access var locEnv gloEnv store out
+        let loc, store = access (AccVar var) locEnv gloEnv store out
         let _, store = res, setSto store loc res
         locEnv, store
-
 
 
 (* Evaluating micro-C expressions *)

@@ -88,23 +88,6 @@ let bindParams paras ((env, fdepth): varEnv) : varEnv = List.fold bindParam (env
 
 (* ------------------------------------------------------------------- *)
 
-(* Build environments for global variables and functions *)
-
-let makeGlobalEnvs (topdecs: topdec list) : varEnv * funEnv * instr list =
-    let rec addv decs varEnv funEnv =
-        match decs with
-        | [] -> varEnv, funEnv, []
-        | dec :: decr ->
-            match dec with
-            | Vardec(typ, var) ->
-                let varEnv1, code1 = allocate Glovar (typ, var) varEnv
-                let varEnvr, funEnvr, coder = addv decr varEnv1 funEnv
-                varEnvr, funEnvr, code1 @ coder
-            | Fundec(tyOpt, f, xs, _body) -> addv decr varEnv ((f, (newLabel (), tyOpt, xs)) :: funEnv)
-
-    addv topdecs ([], 0) []
-
-(* ------------------------------------------------------------------- *)
 
 (* Compiling micro-C statements:
    * stmt    is the statement to compile
@@ -160,15 +143,10 @@ and cStmtOrDec stmtOrDec (varEnv: varEnv) (funEnv: funEnv) : varEnv * instr list
     | Dec(typ, x) -> allocate Locvar (typ, x) varEnv
     | DecA(typ, var, expr) ->
 
-        let v =
-            match var with
-            | AccVar v -> v
-            | AccDeref _ -> failwith "Not Implemented"
-            | AccIndex _ -> failwith "Not Implemented"
+        let varEnv, code = allocate Locvar (typ, var) varEnv
 
-        let varEnv, code = allocate Locvar (typ, v) varEnv
-
-        let code = code @ cAccess var varEnv funEnv @ cExpr expr varEnv funEnv @ [ STI ]
+        let code =
+            code @ cAccess (AccVar var) varEnv funEnv @ cExpr expr varEnv funEnv @ [ STI ]
 
         varEnv, code
 
@@ -284,11 +262,47 @@ and callfun f es varEnv funEnv : instr list =
         raise (Failure(f + ": parameter/argument mismatch"))
 
 
+(* Build environments for global variables and functions *)
+
+// varEnv, funEnv, globalReserve, globalInit
+let makeGlobalEnvs (topdecs: topdec list) : varEnv * funEnv * instr list * instr list =
+    let rec addv decs varEnv funEnv =
+        match decs with
+
+        | [] -> varEnv, funEnv, [], []
+
+        | dec :: decr ->
+            match dec with
+            | Vardec(typ, var) ->
+                let varEnv, code = allocate Glovar (typ, var) varEnv
+                let (varEnvr: varEnv), (funEnvr: funEnv), coder, codep = addv decr varEnv funEnv
+
+                varEnvr, funEnvr, code @ coder, codep
+
+            | VardecA(typ, var, e) ->
+                let varEnv, code = allocate Glovar (typ, var) varEnv
+                let (varEnvr: varEnv), (funEnvr: funEnv), coder, codep = addv decr varEnv funEnv
+
+                let codep =
+                    cAccess (AccVar var) varEnv funEnv @ cExpr e varEnv funEnv @ [ STI ] @ codep
+
+                varEnvr, funEnvr, code @ coder, codep
+
+
+            | Fundec(tyOpt, f, xs, _body) -> addv decr varEnv ((f, (newLabel (), tyOpt, xs)) :: funEnv)
+
+
+    addv topdecs ([], 0) []
+
+(* ------------------------------------------------------------------- *)
+
+
+
 (* Compile a complete micro-C program: globals, call to main, functions *)
 
 let cProgram (Prog topdecs) : instr list =
     let _ = resetLabels ()
-    let (globalVarEnv, _), funEnv, globalInit = makeGlobalEnvs topdecs
+    let (globalVarEnv, _), funEnv, globalReserve, globalInit = makeGlobalEnvs topdecs
 
     let compilefun (_tyOpt, f, _xs, body) =
         let labf, _, paras = lookup funEnv f
@@ -300,12 +314,13 @@ let cProgram (Prog topdecs) : instr list =
         List.choose
             (function
             | Fundec(rTy, name, argTy, body) -> Some(compilefun (rTy, name, argTy, body))
-            | Vardec _ -> None)
+            | Vardec _ -> None
+            | VardecA(_, _, _) -> None)
             topdecs
 
     let mainlab, _, mainparams = lookup funEnv "main"
     let argc = List.length mainparams
-    globalInit @ [ LDARGS; CALL(argc, mainlab); STOP ] @ List.concat functions
+    globalReserve @ globalInit @ [ LDARGS; CALL(argc, mainlab); STOP ] @ List.concat functions
 
 (* Compile a complete micro-C and write the resulting instruction list
    to file fname; also, return the program as a list of instructions. *)
