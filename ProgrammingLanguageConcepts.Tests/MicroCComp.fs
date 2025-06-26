@@ -255,3 +255,29 @@ void main() {
     let er = call_machine ep []
 
     Assert.Equal("12 12 24", er)
+
+
+[<Fact>]
+let ``Declare assign g`` () =
+
+    let src =
+        @"
+
+int sum = 12;
+int* sumaddr = &sum;
+int sumdbl = *sumaddr * 2;
+int j = 1;
+int i = j + 32;
+
+void main() {
+  print sum;
+  print *sumaddr;
+  print sumdbl;
+  print i;
+}
+"
+
+    let ep = fromString src
+    let er = call_machine ep []
+
+    Assert.Equal("12 12 24 33", er)
