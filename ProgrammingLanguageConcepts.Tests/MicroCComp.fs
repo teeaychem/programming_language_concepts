@@ -226,7 +226,7 @@ void main() {
 
 
 [<Fact>]
-let ``Declare assign`` () =
+let ``Exercise 8.9, Declare assign local`` () =
 
     let src =
         @"
@@ -258,7 +258,7 @@ void main() {
 
 
 [<Fact>]
-let ``Declare assign g`` () =
+let ``Exercise 8.9, Declare assign global`` () =
 
     let src =
         @"

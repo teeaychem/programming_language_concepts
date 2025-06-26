@@ -3,6 +3,16 @@ module TestsIntro2
 open System
 open Xunit
 
+
+[<Fact>]
+let ``Intro1 tests`` () =
+    Assert.Equal(17, Intro1.eval (Intro1.CstI 17))
+
+    Assert.Equal(-1, Intro1.eval (Intro1.Prim("-", Intro1.CstI 3, Intro1.CstI 4)))
+
+    Assert.Equal(73, Intro1.eval (Intro1.Prim("+", Intro1.Prim("*", Intro1.CstI 7, Intro1.CstI 9), Intro1.CstI 10)))
+
+
 open Intro2
 
 let emptyenv: env = [] (* the empty environment *)
@@ -35,7 +45,7 @@ let ``Evaluation tests`` () =
 
 
 [<Fact>]
-let ``1.1(i) tests`` () =
+let ``Exercise 1.1(i)`` () =
     let e_max = Prim("max", CstI 3, Var "c")
     Assert.Equal(lookup env "c", eval e_max env)
 
@@ -50,7 +60,7 @@ let ``1.1(i) tests`` () =
 
 
 [<Fact>]
-let ``1.1(ii) tests`` () =
+let ``Exercise  1.1(ii)`` () =
     let abs a env =
         let value = eval a env
 
@@ -70,7 +80,7 @@ let ``1.1(ii) tests`` () =
 
 
 [<Fact>]
-let ``1.1(iv) tests`` () =
+let ``Exercise  1.1(iv)`` () =
 
     let if_case = CstI 1
     let else_case = CstI 0
@@ -93,13 +103,13 @@ let ``1.2(i-iii) tests`` () =
 
 
 [<Fact>]
-let ``1.2(iv) tests`` () =
+let ``Exercise 1.2(iv)`` () =
     let e1 = AwL.Sub(AwL.Var "v", AwL.CstI 0)
     Assert.Equal(AwL.Var "v", AwL.simplify e1)
 
 
 [<Fact>]
-let ``1.2(v) tests`` () =
+let ``Exercise  1.2(v)`` () =
     let e =
         AwL.Add(
             AwL.Mul(AwL.CstI 2, AwL.Pow(AwL.Var "x", AwL.CstI 3)),

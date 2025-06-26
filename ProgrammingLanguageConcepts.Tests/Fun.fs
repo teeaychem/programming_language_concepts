@@ -216,8 +216,9 @@ let ``Exercise 4.2`` () =
     Assert.Equal(int (pow_sum2_expected ex (float lim)), run (fromString (pow_sum2_expr ex lim)))
 
 
+
 [<Fact>]
-let ``Exercise 4.4`` () =
+let ``Exercises 4.3, 4.4`` () =
     let e1s = "let pow x n = if n=0 then 1 else x * pow x (n-1) in pow 3 8 end"
     let e1ast = fromString e1s
 
@@ -279,7 +280,10 @@ let ``Exercise 4.6`` () =
     let e4 = fromString "let t = (1+2, false, 8<5) in if #3(t) then #1(t) else 14 end"
     Assert.Equal(14, run e4)
 
-    let e5 = fromString "
+    let e5 =
+        fromString
+            "
     let max xy = if #2(xy) < #1(xy) then #1(xy) else #2(xy) in max (3, 88) end
     "
+
     Assert.Equal(88, run e5)
