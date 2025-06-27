@@ -2,11 +2,10 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
-
 
     <Compile Include="Intro/Intro1.fs" />
     <Compile Include="Intro/Intro2.fs" />
@@ -63,6 +62,21 @@
     <Compile Include="MicroC/Interp.fs" />
     <Compile Include="MicroC/Machine.fs" />
     <Compile Include="MicroC/Comp.fs" />
+
+    <Compile Include="ListC/ListCAbsyn.fs" />
+    <FsYacc Include="ListC/ListCPar.fsy">
+      <OtherFlags>--module ListCPar</OtherFlags>
+    </FsYacc>
+    <Compile Include="ListCPar.fs" />
+
+    <FsLex Include="ListC/ListCLex.fsl">
+      <OtherFlags>--unicode</OtherFlags>
+    </FsLex>
+    <Compile Include="ListCLex.fs" />
+
+    <Compile Include="ListC/Parse.fs" />
+    <Compile Include="ListC/Machine.fs" />
+    <Compile Include="ListC/Comp.fs" />
 
 
     <Compile Include="Library.fs" />
