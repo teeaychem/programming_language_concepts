@@ -51,6 +51,8 @@
    created when allocating all but the last word of a free block.
 */
 
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -58,76 +60,92 @@
 #include <sys/resource.h>
 #include <sys/time.h>
 
-typedef uint32_t word;
+const size_t HEAPSIZE = 1000;  // Heap size in words
+const size_t STACKSIZE = 1000; // Stack size
 
-#define IsInt(v) (((v) & 1) == 1)
-#define Tag(v) (((v) << 1) | 1)
-#define Untag(v) ((v) >> 1)
+// Set the word type equal in size to a pointer.
+typedef intptr_t word;
 
-#define White 0
-#define Grey 1
-#define Black 2
-#define Blue 3
+// These numeric instruction codes must agree with ListC/Machine.fs:
+// C23 enum with size intptr_t
+typedef enum : intptr_t { CSTI = 0,
+                          ADD = 1,
+                          SUB = 2,
+                          MUL = 3,
+                          DIV = 4,
+                          MOD = 5,
+                          EQ = 6,
+                          LT = 7,
+                          NOT = 8,
+                          DUP = 9,
+                          SWAP = 10,
+                          LDI = 11,
+                          STI = 12,
+                          GETBP = 13,
+                          GETSP = 14,
+                          INCSP = 15,
+                          GOTO = 16,
+                          IFZERO = 17,
+                          IFNZRO = 18,
+                          CALL = 19,
+                          TCALL = 20,
+                          RET = 21,
+                          PRINTI = 22,
+                          PRINTC = 23,
+                          LDARGS = 24,
+                          STOP = 25,
+                          NIL = 26,
+                          CONS = 27,
+                          CAR = 28,
+                          CDR = 29,
+                          SETCAR = 30,
+                          SETCDR = 31,
+} instr_t;
 
-#define BlockTag(hdr) ((hdr) >> 24)
-#define Length(hdr) (((hdr) >> 2) & 0x003FFFFF)
-#define Color(hdr) ((hdr) & 3)
-#define Paint(hdr, color) (((hdr) & (~3)) | (color))
+typedef enum Tag { TagCons = 0,
+} tag_t;
 
-#define CONSTAG 0
+typedef enum Color { White = 0,
+                     Grey = 1,
+                     Black = 2,
+                     Blue = 3
+} color_t;
 
-// Heap size in words
+// As there's only a single translation unit (this source) we use static inline.
+static inline bool IsInstr(instr_t inst) {
+  return (inst & 1) == 1;
+}
 
-#define HEAPSIZE 1000
+static inline instr_t TagInt(int instr) {
+  return (((instr_t)instr) << 1) | 1;
+}
+
+static inline int UntagInstr(instr_t inst) { return inst >> 1; }
+
+static inline word BlockTag(word hdr) { return hdr >> 24; }
+
+static inline word Length(word hdr) {
+  return (((hdr) >> 2) & 0x003FFFFF);
+}
+
+static inline color_t GetColor(word hdr) {
+  return ((hdr) & 3);
+}
+
+static inline word Paint(word hdr, color_t color) {
+  return (((hdr) & (~3)) | (color));
+}
 
 word *heap;
 word *afterHeap;
 word *freelist;
 
-// These numeric instruction codes must agree with ListC/Machine.fs:
-// (Use #define because const int does not define a constant in C)
-
-#define CSTI 0
-#define ADD 1
-#define SUB 2
-#define MUL 3
-#define DIV 4
-#define MOD 5
-#define EQ 6
-#define LT 7
-#define NOT 8
-#define DUP 9
-#define SWAP 10
-#define LDI 11
-#define STI 12
-#define GETBP 13
-#define GETSP 14
-#define INCSP 15
-#define GOTO 16
-#define IFZERO 17
-#define IFNZRO 18
-#define CALL 19
-#define TCALL 20
-#define RET 21
-#define PRINTI 22
-#define PRINTC 23
-#define LDARGS 24
-#define STOP 25
-#define NIL 26
-#define CONS 27
-#define CAR 28
-#define CDR 29
-#define SETCAR 30
-#define SETCDR 31
-
-#define STACKSIZE 1000
-
 // Print the stack machine instruction at p[pc]
 
-void printInstruction(int p[], int pc) {
-  switch (p[pc]) {
+void printInstruction(instr_t prg[], size_t prg_ctr) {
+  switch (prg[prg_ctr]) {
   case CSTI:
-    printf("CSTI %d", p[pc + 1]);
+    printf("CSTI %ld", prg[prg_ctr + 1]);
     break;
   case ADD:
     printf("ADD");
@@ -172,25 +190,25 @@ void printInstruction(int p[], int pc) {
     printf("GETSP");
     break;
   case INCSP:
-    printf("INCSP %d", p[pc + 1]);
+    printf("INCSP %ld", prg[prg_ctr + 1]);
     break;
   case GOTO:
-    printf("GOTO %d", p[pc + 1]);
+    printf("GOTO %ld", prg[prg_ctr + 1]);
     break;
   case IFZERO:
-    printf("IFZERO %d", p[pc + 1]);
+    printf("IFZERO %ld", prg[prg_ctr + 1]);
     break;
   case IFNZRO:
-    printf("IFNZRO %d", p[pc + 1]);
+    printf("IFNZRO %ld", prg[prg_ctr + 1]);
     break;
   case CALL:
-    printf("CALL %d %d", p[pc + 1], p[pc + 2]);
+    printf("CALL %ld %ld", prg[prg_ctr + 1], prg[prg_ctr + 2]);
     break;
   case TCALL:
-    printf("TCALL %d %d %d", p[pc + 1], p[pc + 2], p[pc + 3]);
+    printf("TCALL %ld %ld %ld", prg[prg_ctr + 1], prg[prg_ctr + 2], prg[prg_ctr + 3]);
     break;
   case RET:
-    printf("RET %d", p[pc + 1]);
+    printf("RET %ld", prg[prg_ctr + 1]);
     break;
   case PRINTI:
     printf("PRINTI");
@@ -229,34 +247,31 @@ void printInstruction(int p[], int pc) {
 }
 
 // Print current stack (marking heap references by #) and current instruction
+void printStackAndPc(instr_t stk[], int base_ptr, int stk_ptr, instr_t prg[], size_t prg_ctr) {
 
-void printStackAndPc(int s[], int bp, int sp, int p[], int pc) {
   printf("[ ");
-  for (int i = 0; i <= sp; i++) {
-    if (IsInt(s[i])) {
-      printf("%d ", Untag(s[i]));
-    } else {
-      printf("#%d ", s[i]);
-    }
+  for (int i = 0; i <= stk_ptr; i++) {
+    (IsInstr(stk[i])) ? printf("%d ", UntagInstr(stk[i])) : printf("#%ld ", stk[i]);
   }
-  printf("] {%d:", pc);
-  printInstruction(p, pc);
+  printf("] {%zu:", prg_ctr);
+  printInstruction(prg, prg_ctr);
   printf("}\n");
 }
 
 // Read instructions from a file, return array of instructions
+instr_t *readfile(char *filename) {
+  size_t capacity = 1;
+  size_t size = 0;
 
-int *readfile(char *filename) {
-  int capacity = 1;
-  int size = 0;
-
-  int *program = (int *)malloc(sizeof(int) * capacity);
+  instr_t *program = malloc(sizeof(instr_t) * capacity);
 
   FILE *inp = fopen(filename, "r");
-  int instr;
-  while (fscanf(inp, "%d", &instr) == 1) {
+
+  instr_t instr;
+
+  while (fscanf(inp, "%ld", &instr) == 1) {
     if (size >= capacity) {
-      int *buffer = (int *)malloc(sizeof(int) * 2 * capacity);
+      instr_t *buffer = malloc(sizeof(instr_t) * 2 * capacity);
 
       for (int i = 0; i < capacity; i++) {
         buffer[i] = program[i];
@@ -266,203 +281,211 @@ int *readfile(char *filename) {
       program = buffer;
       capacity *= 2;
     }
+
     program[size++] = instr;
   }
+
   fclose(inp);
   return program;
 }
 
-word *allocate(unsigned int tag, unsigned int length, int s[], int sp);
+word *allocate(uint32_t tag, size_t length, instr_t stk[], int stk_ptr);
 
 // The machine: execute the code starting at p[pc]
 
-int execcode(int p[], int s[], int iargs[], int iargc, int /* boolean */ trace) {
-  int bp = -999; // Base pointer, for local variable access
-  int sp = -1;   // Stack top pointer
-  int pc = 0;    // Program counter: next instruction
+int execcode(instr_t prg[], instr_t stk[], int iargs[], int iargc, bool trace) {
+  int bse_ptr = -999; // Base pointer, for local variable access
+  int stk_ptr = -1;   // Stack top pointer
+  size_t prg_ctr = 0; // Program counter: next instruction
   for (;;) {
     if (trace) {
-      printStackAndPc(s, bp, sp, p, pc);
+      printStackAndPc(stk, bse_ptr, stk_ptr, prg, prg_ctr);
     }
-    switch (p[pc++]) {
+
+    switch (prg[prg_ctr++]) {
     case CSTI:
-      s[sp + 1] = Tag(p[pc++]);
-      sp++;
+      stk[stk_ptr + 1] = TagInt(prg[prg_ctr++]);
+      stk_ptr++;
       break;
     case ADD:
-      s[sp - 1] = Tag(Untag(s[sp - 1]) + Untag(s[sp]));
-      sp--;
+      stk[stk_ptr - 1] = TagInt(UntagInstr(stk[stk_ptr - 1]) + UntagInstr(stk[stk_ptr]));
+      stk_ptr--;
       break;
     case SUB:
-      s[sp - 1] = Tag(Untag(s[sp - 1]) - Untag(s[sp]));
-      sp--;
+      stk[stk_ptr - 1] = TagInt(UntagInstr(stk[stk_ptr - 1]) - UntagInstr(stk[stk_ptr]));
+      stk_ptr--;
       break;
     case MUL:
-      s[sp - 1] = Tag(Untag(s[sp - 1]) * Untag(s[sp]));
-      sp--;
+      stk[stk_ptr - 1] = TagInt(UntagInstr(stk[stk_ptr - 1]) * UntagInstr(stk[stk_ptr]));
+      stk_ptr--;
       break;
     case DIV:
-      s[sp - 1] = Tag(Untag(s[sp - 1]) / Untag(s[sp]));
-      sp--;
+      stk[stk_ptr - 1] = TagInt(UntagInstr(stk[stk_ptr - 1]) / UntagInstr(stk[stk_ptr]));
+      stk_ptr--;
       break;
     case MOD:
-      s[sp - 1] = Tag(Untag(s[sp - 1]) % Untag(s[sp]));
-      sp--;
+      stk[stk_ptr - 1] = TagInt(UntagInstr(stk[stk_ptr - 1]) % UntagInstr(stk[stk_ptr]));
+      stk_ptr--;
       break;
     case EQ:
-      s[sp - 1] = Tag(s[sp - 1] == s[sp] ? 1 : 0);
-      sp--;
+      stk[stk_ptr - 1] = TagInt(stk[stk_ptr - 1] == stk[stk_ptr] ? 1 : 0);
+      stk_ptr--;
       break;
     case LT:
-      s[sp - 1] = Tag(s[sp - 1] < s[sp] ? 1 : 0);
-      sp--;
+      stk[stk_ptr - 1] = TagInt(stk[stk_ptr - 1] < stk[stk_ptr] ? 1 : 0);
+      stk_ptr--;
       break;
     case NOT: {
-      int v = s[sp];
-      s[sp] = Tag((IsInt(v) ? Untag(v) == 0 : v == 0) ? 1 : 0);
+      int v = stk[stk_ptr];
+      stk[stk_ptr] = TagInt((IsInstr(v) ? UntagInstr(v) == 0 : v == 0) ? 1 : 0);
     } break;
     case DUP:
-      s[sp + 1] = s[sp];
-      sp++;
+      stk[stk_ptr + 1] = stk[stk_ptr];
+      stk_ptr++;
       break;
     case SWAP: {
-      int tmp = s[sp];
-      s[sp] = s[sp - 1];
-      s[sp - 1] = tmp;
+      int tmp = stk[stk_ptr];
+      stk[stk_ptr] = stk[stk_ptr - 1];
+      stk[stk_ptr - 1] = tmp;
     } break;
     case LDI: // load indirect
-      s[sp] = s[Untag(s[sp])];
+      stk[stk_ptr] = stk[UntagInstr(stk[stk_ptr])];
       break;
     case STI: // store indirect, keep value on top
-      s[Untag(s[sp - 1])] = s[sp];
-      s[sp - 1] = s[sp];
-      sp--;
+      stk[UntagInstr(stk[stk_ptr - 1])] = stk[stk_ptr];
+      stk[stk_ptr - 1] = stk[stk_ptr];
+      stk_ptr--;
       break;
     case GETBP:
-      s[sp + 1] = Tag(bp);
-      sp++;
+      stk[stk_ptr + 1] = TagInt(bse_ptr);
+      stk_ptr++;
       break;
     case GETSP:
-      s[sp + 1] = Tag(sp);
-      sp++;
+      stk[stk_ptr + 1] = TagInt(stk_ptr);
+      stk_ptr++;
       break;
     case INCSP:
-      sp = sp + p[pc++];
+      stk_ptr = stk_ptr + prg[prg_ctr++];
       break;
     case GOTO:
-      pc = p[pc];
+      prg_ctr = prg[prg_ctr];
       break;
     case IFZERO: {
-      int v = s[sp--];
-      pc = (IsInt(v) ? Untag(v) == 0 : v == 0) ? p[pc] : pc + 1;
+      int v = stk[stk_ptr--];
+      prg_ctr =
+          (IsInstr(v) ? UntagInstr(v) == 0 : v == 0) ? prg[prg_ctr] : prg_ctr + 1;
     } break;
     case IFNZRO: {
-      int v = s[sp--];
-      pc = (IsInt(v) ? Untag(v) != 0 : v != 0) ? p[pc] : pc + 1;
+      int v = stk[stk_ptr--];
+      prg_ctr =
+          (IsInstr(v) ? UntagInstr(v) != 0 : v != 0) ? prg[prg_ctr] : prg_ctr + 1;
     } break;
     case CALL: {
-      int argc = p[pc++];
-      for (int i = 0; i < argc; i++) { // Make room for return address
-        s[sp - i + 2] = s[sp - i]; // and old base pointer
+      int argc = prg[prg_ctr++];
+      for (int i = 0; i < argc; i++) {           // Make room for return address
+        stk[stk_ptr - i + 2] = stk[stk_ptr - i]; // and old base pointer
       }
-      s[sp - argc + 1] = Tag(pc + 1);
-      sp++;
-      s[sp - argc + 1] = Tag(bp);
-      sp++;
-      bp = sp + 1 - argc;
-      pc = p[pc];
+      stk[stk_ptr - argc + 1] = TagInt(prg_ctr + 1);
+      stk_ptr++;
+      stk[stk_ptr - argc + 1] = TagInt(bse_ptr);
+      stk_ptr++;
+      bse_ptr = stk_ptr + 1 - argc;
+      prg_ctr = prg[prg_ctr];
     } break;
     case TCALL: {
-      int argc = p[pc++]; // Number of new arguments
-      int pop = p[pc++];  // Number of variables to discard
+      int argc = prg[prg_ctr++];            // Number of new arguments
+      int pop = prg[prg_ctr++];             // Number of variables to discard
       for (int i = argc - 1; i >= 0; i--) { // Discard variables
-        s[sp - i - pop] = s[sp - i];
+        stk[stk_ptr - i - pop] = stk[stk_ptr - i];
       }
-      sp = sp - pop;
-      pc = p[pc];
+      stk_ptr = stk_ptr - pop;
+      prg_ctr = prg[prg_ctr];
     } break;
     case RET: {
-      int res = s[sp];
-      sp = sp - p[pc];
-      bp = Untag(s[--sp]);
-      pc = Untag(s[--sp]);
-      s[sp] = res;
+      int res = stk[stk_ptr];
+      stk_ptr = stk_ptr - prg[prg_ctr];
+      bse_ptr = UntagInstr(stk[--stk_ptr]);
+      prg_ctr = UntagInstr(stk[--stk_ptr]);
+      stk[stk_ptr] = res;
     } break;
     case PRINTI:
-      printf("%d ", IsInt(s[sp]) ? Untag(s[sp]) : s[sp]);
+      printf("%ld ", IsInstr(stk[stk_ptr]) ? UntagInstr(stk[stk_ptr]) : stk[stk_ptr]);
       break;
     case PRINTC:
-      printf("%c", Untag(s[sp]));
+      printf("%d", UntagInstr(stk[stk_ptr]));
       break;
     case LDARGS: {
       for (int i = 0; i < iargc; i++) { // Push commandline arguments
-        s[++sp] = Tag(iargs[i]);
+        stk[++stk_ptr] = TagInt(iargs[i]);
       }
     } break;
     case STOP:
       return 0;
     case NIL:
-      s[sp + 1] = 0;
-      sp++;
+      stk[stk_ptr + 1] = 0;
+      stk_ptr++;
       break;
     case CONS: {
-      word *p = allocate(CONSTAG, 2, s, sp);
-      p[1] = (word)s[sp - 1];
-      p[2] = (word)s[sp];
-      s[sp - 1] = (int)p;
-      sp--;
+      word *p = allocate(TagCons, 2, stk, stk_ptr);
+      p[1] = (word)stk[stk_ptr - 1];
+      p[2] = (word)stk[stk_ptr];
+      stk[stk_ptr - 1] = (instr_t)p;
+      stk_ptr--;
     } break;
     case CAR: {
-      word *p = (word *)s[sp];
+      word *p = (word *)stk[stk_ptr];
       if (p == 0) {
         printf("Cannot take car of null\n");
         return -1;
       }
-      s[sp] = (int)(p[1]);
+      stk[stk_ptr] = (int)(p[1]);
     } break;
     case CDR: {
-      word *p = (word *)s[sp];
+      word *p = (word *)stk[stk_ptr];
       if (p == 0) {
         printf("Cannot take cdr of null\n");
         return -1;
       }
-      s[sp] = (int)(p[2]);
+      stk[stk_ptr] = (int)(p[2]);
     } break;
     case SETCAR: {
-      word v = (word)s[sp--];
-      word *p = (word *)s[sp];
+      word v = (word)stk[stk_ptr--];
+      word *p = (word *)stk[stk_ptr];
       p[1] = v;
     } break;
     case SETCDR: {
-      word v = (word)s[sp--];
-      word *p = (word *)s[sp];
+      word v = (word)stk[stk_ptr--];
+      word *p = (word *)stk[stk_ptr];
       p[2] = v;
     } break;
     default:
-      printf("Illegal instruction %d at address %d\n", p[pc - 1], pc - 1);
+      printf("Illegal instruction %ld at address %zu\n", prg[prg_ctr - 1], prg_ctr - 1);
       return -1;
     }
   }
 }
 
 // Read program from file, and execute it
+int execute(int argc, char **argv, bool trace) {
+  instr_t *prg = readfile(argv[trace ? 2 : 1]);       // program bytecodes: int[]
+  instr_t *stk = malloc(sizeof(instr_t) * STACKSIZE); // stack: int[]
 
-int execute(int argc, char **argv, int /* boolean */ trace) {
-  int *p = readfile(argv[trace ? 2 : 1]);          // program bytecodes: int[]
-  int *s = (int *)malloc(sizeof(int) * STACKSIZE); // stack: int[]
   int iargc = trace ? argc - 3 : argc - 2;
-  int *iargs = (int *)malloc(sizeof(int) * iargc); // program inputs: int[]
+  int *iargs = malloc(sizeof(int) * iargc); // program inputs: int[]
 
   for (int i = 0; i < iargc; i++) { // Convert commandline arguments
     iargs[i] = atoi(argv[trace ? i + 3 : i + 2]);
   }
   // Measure cpu time for executing the program
-  struct rusage ru1, ru2;
+  struct rusage ru1;
+  struct rusage ru2;
+
   getrusage(RUSAGE_SELF, &ru1);
-  int res = execcode(p, s, iargs, iargc, trace); // Execute program proper
+  int res = execcode(prg, stk, iargs, iargc, trace); // Execute program proper
   getrusage(RUSAGE_SELF, &ru2);
   struct timeval t1 = ru1.ru_utime, t2 = ru2.ru_utime;
-  double runtime = t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec) / 1000000.0;
+  double runtime =
+      t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec) / 1000000.0;
   printf("\nUsed %7.3f cpu seconds\n", runtime);
   return res;
 }
@@ -476,10 +499,16 @@ word mkheader(unsigned int tag, unsigned int length, unsigned int color) {
 int inHeap(word *p) { return heap <= p && p < afterHeap; }
 
 // Call this after a GC to get heap statistics:
-
 void heapStatistics() {
-  int blocks = 0, free = 0, orphans = 0, blocksSize = 0, freeSize = 0, largestFree = 0;
+  int blocks = 0;
+  int free = 0;
+  int orphans = 0;
+  int blocksSize = 0;
+  int freeSize = 0;
+  int largestFree = 0;
+
   word *heapPtr = heap;
+
   while (heapPtr < afterHeap) {
     if (Length(heapPtr[0]) > 0) {
       blocks++;
@@ -487,13 +516,16 @@ void heapStatistics() {
     } else {
       orphans++;
     }
+
     word *nextBlock = heapPtr + Length(heapPtr[0]) + 1;
     if (nextBlock > afterHeap) {
       printf("HEAP ERROR: block at heap[%ld] extends beyond heap\n", heapPtr - heap);
       exit(-1);
     }
+
     heapPtr = nextBlock;
   }
+
   word *freePtr = freelist;
   while (freePtr != 0) {
     free++;
@@ -504,11 +536,12 @@ void heapStatistics() {
     }
     freeSize += length;
     largestFree = length > largestFree ? length : largestFree;
-    if (Color(freePtr[0]) != Blue) {
-      printf("Non-blue block at heap[%d] on freelist\n", (int)freePtr);
+    if (GetColor(freePtr[0]) != Blue) {
+      printf("Non-blue block at heap[%ld] on freelist\n", freePtr);
     }
     freePtr = (word *)freePtr[1];
   }
+
   printf("Heap: %d blocks (%d words); of which %d free (%d words, largest %d words); %d orphans\n", blocks, blocksSize, free, freeSize, largestFree, orphans);
 }
 
@@ -521,7 +554,7 @@ void initheap() {
   freelist = &heap[0];
 }
 
-void markPhase(int s[], int sp) {
+void markPhase(instr_t stk[], int stk_ptr) {
   printf("marking ...\n");
   // TODO: Actually mark something
 }
@@ -531,15 +564,16 @@ void sweepPhase() {
   // TODO: Actually sweep
 }
 
-void collect(int s[], int sp) {
-  markPhase(s, sp);
+void collect(instr_t stk[], int stk_ptr) {
+  markPhase(stk, stk_ptr);
   heapStatistics();
   sweepPhase();
   heapStatistics();
 }
 
-word *allocate(unsigned int tag, unsigned int length, int s[], int sp) {
-  int attempt = 1;
+word *allocate(uint32_t tag, size_t length, instr_t stk[], int stk_ptr) {
+  size_t attempt = 1;
+
   do {
     word *free = freelist;
     word **prev = &freelist;
@@ -566,9 +600,10 @@ word *allocate(unsigned int tag, unsigned int length, int s[], int sp) {
 
     // No free space, do a garbage collection and try again
     if (attempt == 1) {
-      collect(s, sp);
+      collect(stk, stk_ptr);
     }
   } while (attempt++ == 1);
+
   printf("Out of memory\n");
   exit(1);
 }
@@ -576,14 +611,20 @@ word *allocate(unsigned int tag, unsigned int length, int s[], int sp) {
 // Read code from file and execute it
 
 int main(int argc, char **argv) {
-  if (sizeof(word) != 4 || sizeof(word *) != 4 || sizeof(int) != 4) {
-    printf("Size of word, word* or int is not 32 bit, cannot run\n");
+
+  if (sizeof(intptr_t) < 4) {
+
+    printf("Size of word, word* or int lower than 32 bit, cannot run\n");
     return -1;
+
   } else if (argc < 2) {
-    printf("Usage: listmachine [-trace] <programfile> <arg1> ...\n");
+
+    printf("Usage: listmachine [--trace] <programfile> <arg1> ...\n");
     return -1;
+
   } else {
-    int trace = argc >= 3 && 0 == strncmp(argv[1], "-trace", 7);
+
+    bool trace = argc >= 3 && 0 == strncmp(argv[1], "--trace", 7);
     initheap();
     return execute(argc, argv, trace);
   }
