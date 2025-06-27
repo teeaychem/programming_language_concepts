@@ -485,18 +485,10 @@ $RECYCLE.BIN/
 
 # Project specific files
 /ProgrammingLanguageConcepts/Intcomp/machine
-/ProgrammingLanguageConcepts/ExprLex.fs
-/ProgrammingLanguageConcepts/ExprLex.fsi
-/ProgrammingLanguageConcepts/ExprPar.fs
-/ProgrammingLanguageConcepts/ExprPar.fsi
-/ProgrammingLanguageConcepts/FunLex.fs
-/ProgrammingLanguageConcepts/FunLex.fsi
-/ProgrammingLanguageConcepts/FunPar.fs
-/ProgrammingLanguageConcepts/FunPar.fsi
-/ProgrammingLanguageConcepts/CLex.fs
-/ProgrammingLanguageConcepts/CLex.fsi
-/ProgrammingLanguageConcepts/CPar.fs
-/ProgrammingLanguageConcepts/CPar.fsi
+/ProgrammingLanguageConcepts/*Lex.fs
+/ProgrammingLanguageConcepts/*Lex.fsi
+/ProgrammingLanguageConcepts/*Par.fs
+/ProgrammingLanguageConcepts/*Par.fsi
 
 /ProgrammingLanguageConcepts/MicroC/ex/
 /ProgrammingLanguageConcepts/MicroC/prog*
