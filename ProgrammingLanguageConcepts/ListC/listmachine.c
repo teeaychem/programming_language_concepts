@@ -426,27 +426,27 @@ int execcode(instr_t prg[], instr_t stk[], int iargs[], int iargc, bool trace) {
       stk_ptr++;
       break;
     case CONS: {
-      word *p = allocate(TagCons, 2, stk, stk_ptr);
-      p[1] = (word)stk[stk_ptr - 1];
-      p[2] = (word)stk[stk_ptr];
-      stk[stk_ptr - 1] = (instr_t)p;
+      word *ptr = allocate(TagCons, 2, stk, stk_ptr);
+      ptr[1] = (word)stk[stk_ptr - 1];
+      ptr[2] = (word)stk[stk_ptr];
+      stk[stk_ptr - 1] = (instr_t)ptr;
       stk_ptr--;
     } break;
     case CAR: {
-      word *p = (word *)stk[stk_ptr];
-      if (p == 0) {
+      word *ptr = (word *)stk[stk_ptr];
+      if (ptr == 0) {
         printf("Cannot take car of null\n");
         return -1;
       }
-      stk[stk_ptr] = (int)(p[1]);
+      stk[stk_ptr] = (int)(ptr[1]);
     } break;
     case CDR: {
-      word *p = (word *)stk[stk_ptr];
-      if (p == 0) {
+      word *ptr = (word *)stk[stk_ptr];
+      if (ptr == 0) {
         printf("Cannot take cdr of null\n");
         return -1;
       }
-      stk[stk_ptr] = (int)(p[2]);
+      stk[stk_ptr] = (int)(ptr[2]);
     } break;
     case SETCAR: {
       word v = (word)stk[stk_ptr--];
@@ -492,7 +492,7 @@ int execute(int argc, char **argv, bool trace) {
 
 // Garbage collection and heap allocation
 
-word mkheader(unsigned int tag, unsigned int length, unsigned int color) {
+word mkheader(unsigned int tag, size_t length, color_t color) {
   return (tag << 24) | (length << 2) | color;
 }
 
@@ -550,9 +550,12 @@ void initheap() {
   afterHeap = &heap[HEAPSIZE];
   // Initially, entire heap is one block on the freelist:
   heap[0] = mkheader(0, HEAPSIZE - 1, Blue);
-  heap[1] = (word)0;
-  freelist = &heap[0];
+
+  freelist = &heap[0];       // the contents of freelist is a pointer to the start of the heap
+  *(freelist + 1) = (word)0; // the next block in the freelist chain is initially set to `null`
 }
+
+void mark(word *block) { }
 
 void markPhase(instr_t stk[], int stk_ptr) {
   printf("marking ...\n");
@@ -571,37 +574,55 @@ void collect(instr_t stk[], int stk_ptr) {
   heapStatistics();
 }
 
+// Setup:
+// - freeblock points to the next free block.
+// - freeblock + 1 contains a pointer to the following block (or null / 0).
+// Action:
+// - Start at the first free block, and then continue working through freeblocks
+// by the stored pointer until a block with sufficient length is found.
+// - When a block with sufficient length is found, update the freelist pointer,
+// - Maybe split the block and update pointers.
+// - Return a pointer to the block found.
 word *allocate(uint32_t tag, size_t length, instr_t stk[], int stk_ptr) {
   size_t attempt = 1;
 
   do {
     word *free = freelist;
-    word **prev = &freelist;
 
     while (free != 0) {
-      int rest = Length(free[0]) - length;
-      if (rest >= 0) {
-        if (rest == 0) { // Exact fit with free block
-          *prev = (word *)free[1];
-        } else if (rest == 1) { // Create orphan (unusable) block
-          *prev = (word *)free[1];
-          free[length + 1] = mkheader(0, rest - 1, Blue);
-        } else { // Make previous free block point to rest of this block
-          *prev = &free[length + 1];
-          free[length + 1] = mkheader(0, rest - 1, Blue);
-          free[length + 2] = free[1];
+
+      int remaining = Length(*free) - length;
+
+      if (remaining >= 0) {
+        // if exhaust block, use stored pointer to next block
+        // otherwise, create new block and copy stored pointer over
+
+        if (remaining == 0) { // Exact fit with free block, so use stored pointer.
+          freelist = (word *)*(free + 1);
+        } else if (remaining == 1) {      // Fill with unusable block of legnth zero
+          freelist = (word *)*(free + 1); // So, use stored pointer for next next block.
+          // Create unusable block through header with zero length.
+          *(free + length + 1) = mkheader(0, 0, Blue);
+
+        } else {                          // Block will not be filled as excess length.
+          freelist = (free + length + 1); // Set freelist to after length used.
+          // Set a new header with the remaining capacity.
+          *(free + length + 1) = mkheader(0, remaining - 1, Blue);
+          *(free + length + 2) = *(free + 1); // Copy over the stored pointer.
         }
-        free[0] = mkheader(tag, length, White);
+
+        *free = mkheader(tag, length, White);
         return free;
       }
-      prev = (word **)&free[1];
-      free = (word *)free[1];
+
+      free = (word *)*(free + 1); // No capacity so use stored pointer to next block.
     }
 
-    // No free space, do a garbage collection and try again
+    // On first attempt, if no free space, do a garbage collection and retry
     if (attempt == 1) {
       collect(stk, stk_ptr);
     }
+
   } while (attempt++ == 1);
 
   printf("Out of memory\n");
@@ -614,7 +635,7 @@ int main(int argc, char **argv) {
 
   if (sizeof(intptr_t) < 4) {
 
-    printf("Size of word, word* or int lower than 32 bit, cannot run\n");
+    printf("Size of intptr_t lower than 32 bit, cannot run\n");
     return -1;
 
   } else if (argc < 2) {
@@ -626,6 +647,10 @@ int main(int argc, char **argv) {
 
     bool trace = argc >= 3 && 0 == strncmp(argv[1], "--trace", 7);
     initheap();
-    return execute(argc, argv, trace);
+    printHeap();
+
+    int result = execute(argc, argv, trace);
+
+    return result;
   }
 }
