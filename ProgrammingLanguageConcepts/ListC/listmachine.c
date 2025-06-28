@@ -74,13 +74,13 @@
 // Heap + NULL -> HULL
 #define HULL 0
 
-const size_t HEAPSIZE = 1000;  // Heap size in words
+const size_t HEAPSIZE = 100;   // Heap size in words
 const size_t STACKSIZE = 1000; // Stack size
 
 typedef enum {
-  HDR, // The header to a block
-  INT, // An integer
-  PTR, // A(n actual) pointer
+  HDR = 0, // The header to a block
+  INT = 1, // An integer
+  PTR = 2, // A(n actual) pointer
 } data_t;
 
 // Set the word type as data and a discriminant.
@@ -128,6 +128,7 @@ typedef enum : intptr_t {
 
 typedef enum Tag {
   TagCons = 0,
+  TagFree = 1,
 } tag_t;
 
 typedef enum Color {
@@ -139,23 +140,30 @@ typedef enum Color {
 
 // As there's only a single translation unit (this source) we use static inline.
 
-static inline int32_t BlockTag(const word_t hdr) {
-  assert(hdr.type == HDR);
-  return hdr.data >> 24;
+static inline void assert_word_type(data_t t, const word_t *w) {
+  if (w->type != HDR) {
+    printf("Expected %u, found %u with data %ld", t, w->type, w->data);
+    exit(1);
+  }
 }
 
-static inline size_t BlockLen(const word_t hdr) {
-  assert(hdr.type == HDR);
-  return (((hdr.data) >> 2) & 0x003FFFFF);
+static inline int32_t BlockTag(const word_t *hdr_ptr) {
+  assert_word_type(HDR, hdr_ptr);
+  return hdr_ptr->data >> 24;
 }
 
-static inline color_t BlockColor(const word_t hdr) {
-  assert(hdr.type == HDR);
-  return ((hdr.data) & 3);
+static inline size_t BlockLen(const word_t *hdr_ptr) {
+  assert_word_type(HDR, hdr_ptr);
+  return (((hdr_ptr->data) >> 2) & 0x003FFFFF);
+}
+
+static inline color_t BlockColor(const word_t *hdr_ptr) {
+  assert_word_type(HDR, hdr_ptr);
+  return ((hdr_ptr->data) & 3);
 }
 
 static inline void PaintBlock(word_t *hdr_ptr, color_t color) {
-  assert(hdr_ptr->type == HDR);
+  assert_word_type(HDR, hdr_ptr);
   hdr_ptr->data = (((hdr_ptr->data) & (~3)) | (color));
   return;
 }
@@ -271,9 +279,9 @@ void printInstruction(instr_t prg[], size_t prg_ctr) {
 }
 
 void printHeader(word_t *hdr) {
-  size_t length = BlockLen(*hdr);
-  color_t color = BlockColor(*hdr);
-  tag_t tag = BlockTag(*hdr);
+  size_t length = BlockLen(hdr);
+  color_t color = BlockColor(hdr);
+  tag_t tag = BlockTag(hdr);
   printf("H #{%ld} [%d %zu %d]\n", (intptr_t)hdr, tag, length, color);
 }
 
@@ -281,8 +289,8 @@ void printHeap() {
   word_t *idx = heap;
   while (idx < afterHeap) {
 
-    size_t length = BlockLen(*idx);
-    color_t color = BlockColor(*idx);
+    size_t length = BlockLen(idx);
+    color_t color = BlockColor(idx);
     printHeader(idx);
 
     ++idx; // Discard the header
@@ -371,7 +379,7 @@ instr_t *readfile(char *filename) {
   return program;
 }
 
-word_t *allocate(uint32_t tag, size_t length, word_t stk[], int stk_ptr, bool trace);
+word_t *allocate(tag_t tag, size_t length, word_t stk[], int stk_ptr, bool trace);
 
 // The machine: execute the code starting at p[pc]
 
@@ -630,7 +638,7 @@ int execute(int argc, char **argv, bool trace) {
 
 // Garbage collection and heap allocation
 
-word_t mkheader(unsigned int tag, size_t length, color_t color) {
+word_t mkheader(tag_t tag, size_t length, color_t color) {
   intptr_t data = (tag << 24) | (length << 2) | color;
   word_t word = {.data = data, .type = HDR};
 
@@ -651,17 +659,16 @@ void heapStatistics() {
   word_t *heapPtr = heap;
 
   while (heapPtr < afterHeap) {
-    if (BlockLen(heapPtr[0]) > 0) {
+    if (BlockLen(heapPtr) > 0) {
       blocks++;
-      blocksSize += BlockLen(heapPtr[0]);
+      blocksSize += BlockLen(heapPtr);
     } else {
       orphans++;
     }
 
-    word_t *nextBlock = heapPtr + BlockLen(heapPtr[0]) + 1;
+    word_t *nextBlock = heapPtr + BlockLen(heapPtr) + 1;
     if (nextBlock > afterHeap) {
-      printf("HEAP ERROR: block at heap[%ld] extends beyond heap\n",
-             heapPtr - heap);
+      printf("HEAP ERROR: block at heap[%ld] extends beyond heap\n", heapPtr - heap);
       exit(-1);
     }
 
@@ -671,16 +678,15 @@ void heapStatistics() {
   word_t *freePtr = freelist;
   while (freePtr != HULL) {
     free++;
-    int length = BlockLen(freePtr[0]);
+    int length = BlockLen(freePtr);
     if (freePtr < heap || afterHeap < freePtr + length + 1) {
-      printf("HEAP ERROR: freelist item %d (at heap[%ld], length %d) is "
-             "outside heap\n",
+      printf("HEAP ERROR: freelist item %d (at heap[%ld], length %d) is outside heap\n",
              free, freePtr - heap, length);
       exit(-1);
     }
     freeSize += length;
     largestFree = length > largestFree ? length : largestFree;
-    if (BlockColor(freePtr[0]) != Blue) {
+    if (BlockColor(freePtr) != Blue) {
       printf("Non-blue block at heap[%ld] on freelist\n", (intptr_t)freePtr);
     }
 
@@ -688,15 +694,14 @@ void heapStatistics() {
     freePtr = (word_t *)freePtr[1].data;
   }
 
-  printf("Heap: %d blocks (%d words); of which %d free (%d words, largest %d words); %d orphans\n",
-         blocks, blocksSize, free, freeSize, largestFree, orphans);
+  printf("Heap: %d blocks (%d words); of which %d free (%d words, largest %d words); %d orphans\n", blocks, blocksSize, free, freeSize, largestFree, orphans);
 }
 
 void initheap() {
   heap = (word_t *)malloc(sizeof(word_t) * HEAPSIZE);
   afterHeap = &heap[HEAPSIZE];
   // Initially, entire heap is one block on the freelist:
-  heap[0] = mkheader(0, HEAPSIZE - 1, Blue);
+  heap[0] = mkheader(TagFree, HEAPSIZE - 1, Blue);
 
   freelist = &heap[0]; // the contents of freelist is a pointer to the start of the heap
 
@@ -706,12 +711,12 @@ void initheap() {
 
 void mark(word_t *blk_ptr) {
 
-  color_t color = BlockColor(*blk_ptr);
+  color_t color = BlockColor(blk_ptr);
 
   if (color == White) {
     PaintBlock(blk_ptr, Black);
 
-    for (int i = 1; i <= BlockLen(*blk_ptr); ++i) {
+    for (int i = 1; i <= BlockLen(blk_ptr); ++i) {
       if (blk_ptr[i].type == PTR && blk_ptr[i].data != HULL) {
         mark((word_t *)blk_ptr[i].data);
       }
@@ -742,12 +747,31 @@ void sweepPhase(bool trace) {
 
   word_t *hdr = heap;
   while (hdr < afterHeap) {
-    switch (BlockColor(*hdr)) {
+    switch (BlockColor(hdr)) {
 
     case White: { // Add the block to the start of the freelist
-      word_t word = {.data = (intptr_t)freelist, .type = PTR};
-      *(hdr + 1) = word; // Set next freelist pointer after the header to the block.
-      freelist = hdr;    // Update the freelist to start at the block.
+      word_t fl_nxt = {.data = (intptr_t)freelist, .type = PTR};
+      freelist = hdr;           // Update the freelist to start at the block.
+      *(freelist + 1) = fl_nxt; // Set next freelist pointer after the header to the block.
+
+      // Merge the following blocks, until HULL or non-free.
+      word_t *next = freelist + 1 + BlockLen(freelist);
+
+      while (next < afterHeap && next->data != HULL) {
+        assert_word_type(HDR, next);
+
+        color_t next_color = BlockColor(next);
+        if (next_color == White || next_color == Blue) {
+          size_t offset = BlockLen(freelist) + 1 + BlockLen(next);
+          word_t fresh_hdr = mkheader(TagFree, offset, White);
+          *freelist = fresh_hdr;
+
+          next = next + BlockLen(next) + 1;
+        } else {
+          break;
+        }
+      }
+
     } break;
     case Grey:
       printf("Grey block found");
@@ -759,11 +783,22 @@ void sweepPhase(bool trace) {
       break;
     }
 
-    size_t len = BlockLen(*hdr);
+    size_t len = BlockLen(hdr);
     hdr += (1 + len);
   }
+
   if (trace) {
     printf("sweep complete\n");
+    printf("compacting...\n");
+  }
+
+  if (freelist == HULL) {
+    printf("Freelist HULL\n");
+    return;
+  }
+
+  if (trace) {
+    printHeader(freelist);
   }
 }
 
@@ -787,7 +822,7 @@ void collect(word_t stk[], int stk_ptr, bool trace) {
 // - When a block with sufficient length is found, update the freelist pointer,
 // - Maybe split the block and update pointers.
 // - Return a pointer to the block found.
-word_t *allocate(uint32_t tag, size_t length, word_t stk[], int stk_ptr, bool trace) {
+word_t *allocate(tag_t tag, size_t length, word_t stk[], int stk_ptr, bool trace) {
   size_t attempt = 1;
 
   do {
@@ -795,7 +830,7 @@ word_t *allocate(uint32_t tag, size_t length, word_t stk[], int stk_ptr, bool tr
 
     while (free != HULL) {
 
-      int remaining = BlockLen(*free) - length;
+      int remaining = BlockLen(free) - length;
 
       if (remaining >= 0) {
         // if exhaust block, use stored pointer to next block
@@ -806,12 +841,12 @@ word_t *allocate(uint32_t tag, size_t length, word_t stk[], int stk_ptr, bool tr
         } else if (remaining == 1) {               // Fill with unusable block of legnth zero
           freelist = (word_t *)(*(free + 1)).data; // So, use stored pointer for next next block.
           // Create unusable block through header with zero length.
-          *(free + length + 1) = mkheader(0, 0, Blue);
+          *(free + length + 1) = mkheader(TagFree, 0, Blue);
 
         } else {                          // Block will not be filled as excess length.
           freelist = (free + length + 1); // Set freelist to after length used.
           // Set a new header with the remaining capacity.
-          *(free + length + 1) = mkheader(0, remaining - 1, Blue);
+          *(free + length + 1) = mkheader(TagFree, remaining - 1, Blue);
           *(free + length + 2) = *(free + 1); // Copy over the stored pointer.
         }
 
@@ -851,7 +886,10 @@ int main(int argc, char **argv) {
 
     bool trace = argc >= 3 && 0 == strncmp(argv[1], "--trace", 7);
     initheap();
-    printHeap();
+
+    if (trace) {
+      printHeap();
+    }
 
     int result = execute(argc, argv, trace);
 
