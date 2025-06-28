@@ -3,6 +3,15 @@
    for list-C, a variant of micro-C with cons cells.
    sestoft@itu.dk * 2009-11-17, 2012-02-08
 
+   Modified further to avoid mangling pointers by sparkes.
+   A heavy handed approach is used.
+   Previously, words were (implicitly) int32_ts.
+   Now, words are structs containing data and a discriminant.
+   For simplicity, data is an intptr_t.
+
+
+
+
    Compile like this, on ssh.itu.dk say:
       gcc -Wall listmachine.c -o listmachine
 
@@ -51,6 +60,8 @@
    created when allocating all but the last word of a free block.
 */
 
+#include <assert.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -60,85 +71,98 @@
 #include <sys/resource.h>
 #include <sys/time.h>
 
+// Heap + NULL -> HULL
+#define HULL 0
+
 const size_t HEAPSIZE = 1000;  // Heap size in words
 const size_t STACKSIZE = 1000; // Stack size
 
-// Set the word type equal in size to a pointer.
-typedef intptr_t word;
+typedef enum {
+  HDR, // The header to a block
+  INT, // An integer
+  PTR, // A(n actual) pointer
+} data_t;
+
+// Set the word type as data and a discriminant.
+typedef struct word {
+  intptr_t data;
+  data_t type;
+} word_t;
 
 // These numeric instruction codes must agree with ListC/Machine.fs:
 // C23 enum with size intptr_t
-typedef enum : intptr_t { CSTI = 0,
-                          ADD = 1,
-                          SUB = 2,
-                          MUL = 3,
-                          DIV = 4,
-                          MOD = 5,
-                          EQ = 6,
-                          LT = 7,
-                          NOT = 8,
-                          DUP = 9,
-                          SWAP = 10,
-                          LDI = 11,
-                          STI = 12,
-                          GETBP = 13,
-                          GETSP = 14,
-                          INCSP = 15,
-                          GOTO = 16,
-                          IFZERO = 17,
-                          IFNZRO = 18,
-                          CALL = 19,
-                          TCALL = 20,
-                          RET = 21,
-                          PRINTI = 22,
-                          PRINTC = 23,
-                          LDARGS = 24,
-                          STOP = 25,
-                          NIL = 26,
-                          CONS = 27,
-                          CAR = 28,
-                          CDR = 29,
-                          SETCAR = 30,
-                          SETCDR = 31,
+typedef enum : intptr_t {
+  CSTI = 0,
+  ADD = 1,
+  SUB = 2,
+  MUL = 3,
+  DIV = 4,
+  MOD = 5,
+  EQ = 6,
+  LT = 7,
+  NOT = 8,
+  DUP = 9,
+  SWAP = 10,
+  LDI = 11,
+  STI = 12,
+  GETBP = 13,
+  GETSP = 14,
+  INCSP = 15,
+  GOTO = 16,
+  IFZERO = 17,
+  IFNZRO = 18,
+  CALL = 19,
+  TCALL = 20,
+  RET = 21,
+  PRINTI = 22,
+  PRINTC = 23,
+  LDARGS = 24,
+  STOP = 25,
+  NIL = 26,
+  CONS = 27,
+  CAR = 28,
+  CDR = 29,
+  SETCAR = 30,
+  SETCDR = 31,
 } instr_t;
 
-typedef enum Tag { TagCons = 0,
+typedef enum Tag {
+  TagCons = 0,
 } tag_t;
 
-typedef enum Color { White = 0,
-                     Grey = 1,
-                     Black = 2,
-                     Blue = 3
+typedef enum Color {
+  White = 0,
+  Grey = 1,
+  Black = 2,
+  Blue = 3
 } color_t;
 
 // As there's only a single translation unit (this source) we use static inline.
-static inline bool IsInstr(instr_t inst) {
-  return (inst & 1) == 1;
+
+static inline int32_t BlockTag(const word_t hdr) {
+  assert(hdr.type == HDR);
+  return hdr.data >> 24;
 }
 
-static inline instr_t TagInt(int instr) {
-  return (((instr_t)instr) << 1) | 1;
+static inline size_t BlockLen(const word_t hdr) {
+  assert(hdr.type == HDR);
+  return (((hdr.data) >> 2) & 0x003FFFFF);
 }
 
-static inline int UntagInstr(instr_t inst) { return inst >> 1; }
-
-static inline word BlockTag(word hdr) { return hdr >> 24; }
-
-static inline word Length(word hdr) {
-  return (((hdr) >> 2) & 0x003FFFFF);
+static inline color_t BlockColor(const word_t hdr) {
+  assert(hdr.type == HDR);
+  return ((hdr.data) & 3);
 }
 
-static inline color_t GetColor(word hdr) {
-  return ((hdr) & 3);
+static inline void PaintBlock(word_t *hdr_ptr, color_t color) {
+  assert(hdr_ptr->type == HDR);
+  hdr_ptr->data = (((hdr_ptr->data) & (~3)) | (color));
+  return;
 }
 
-static inline word Paint(word hdr, color_t color) {
-  return (((hdr) & (~3)) | (color));
-}
-
-word *heap;
-word *afterHeap;
-word *freelist;
+word_t *heap;
+word_t *afterHeap;
+word_t *freelist;
 
 // Print the stack machine instruction at p[pc]
 
@@ -246,14 +270,72 @@ void printInstruction(instr_t prg[], size_t prg_ctr) {
   }
 }
 
-// Print current stack (marking heap references by #) and current instruction
-void printStackAndPc(instr_t stk[], int base_ptr, int stk_ptr, instr_t prg[], size_t prg_ctr) {
+void printHeader(word_t *hdr) {
+  size_t length = BlockLen(*hdr);
+  color_t color = BlockColor(*hdr);
+  tag_t tag = BlockTag(*hdr);
+  printf("H #{%ld} [%d %zu %d]\n", (intptr_t)hdr, tag, length, color);
+}
 
+void printHeap() {
+  word_t *idx = heap;
+  while (idx < afterHeap) {
+
+    size_t length = BlockLen(*idx);
+    color_t color = BlockColor(*idx);
+    printHeader(idx);
+
+    ++idx; // Discard the header
+
+    if (length == 0) {
+      break;
+    }
+
+    if (color == White) {
+      for (int i = 0; i < length; ++i) {
+        printf("  [%d] ", i);
+        switch (idx[i].type) {
+        case HDR: {
+          printHeader(idx + i);
+        } break;
+        case INT: {
+          printf("%ld\n", idx[i].data);
+        } break;
+        case PTR: {
+          printf("#{%ld}\n ", idx[i].data);
+        } break;
+        }
+      }
+    }
+
+    idx += length;
+  }
+  printf("\n");
+}
+
+void printStack(word_t stk[], int stk_ptr) {
   printf("[ ");
   for (int i = 0; i <= stk_ptr; i++) {
-    (IsInstr(stk[i])) ? printf("%d ", UntagInstr(stk[i])) : printf("#%ld ", stk[i]);
+    switch (stk[i].type) {
+
+    case HDR:
+      printf("Header on stack");
+      exit(1);
+    case INT: {
+      printf("%ld ", stk[i].data);
+    } break;
+    case PTR: {
+      printf("#{%ld} ", stk[i].data);
+    } break;
+    }
   }
-  printf("] {%zu:", prg_ctr);
+  printf("]");
+}
+
+// Print current stack (marking heap references by #) and current instruction
+void printStackAndPc(word_t stk[], int base_ptr, int stk_ptr, instr_t prg[], size_t prg_ctr) {
+  printStack(stk, stk_ptr);
+  printf(" {%zu:", prg_ctr);
   printInstruction(prg, prg_ctr);
   printf("}\n");
 }
@@ -263,7 +345,7 @@ instr_t *readfile(char *filename) {
   size_t capacity = 1;
   size_t size = 0;
 
-  instr_t *program = malloc(sizeof(instr_t) * capacity);
+  instr_t *program = malloc(sizeof(word_t) * capacity);
 
   FILE *inp = fopen(filename, "r");
 
@@ -271,7 +353,7 @@ instr_t *readfile(char *filename) {
 
   while (fscanf(inp, "%ld", &instr) == 1) {
     if (size >= capacity) {
-      instr_t *buffer = malloc(sizeof(instr_t) * 2 * capacity);
+      instr_t *buffer = malloc(sizeof(word_t) * 2 * capacity);
 
       for (int i = 0; i < capacity; i++) {
         buffer[i] = program[i];
@@ -289,11 +371,11 @@ instr_t *readfile(char *filename) {
   return program;
 }
 
-word *allocate(uint32_t tag, size_t length, instr_t stk[], int stk_ptr);
+word_t *allocate(uint32_t tag, size_t length, word_t stk[], int stk_ptr, bool trace);
 
 // The machine: execute the code starting at p[pc]
 
-int execcode(instr_t prg[], instr_t stk[], int iargs[], int iargc, bool trace) {
+int execcode(instr_t prg[], word_t stk[], int iargs[], int iargc, bool trace) {
   int bse_ptr = -999; // Base pointer, for local variable access
   int stk_ptr = -1;   // Stack top pointer
   size_t prg_ctr = 0; // Program counter: next instruction
@@ -303,94 +385,107 @@ int execcode(instr_t prg[], instr_t stk[], int iargs[], int iargc, bool trace) {
     }
 
     switch (prg[prg_ctr++]) {
-    case CSTI:
-      stk[stk_ptr + 1] = TagInt(prg[prg_ctr++]);
+    case CSTI: {
+      word_t word = {.data = prg[prg_ctr++], .type = INT};
+      stk[stk_ptr + 1] = word;
       stk_ptr++;
-      break;
-    case ADD:
-      stk[stk_ptr - 1] = TagInt(UntagInstr(stk[stk_ptr - 1]) + UntagInstr(stk[stk_ptr]));
-      stk_ptr--;
-      break;
-    case SUB:
-      stk[stk_ptr - 1] = TagInt(UntagInstr(stk[stk_ptr - 1]) - UntagInstr(stk[stk_ptr]));
-      stk_ptr--;
-      break;
-    case MUL:
-      stk[stk_ptr - 1] = TagInt(UntagInstr(stk[stk_ptr - 1]) * UntagInstr(stk[stk_ptr]));
-      stk_ptr--;
-      break;
-    case DIV:
-      stk[stk_ptr - 1] = TagInt(UntagInstr(stk[stk_ptr - 1]) / UntagInstr(stk[stk_ptr]));
-      stk_ptr--;
-      break;
-    case MOD:
-      stk[stk_ptr - 1] = TagInt(UntagInstr(stk[stk_ptr - 1]) % UntagInstr(stk[stk_ptr]));
-      stk_ptr--;
-      break;
-    case EQ:
-      stk[stk_ptr - 1] = TagInt(stk[stk_ptr - 1] == stk[stk_ptr] ? 1 : 0);
-      stk_ptr--;
-      break;
-    case LT:
-      stk[stk_ptr - 1] = TagInt(stk[stk_ptr - 1] < stk[stk_ptr] ? 1 : 0);
-      stk_ptr--;
-      break;
-    case NOT: {
-      int v = stk[stk_ptr];
-      stk[stk_ptr] = TagInt((IsInstr(v) ? UntagInstr(v) == 0 : v == 0) ? 1 : 0);
     } break;
-    case DUP:
+    case ADD: {
+      word_t word = {.data = stk[stk_ptr - 1].data + stk[stk_ptr].data, .type = INT};
+      stk[stk_ptr - 1] = word;
+      stk_ptr--;
+    } break;
+    case SUB: {
+      word_t word = {.data = stk[stk_ptr - 1].data - stk[stk_ptr].data, .type = INT};
+      stk[stk_ptr - 1] = word;
+      stk_ptr--;
+    } break;
+    case MUL: {
+      word_t word = {.data = stk[stk_ptr - 1].data * stk[stk_ptr].data, .type = INT};
+      stk[stk_ptr - 1] = word;
+      stk_ptr--;
+    } break;
+    case DIV: {
+      word_t word = {.data = stk[stk_ptr - 1].data / stk[stk_ptr].data, .type = INT};
+      stk[stk_ptr - 1] = word;
+      stk_ptr--;
+    } break;
+    case MOD: {
+      word_t word = {.data = stk[stk_ptr - 1].data % stk[stk_ptr].data, .type = INT};
+      stk[stk_ptr - 1] = word;
+      stk_ptr--;
+    } break;
+    case EQ: {
+      word_t word = {.data = stk[stk_ptr - 1].data == stk[stk_ptr].data, .type = INT};
+      stk[stk_ptr - 1] = word;
+      stk_ptr--;
+    } break;
+    case LT: {
+      word_t word = {.data = stk[stk_ptr - 1].data < stk[stk_ptr].data, .type = INT};
+      stk[stk_ptr - 1] = word;
+      stk_ptr--;
+    } break;
+    case NOT: {
+      int v = stk[stk_ptr].data;
+      word_t word = {.data = (v == 0 ? 1 : 0), .type = INT};
+      stk[stk_ptr] = word;
+    } break;
+    case DUP: {
       stk[stk_ptr + 1] = stk[stk_ptr];
       stk_ptr++;
-      break;
+    } break;
     case SWAP: {
-      int tmp = stk[stk_ptr];
+      word_t tmp = stk[stk_ptr];
       stk[stk_ptr] = stk[stk_ptr - 1];
       stk[stk_ptr - 1] = tmp;
     } break;
-    case LDI: // load indirect
-      stk[stk_ptr] = stk[UntagInstr(stk[stk_ptr])];
-      break;
-    case STI: // store indirect, keep value on top
-      stk[UntagInstr(stk[stk_ptr - 1])] = stk[stk_ptr];
+    case LDI: { // load indirect
+      stk[stk_ptr] = stk[stk[stk_ptr].data];
+    } break;
+    case STI: { // store indirect, keep value on top
+      stk[stk[stk_ptr - 1].data] = stk[stk_ptr];
       stk[stk_ptr - 1] = stk[stk_ptr];
       stk_ptr--;
-      break;
-    case GETBP:
-      stk[stk_ptr + 1] = TagInt(bse_ptr);
+    } break;
+    case GETBP: {
+      word_t word = {.data = bse_ptr, .type = INT};
+      stk[stk_ptr + 1] = word;
       stk_ptr++;
-      break;
-    case GETSP:
-      stk[stk_ptr + 1] = TagInt(stk_ptr);
+    } break;
+    case GETSP: {
+      word_t word = {.data = stk_ptr, .type = INT};
+      stk[stk_ptr + 1] = word;
       stk_ptr++;
-      break;
-    case INCSP:
+    } break;
+    case INCSP: {
       stk_ptr = stk_ptr + prg[prg_ctr++];
-      break;
-    case GOTO:
+    } break;
+    case GOTO: {
       prg_ctr = prg[prg_ctr];
-      break;
+    } break;
     case IFZERO: {
-      int v = stk[stk_ptr--];
-      prg_ctr =
-          (IsInstr(v) ? UntagInstr(v) == 0 : v == 0) ? prg[prg_ctr] : prg_ctr + 1;
+      int v = stk[stk_ptr--].data;
+      prg_ctr = (v == 0) ? prg[prg_ctr] : prg_ctr + 1;
     } break;
     case IFNZRO: {
-      int v = stk[stk_ptr--];
-      prg_ctr =
-          (IsInstr(v) ? UntagInstr(v) != 0 : v != 0) ? prg[prg_ctr] : prg_ctr + 1;
+      int v = stk[stk_ptr--].data;
+      prg_ctr = (v != 0) ? prg[prg_ctr] : prg_ctr + 1;
     } break;
     case CALL: {
       int argc = prg[prg_ctr++];
       for (int i = 0; i < argc; i++) {           // Make room for return address
         stk[stk_ptr - i + 2] = stk[stk_ptr - i]; // and old base pointer
       }
-      stk[stk_ptr - argc + 1] = TagInt(prg_ctr + 1);
+      word_t word_a = {.data = prg_ctr + 1, .type = INT};
+      stk[stk_ptr - argc + 1] = word_a;
       stk_ptr++;
-      stk[stk_ptr - argc + 1] = TagInt(bse_ptr);
+
+      word_t word_b = {.data = bse_ptr, .type = INT};
+      stk[stk_ptr - argc + 1] = word_b;
       stk_ptr++;
       bse_ptr = stk_ptr + 1 - argc;
       prg_ctr = prg[prg_ctr];
+
     } break;
     case TCALL: {
       int argc = prg[prg_ctr++];            // Number of new arguments
@@ -402,64 +497,107 @@ int execcode(instr_t prg[], instr_t stk[], int iargs[], int iargc, bool trace) {
       prg_ctr = prg[prg_ctr];
     } break;
     case RET: {
-      int res = stk[stk_ptr];
+      word_t res = stk[stk_ptr];
+
       stk_ptr = stk_ptr - prg[prg_ctr];
-      bse_ptr = UntagInstr(stk[--stk_ptr]);
-      prg_ctr = UntagInstr(stk[--stk_ptr]);
+      bse_ptr = stk[--stk_ptr].data;
+      prg_ctr = stk[--stk_ptr].data;
+
       stk[stk_ptr] = res;
     } break;
     case PRINTI:
-      printf("%ld ", IsInstr(stk[stk_ptr]) ? UntagInstr(stk[stk_ptr]) : stk[stk_ptr]);
+
+      switch (stk[stk_ptr].type) {
+
+      case HDR:
+        printf("Header on the stack");
+        exit(1);
+      case INT: {
+        printf("%ld ", stk[stk_ptr].data);
+      } break;
+      case PTR: {
+        printf("#{%ld} ", stk[stk_ptr].data);
+      } break;
+      }
+
       break;
     case PRINTC:
-      printf("%d", UntagInstr(stk[stk_ptr]));
+      switch (stk[stk_ptr].type) {
+
+      case HDR:
+        printf("Header on the stack");
+        exit(1);
+      case INT: {
+        printf("%ld ", stk[stk_ptr].data);
+      } break;
+      case PTR: {
+        printf("#{%ld} ", stk[stk_ptr].data);
+      } break;
+      }
+
       break;
     case LDARGS: {
       for (int i = 0; i < iargc; i++) { // Push commandline arguments
-        stk[++stk_ptr] = TagInt(iargs[i]);
+        word_t word = {.data = iargs[i], .type = INT};
+        stk[++stk_ptr] = word;
       }
     } break;
     case STOP:
       return 0;
-    case NIL:
-      stk[stk_ptr + 1] = 0;
+    case NIL: {
+      word_t word = {.data = 0, .type = INT};
+      stk[stk_ptr + 1] = word;
       stk_ptr++;
-      break;
+    } break;
     case CONS: {
-      word *ptr = allocate(TagCons, 2, stk, stk_ptr);
-      ptr[1] = (word)stk[stk_ptr - 1];
-      ptr[2] = (word)stk[stk_ptr];
-      stk[stk_ptr - 1] = (instr_t)ptr;
+      word_t *ptr = allocate(TagCons, 2, stk, stk_ptr, trace);
+      ptr[1] = (word_t)stk[stk_ptr - 1];
+      ptr[2] = (word_t)stk[stk_ptr];
+
+      word_t word = {.data = (intptr_t)ptr, .type = PTR};
+
+      stk[stk_ptr - 1] = word;
       stk_ptr--;
     } break;
     case CAR: {
-      word *ptr = (word *)stk[stk_ptr];
-      if (ptr == 0) {
+      assert(stk[stk_ptr].type == PTR);
+      word_t *data = (word_t *)stk[stk_ptr].data;
+
+      if (data == HULL) {
         printf("Cannot take car of null\n");
         return -1;
       }
-      stk[stk_ptr] = (int)(ptr[1]);
+
+      stk[stk_ptr] = data[1];
     } break;
     case CDR: {
-      word *ptr = (word *)stk[stk_ptr];
-      if (ptr == 0) {
+      assert(stk[stk_ptr].type == PTR);
+      word_t *data = (word_t *)stk[stk_ptr].data;
+
+      if (data == HULL) {
         printf("Cannot take cdr of null\n");
         return -1;
       }
-      stk[stk_ptr] = (int)(ptr[2]);
+
+      stk[stk_ptr] = data[2];
     } break;
     case SETCAR: {
-      word v = (word)stk[stk_ptr--];
-      word *p = (word *)stk[stk_ptr];
-      p[1] = v;
+      word_t val = stk[stk_ptr--];
+      assert(stk[stk_ptr].type == PTR);
+
+      word_t *ptr = (word_t *)stk[stk_ptr].data;
+      ptr[1] = val;
     } break;
     case SETCDR: {
-      word v = (word)stk[stk_ptr--];
-      word *p = (word *)stk[stk_ptr];
-      p[2] = v;
+      word_t val = (word_t)stk[stk_ptr--];
+      assert(stk[stk_ptr].type == PTR);
+
+      word_t *ptr = (word_t *)stk[stk_ptr].data;
+      ptr[2] = val;
     } break;
     default:
-      printf("Illegal instruction %ld at address %zu\n", prg[prg_ctr - 1], prg_ctr - 1);
+      printf("Illegal instruction %ld at address %zu\n", prg[prg_ctr - 1],
+             prg_ctr - 1);
       return -1;
     }
   }
@@ -467,8 +605,8 @@ int execcode(instr_t prg[], instr_t stk[], int iargs[], int iargc, bool trace) {
 
 // Read program from file, and execute it
 int execute(int argc, char **argv, bool trace) {
-  instr_t *prg = readfile(argv[trace ? 2 : 1]);       // program bytecodes: int[]
-  instr_t *stk = malloc(sizeof(instr_t) * STACKSIZE); // stack: int[]
+  instr_t *prg = readfile(argv[trace ? 2 : 1]);     // program bytecodes: int[]
+  word_t *stk = malloc(sizeof(word_t) * STACKSIZE); // stack: int[]
 
   int iargc = trace ? argc - 3 : argc - 2;
   int *iargs = malloc(sizeof(int) * iargc); // program inputs: int[]
@@ -492,11 +630,14 @@ int execute(int argc, char **argv, bool trace) {
 
 // Garbage collection and heap allocation
 
-word mkheader(unsigned int tag, size_t length, color_t color) {
-  return (tag << 24) | (length << 2) | color;
+word_t mkheader(unsigned int tag, size_t length, color_t color) {
+  intptr_t data = (tag << 24) | (length << 2) | color;
+  word_t word = {.data = data, .type = HDR};
+
+  return word;
 }
 
-int inHeap(word *p) { return heap <= p && p < afterHeap; }
+int inHeap(word_t *p) { return heap <= p && p < afterHeap; }
 
 // Call this after a GC to get heap statistics:
 void heapStatistics() {
@@ -507,71 +648,134 @@ void heapStatistics() {
   int freeSize = 0;
   int largestFree = 0;
 
-  word *heapPtr = heap;
+  word_t *heapPtr = heap;
 
   while (heapPtr < afterHeap) {
-    if (Length(heapPtr[0]) > 0) {
+    if (BlockLen(heapPtr[0]) > 0) {
       blocks++;
-      blocksSize += Length(heapPtr[0]);
+      blocksSize += BlockLen(heapPtr[0]);
     } else {
       orphans++;
     }
 
-    word *nextBlock = heapPtr + Length(heapPtr[0]) + 1;
+    word_t *nextBlock = heapPtr + BlockLen(heapPtr[0]) + 1;
     if (nextBlock > afterHeap) {
-      printf("HEAP ERROR: block at heap[%ld] extends beyond heap\n", heapPtr - heap);
+      printf("HEAP ERROR: block at heap[%ld] extends beyond heap\n",
+             heapPtr - heap);
       exit(-1);
     }
 
     heapPtr = nextBlock;
   }
 
-  word *freePtr = freelist;
-  while (freePtr != 0) {
+  word_t *freePtr = freelist;
+  while (freePtr != HULL) {
     free++;
-    int length = Length(freePtr[0]);
+    int length = BlockLen(freePtr[0]);
     if (freePtr < heap || afterHeap < freePtr + length + 1) {
-      printf("HEAP ERROR: freelist item %d (at heap[%ld], length %d) is outside heap\n", free, freePtr - heap, length);
+      printf("HEAP ERROR: freelist item %d (at heap[%ld], length %d) is "
+             "outside heap\n",
+             free, freePtr - heap, length);
       exit(-1);
     }
     freeSize += length;
     largestFree = length > largestFree ? length : largestFree;
-    if (GetColor(freePtr[0]) != Blue) {
-      printf("Non-blue block at heap[%ld] on freelist\n", freePtr);
+    if (BlockColor(freePtr[0]) != Blue) {
+      printf("Non-blue block at heap[%ld] on freelist\n", (intptr_t)freePtr);
     }
-    freePtr = (word *)freePtr[1];
+
+    assert(freePtr[1].type == PTR);
+    freePtr = (word_t *)freePtr[1].data;
   }
 
-  printf("Heap: %d blocks (%d words); of which %d free (%d words, largest %d words); %d orphans\n", blocks, blocksSize, free, freeSize, largestFree, orphans);
+  printf("Heap: %d blocks (%d words); of which %d free (%d words, largest %d words); %d orphans\n",
+         blocks, blocksSize, free, freeSize, largestFree, orphans);
 }
 
 void initheap() {
-  heap = (word *)malloc(sizeof(word) * HEAPSIZE);
+  heap = (word_t *)malloc(sizeof(word_t) * HEAPSIZE);
   afterHeap = &heap[HEAPSIZE];
   // Initially, entire heap is one block on the freelist:
   heap[0] = mkheader(0, HEAPSIZE - 1, Blue);
 
-  freelist = &heap[0];       // the contents of freelist is a pointer to the start of the heap
-  *(freelist + 1) = (word)0; // the next block in the freelist chain is initially set to `null`
+  freelist = &heap[0]; // the contents of freelist is a pointer to the start of the heap
+
+  word_t word = {.data = HULL, .type = PTR};
+  *(freelist + 1) = word; // the next block in the freelist chain is initially set to `null`
 }
 
-void mark(word *block) { }
+void mark(word_t *blk_ptr) {
 
-void markPhase(instr_t stk[], int stk_ptr) {
-  printf("marking ...\n");
-  // TODO: Actually mark something
+  color_t color = BlockColor(*blk_ptr);
+
+  if (color == White) {
+    PaintBlock(blk_ptr, Black);
+
+    for (int i = 1; i <= BlockLen(*blk_ptr); ++i) {
+      if (blk_ptr[i].type == PTR && blk_ptr[i].data != HULL) {
+        mark((word_t *)blk_ptr[i].data);
+      }
+    }
+  }
 }
 
-void sweepPhase() {
-  printf("sweeping ...\n");
-  // TODO: Actually sweep
+void markPhase(word_t stk[], int stk_ptr, bool trace) {
+  if (trace) {
+    printf("marking ...\n");
+  }
+
+  for (int i = stk_ptr; 0 <= i; --i) {
+    if (stk[i].type == PTR) {
+      mark((word_t *)stk[i].data);
+    }
+  }
+
+  if (trace) {
+    printf("marking complete\n");
+  }
 }
 
-void collect(instr_t stk[], int stk_ptr) {
-  markPhase(stk, stk_ptr);
-  heapStatistics();
-  sweepPhase();
-  heapStatistics();
+void sweepPhase(bool trace) {
+  if (trace) {
+    printf("sweeping ...\n");
+  }
+
+  word_t *hdr = heap;
+  while (hdr < afterHeap) {
+    switch (BlockColor(*hdr)) {
+
+    case White: { // Add the block to the start of the freelist
+      word_t word = {.data = (intptr_t)freelist, .type = PTR};
+      *(hdr + 1) = word; // Set next freelist pointer after the header to the block.
+      freelist = hdr;    // Update the freelist to start at the block.
+    } break;
+    case Grey:
+      printf("Grey block found");
+      exit(1);
+    case Black:
+      PaintBlock(hdr, White);
+      break;
+    case Blue: // Skip, for now
+      break;
+    }
+
+    size_t len = BlockLen(*hdr);
+    hdr += (1 + len);
+  }
+  if (trace) {
+    printf("sweep complete\n");
+  }
+}
+
+void collect(word_t stk[], int stk_ptr, bool trace) {
+  markPhase(stk, stk_ptr, trace);
+  if (trace) {
+    heapStatistics();
+  }
+  sweepPhase(trace);
+  if (trace) {
+    heapStatistics();
+  }
 }
 
 // Setup:
@@ -583,24 +787,24 @@ void collect(instr_t stk[], int stk_ptr) {
 // - When a block with sufficient length is found, update the freelist pointer,
 // - Maybe split the block and update pointers.
 // - Return a pointer to the block found.
-word *allocate(uint32_t tag, size_t length, instr_t stk[], int stk_ptr) {
+word_t *allocate(uint32_t tag, size_t length, word_t stk[], int stk_ptr, bool trace) {
   size_t attempt = 1;
 
   do {
-    word *free = freelist;
+    word_t *free = freelist;
 
-    while (free != 0) {
+    while (free != HULL) {
 
-      int remaining = Length(*free) - length;
+      int remaining = BlockLen(*free) - length;
 
       if (remaining >= 0) {
         // if exhaust block, use stored pointer to next block
         // otherwise, create new block and copy stored pointer over
 
         if (remaining == 0) { // Exact fit with free block, so use stored pointer.
-          freelist = (word *)*(free + 1);
-        } else if (remaining == 1) {      // Fill with unusable block of legnth zero
-          freelist = (word *)*(free + 1); // So, use stored pointer for next next block.
+          freelist = (word_t *)(*(free + 1)).data;
+        } else if (remaining == 1) {               // Fill with unusable block of legnth zero
+          freelist = (word_t *)(*(free + 1)).data; // So, use stored pointer for next next block.
           // Create unusable block through header with zero length.
           *(free + length + 1) = mkheader(0, 0, Blue);
 
@@ -615,12 +819,12 @@ word *allocate(uint32_t tag, size_t length, instr_t stk[], int stk_ptr) {
         return free;
       }
 
-      free = (word *)*(free + 1); // No capacity so use stored pointer to next block.
+      free = (word_t *)(*(free + 1)).data; // No capacity so use stored pointer to next block.
     }
 
     // On first attempt, if no free space, do a garbage collection and retry
     if (attempt == 1) {
-      collect(stk, stk_ptr);
+      collect(stk, stk_ptr, trace);
     }
 
   } while (attempt++ == 1);
