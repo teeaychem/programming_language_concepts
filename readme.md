@@ -72,7 +72,7 @@ The machine reads a file, or runs a couple of internal tests.
 - 6.7
 
 - 7.7: Covered by 8.5.
-- 7.8: No particular interset.
+- 7.8: No particular intereset.
 - 7.9: Interesting, but a little too demanding for the payoff.
 
 - 8.2: Too demanding to implement tests..
@@ -81,3 +81,5 @@ The machine reads a file, or runs a couple of internal tests.
 
 - 9.1
 - 9.2
+
+- 10.1: No relevant tests to include.
