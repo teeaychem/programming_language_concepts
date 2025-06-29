@@ -18,6 +18,7 @@
     <Compile Include="MicroC.fs" />
     <Compile Include="MicroCComp.fs" />
     <Compile Include="ListCComp.fs" />
+    <Compile Include="Cont.fs" />
 
     <Compile Include="Program.fs" />
   </ItemGroup>
