@@ -74,7 +74,7 @@
 // Heap + NULL -> HULL
 #define HULL 0
 
-const size_t HEAPSIZE = 100;   // Heap size in words
+const size_t HEAPSIZE = 10;   // Heap size in words
 const size_t STACKSIZE = 1000; // Stack size
 
 typedef enum {
@@ -287,6 +287,9 @@ void printHeader(word_t *hdr) {
 
 void printHeap() {
   word_t *idx = heap;
+
+  printf("freelist: #{%ld}\n", (intptr_t)freelist);
+
   while (idx < afterHeap) {
 
     size_t length = BlockLen(idx);
@@ -295,13 +298,9 @@ void printHeap() {
 
     ++idx; // Discard the header
 
-    if (length == 0) {
-      break;
-    }
-
     if (color == White) {
       for (int i = 0; i < length; ++i) {
-        printf("  [%d] ", i);
+        printf(" [%d] ", i);
         switch (idx[i].type) {
         case HDR: {
           printHeader(idx + i);
@@ -310,7 +309,7 @@ void printHeap() {
           printf("%ld\n", idx[i].data);
         } break;
         case PTR: {
-          printf("#{%ld}\n ", idx[i].data);
+          printf("#{%ld}\n", idx[i].data);
         } break;
         }
       }
@@ -694,7 +693,9 @@ void heapStatistics() {
     freePtr = (word_t *)freePtr[1].data;
   }
 
-  printf("Heap: %d blocks (%d words); of which %d free (%d words, largest %d words); %d orphans\n", blocks, blocksSize, free, freeSize, largestFree, orphans);
+  printf("Heap: %d blocks (%d words); of which %d free (%d words, largest %d words); %d orphans\n",
+         blocks, blocksSize, free, freeSize, largestFree, orphans);
+  printHeap();
 }
 
 void initheap() {
@@ -709,7 +710,8 @@ void initheap() {
   *(freelist + 1) = word; // the next block in the freelist chain is initially set to `null`
 }
 
-void mark(word_t *blk_ptr) {
+// mark recurisve, recursive case
+void markRecursiveR(word_t *blk_ptr) {
 
   color_t color = BlockColor(blk_ptr);
 
@@ -718,8 +720,17 @@ void mark(word_t *blk_ptr) {
 
     for (int i = 1; i <= BlockLen(blk_ptr); ++i) {
       if (blk_ptr[i].type == PTR && blk_ptr[i].data != HULL) {
-        mark((word_t *)blk_ptr[i].data);
+        markRecursiveR((word_t *)blk_ptr[i].data);
       }
+    }
+  }
+}
+
+// mark recurisve, base case
+void markRecursiveB(word_t stk[], int stk_ptr, bool trace) {
+  for (int i = stk_ptr; 0 <= i; --i) {
+    if (stk[i].type == PTR) {
+      markRecursiveR((word_t *)stk[i].data);
     }
   }
 }
@@ -729,11 +740,7 @@ void markPhase(word_t stk[], int stk_ptr, bool trace) {
     printf("marking ...\n");
   }
 
-  for (int i = stk_ptr; 0 <= i; --i) {
-    if (stk[i].type == PTR) {
-      mark((word_t *)stk[i].data);
-    }
-  }
+  markRecursiveB(stk, stk_ptr, trace);
 
   if (trace) {
     printf("marking complete\n");
