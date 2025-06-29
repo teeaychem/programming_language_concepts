@@ -632,7 +632,7 @@ int execute(int argc, char **argv, bool trace) {
   struct timeval t1 = ru1.ru_utime, t2 = ru2.ru_utime;
   double runtime =
       t2.tv_sec - t1.tv_sec + (t2.tv_usec - t1.tv_usec) / 1000000.0;
-  printf("\nUsed %7.3f cpu seconds\n", runtime);
+  /* printf("\nUsed %7.3f cpu seconds\n", runtime); */
   return res;
 }
 
@@ -749,6 +749,7 @@ void sweepPhase(bool trace) {
   while (hdr < afterHeap) {
     switch (BlockColor(hdr)) {
 
+    case Blue:    // Same as white
     case White: { // Add the block to the start of the freelist
       word_t fl_nxt = {.data = (intptr_t)freelist, .type = PTR};
       freelist = hdr;           // Update the freelist to start at the block.
@@ -778,8 +779,6 @@ void sweepPhase(bool trace) {
       exit(1);
     case Black:
       PaintBlock(hdr, White);
-      break;
-    case Blue: // Skip, for now
       break;
     }
 
