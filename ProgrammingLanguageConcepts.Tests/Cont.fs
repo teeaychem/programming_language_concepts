@@ -24,7 +24,6 @@ let ``Exercise 11.1`` () =
     Assert.Equal(3, leni [ 2; 5; 7 ] 0)
 
 
-
 [<Fact>]
 let ``Exercise 11.2`` () =
 
@@ -47,3 +46,17 @@ let ``Exercise 11.2`` () =
 
     let result = sprintf "%A" (revi [ 2; 5; 7 ] [])
     Assert.Equal("[7; 5; 2]", result)
+
+
+
+[<Fact>]
+let ``Exercise 11.3`` () =
+
+    let rec prodc xs k =
+        match xs with
+        | [] -> k 1
+        | x :: xs -> prodc xs (fun v -> k (x * v))
+
+    Assert.Equal("The answer is ’70’", prodc [ 2; 5; 7 ] (sprintf "The answer is ’%d’"))
+
+    Assert.Equal(70, prodc [ 2; 5; 7 ] id)
