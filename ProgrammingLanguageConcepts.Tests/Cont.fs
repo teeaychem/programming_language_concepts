@@ -60,3 +60,29 @@ let ``Exercise 11.3`` () =
     Assert.Equal("The answer is ’70’", prodc [ 2; 5; 7 ] (sprintf "The answer is ’%d’"))
 
     Assert.Equal(70, prodc [ 2; 5; 7 ] id)
+
+
+[<Fact>]
+let ``Exercise 11.4`` () =
+
+    let rec prodc xs k =
+        match xs with
+        | [] -> k 1
+        | x :: xs ->
+            match x with
+            | 0 -> k 0
+            | 1 -> prodc xs (fun v -> k v)
+            | _ -> prodc xs (fun v -> k (x * v))
+
+    Assert.Equal(70, prodc [ 2; 5; 7 ] id)
+
+    let rec prodi xs acc =
+        match xs with
+        | [] -> acc
+        | x :: xs ->
+            match x with
+            | 0 -> 0
+            | 1 -> prodi xs acc
+            | _ -> prodi xs x * acc
+
+    Assert.Equal(70, prodi [ 2; 5; 7 ] 1 )
