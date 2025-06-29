@@ -74,7 +74,7 @@
 // Heap + NULL -> HULL
 #define HULL 0
 
-const size_t HEAPSIZE = 10;    // Heap size in words
+const size_t HEAPSIZE = 100;   // Heap size in words
 const size_t STACKSIZE = 1000; // Stack size
 
 typedef enum {
@@ -140,30 +140,30 @@ typedef enum Color {
 
 // As there's only a single translation unit (this source) we use static inline.
 
-static inline void assert_word_type(data_t t, const word_t *w) {
+static inline void assert_word_type(data_t t, const word_t *w, char *msg) {
   if (w->type != HDR) {
-    printf("Expected %u, found %u with data %ld", t, w->type, w->data);
+    printf("Expected %u, found %u with data %ld @%s", t, w->type, w->data, msg);
     exit(1);
   }
 }
 
 static inline int32_t BlockTag(const word_t *hdr_ptr) {
-  assert_word_type(HDR, hdr_ptr);
+  assert_word_type(HDR, hdr_ptr, "tag");
   return hdr_ptr->data >> 24;
 }
 
 static inline size_t BlockLen(const word_t *hdr_ptr) {
-  assert_word_type(HDR, hdr_ptr);
+  assert_word_type(HDR, hdr_ptr, "size");
   return (((hdr_ptr->data) >> 2) & 0x003FFFFF);
 }
 
 static inline color_t BlockColor(const word_t *hdr_ptr) {
-  assert_word_type(HDR, hdr_ptr);
+  assert_word_type(HDR, hdr_ptr, "color");
   return ((hdr_ptr->data) & 3);
 }
 
 static inline void PaintBlock(word_t *hdr_ptr, color_t color) {
-  assert_word_type(HDR, hdr_ptr);
+  assert_word_type(HDR, hdr_ptr, "paint");
   hdr_ptr->data = (((hdr_ptr->data) & (~3)) | (color));
   return;
 }
@@ -294,11 +294,12 @@ void printHeap() {
 
     size_t length = BlockLen(idx);
     color_t color = BlockColor(idx);
+    tag_t tag = BlockTag(idx);
     printHeader(idx);
 
     ++idx; // Discard the header
 
-    if (color == White) {
+    if (color == White && tag != TagFree) {
       for (int i = 0; i < length; ++i) {
         printf(" [%d] ", i);
         switch ((idx + i)->type) {
@@ -720,19 +721,68 @@ void markRecursiveR(word_t *blk_ptr) {
 
 // mark recurisve, base case
 void markRecursiveB(word_t stk[], int stk_ptr, bool trace) {
+  trace ? printf("marking recursively ...\n") : true;
   for (int i = stk_ptr; 0 <= i; --i) {
     if (stk[i].type == PTR) {
       markRecursiveR((word_t *)(stk + i)->data);
     }
   }
+  trace ? printf("recursive marking complete\n") : true;
+}
+
+// mark grey
+void markGrey(word_t stk[], int stk_ptr, bool trace) {
+
+  trace ? printf("marking grey ...\n") : true;
+
+  bool fresh_grey = false;
+
+  // Work through the stack.
+  for (int i = stk_ptr; 0 <= i; --i) {
+    if ((stk + i)->type == PTR) {
+      PaintBlock((word_t *)(stk + i)->data, Grey);
+      fresh_grey = true;
+    }
+  }
+
+  word_t *hdr;
+
+  // Work through the heap until a pass with no fresh grey blocks is made.
+  while (fresh_grey) {
+
+    hdr = heap;
+    fresh_grey = false;
+
+    while (hdr < afterHeap) { // Heap loop
+
+      if (BlockColor(hdr) == Grey) { // Grey found.
+        PaintBlock(hdr, Black);
+
+        for (int i = 1; i <= BlockLen(hdr); ++i) { // Scan each cell.
+
+          if ((hdr + i)->type == PTR && (hdr + i)->data != HULL) {
+
+            word_t *target = (word_t *)(hdr + i)->data; // Get the target of a PTR cell.
+
+            if (BlockColor(target) == White) {
+              PaintBlock(target, Grey);
+              fresh_grey = true;
+            }
+          }
+        }
+      }
+
+      hdr += 1 + BlockLen(hdr); // Next block.
+    }
+  }
+
+  trace ? printf("grey marking complete ...\n") : true;
 }
 
 void markPhase(word_t stk[], int stk_ptr, bool trace) {
-  trace ? printf("marking recursively ...\n") : true;
 
-  markRecursiveB(stk, stk_ptr, trace);
-
-  trace ? printf("recursive marking complete\n") : true;
+  markGrey(stk, stk_ptr, trace);
+  /* markRecursiveB(stk, stk_ptr, trace); */
 }
 
 void sweepPhase(bool trace) {
@@ -740,6 +790,7 @@ void sweepPhase(bool trace) {
 
   word_t *hdr = heap;
   while (hdr < afterHeap) {
+    assert_word_type(HDR, hdr, "sweep");
     switch (BlockColor(hdr)) {
 
     case Blue:    // Same as white
@@ -752,8 +803,9 @@ void sweepPhase(bool trace) {
       word_t *next = freelist + 1 + BlockLen(freelist);
 
       while (next < afterHeap && next->data != HULL) {
-        assert_word_type(HDR, next);
+        assert_word_type(HDR, next, "sweep");
 
+        assert_word_type(HDR, next, "next_color");
         color_t next_color = BlockColor(next);
         if (next_color == White || next_color == Blue) {
           size_t offset = BlockLen(freelist) + 1 + BlockLen(next);
@@ -768,15 +820,14 @@ void sweepPhase(bool trace) {
 
     } break;
     case Grey:
-      printf("Grey block found");
-      exit(1);
+      printf("Grey block found during sweep");
+      assert(false);
     case Black:
       PaintBlock(hdr, White);
       break;
     }
 
-    size_t len = BlockLen(hdr);
-    hdr += (1 + len);
+    hdr += 1 + BlockLen(hdr);
   }
 
   trace ? printf("sweep complete\ncompacting...\n") : true;
@@ -872,6 +923,7 @@ int main(int argc, char **argv) {
     bool trace = argc >= 3 && 0 == strncmp(argv[1], "--trace", 7);
     initheap();
 
+    trace ? printf("Trace enabled\n") : true;
     trace ? printHeap() : true;
 
     int result = execute(argc, argv, trace);
