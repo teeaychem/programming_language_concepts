@@ -78,6 +78,10 @@
     <Compile Include="ListC/Machine.fs" />
     <Compile Include="ListC/Comp.fs" />
 
+    <Compile Include="Cont/Icon.fs" />
+    <Compile Include="Cont/Contfun.fs" />
+    <Compile Include="Cont/Contimp.fs" />
+
 
     <Compile Include="Library.fs" />
   </ItemGroup>
