@@ -74,7 +74,7 @@
 // Heap + NULL -> HULL
 #define HULL 0
 
-const size_t HEAPSIZE = 10;   // Heap size in words
+const size_t HEAPSIZE = 10;    // Heap size in words
 const size_t STACKSIZE = 1000; // Stack size
 
 typedef enum {
@@ -301,15 +301,15 @@ void printHeap() {
     if (color == White) {
       for (int i = 0; i < length; ++i) {
         printf(" [%d] ", i);
-        switch (idx[i].type) {
+        switch ((idx + i)->type) {
         case HDR: {
           printHeader(idx + i);
         } break;
         case INT: {
-          printf("%ld\n", idx[i].data);
+          printf("%ld\n", (idx + i)->data);
         } break;
         case PTR: {
-          printf("#{%ld}\n", idx[i].data);
+          printf("#{%ld}\n", (idx + i)->data);
         } break;
         }
       }
@@ -323,16 +323,16 @@ void printHeap() {
 void printStack(word_t stk[], int stk_ptr) {
   printf("[ ");
   for (int i = 0; i <= stk_ptr; i++) {
-    switch (stk[i].type) {
+    switch ((stk + i)->type) {
 
     case HDR:
       printf("Header on stack");
       exit(1);
     case INT: {
-      printf("%ld ", stk[i].data);
+      printf("%ld ", (stk + i)->data);
     } break;
     case PTR: {
-      printf("#{%ld} ", stk[i].data);
+      printf("#{%ld} ", (stk + i)->data);
     } break;
     }
   }
@@ -383,13 +383,11 @@ word_t *allocate(tag_t tag, size_t length, word_t stk[], int stk_ptr, bool trace
 // The machine: execute the code starting at p[pc]
 
 int execcode(instr_t prg[], word_t stk[], int iargs[], int iargc, bool trace) {
-  int bse_ptr = -999; // Base pointer, for local variable access
-  int stk_ptr = -1;   // Stack top pointer
-  size_t prg_ctr = 0; // Program counter: next instruction
+  int base_ptr = -999; // Base pointer, for local variable access
+  int stk_ptr = -1;    // Stack top pointer
+  size_t prg_ctr = 0;  // Program counter: next instruction
   for (;;) {
-    if (trace) {
-      printStackAndPc(stk, bse_ptr, stk_ptr, prg, prg_ctr);
-    }
+    trace ? printStackAndPc(stk, base_ptr, stk_ptr, prg, prg_ctr) : true;
 
     switch (prg[prg_ctr++]) {
     case CSTI: {
@@ -455,7 +453,7 @@ int execcode(instr_t prg[], word_t stk[], int iargs[], int iargc, bool trace) {
       stk_ptr--;
     } break;
     case GETBP: {
-      word_t word = {.data = bse_ptr, .type = INT};
+      word_t word = {.data = base_ptr, .type = INT};
       stk[stk_ptr + 1] = word;
       stk_ptr++;
     } break;
@@ -487,10 +485,10 @@ int execcode(instr_t prg[], word_t stk[], int iargs[], int iargc, bool trace) {
       stk[stk_ptr - argc + 1] = word_a;
       stk_ptr++;
 
-      word_t word_b = {.data = bse_ptr, .type = INT};
+      word_t word_b = {.data = base_ptr, .type = INT};
       stk[stk_ptr - argc + 1] = word_b;
       stk_ptr++;
-      bse_ptr = stk_ptr + 1 - argc;
+      base_ptr = stk_ptr + 1 - argc;
       prg_ctr = prg[prg_ctr];
 
     } break;
@@ -507,15 +505,13 @@ int execcode(instr_t prg[], word_t stk[], int iargs[], int iargc, bool trace) {
       word_t res = stk[stk_ptr];
 
       stk_ptr = stk_ptr - prg[prg_ctr];
-      bse_ptr = stk[--stk_ptr].data;
+      base_ptr = stk[--stk_ptr].data;
       prg_ctr = stk[--stk_ptr].data;
 
       stk[stk_ptr] = res;
     } break;
-    case PRINTI:
-
+    case PRINTI: {
       switch (stk[stk_ptr].type) {
-
       case HDR:
         printf("Header on the stack");
         exit(1);
@@ -526,11 +522,9 @@ int execcode(instr_t prg[], word_t stk[], int iargs[], int iargc, bool trace) {
         printf("#{%ld} ", stk[stk_ptr].data);
       } break;
       }
-
-      break;
-    case PRINTC:
+    } break;
+    case PRINTC: {
       switch (stk[stk_ptr].type) {
-
       case HDR:
         printf("Header on the stack");
         exit(1);
@@ -541,8 +535,7 @@ int execcode(instr_t prg[], word_t stk[], int iargs[], int iargc, bool trace) {
         printf("#{%ld} ", stk[stk_ptr].data);
       } break;
       }
-
-      break;
+    } break;
     case LDARGS: {
       for (int i = 0; i < iargc; i++) { // Push commandline arguments
         word_t word = {.data = iargs[i], .type = INT};
@@ -603,8 +596,7 @@ int execcode(instr_t prg[], word_t stk[], int iargs[], int iargc, bool trace) {
       ptr[2] = val;
     } break;
     default:
-      printf("Illegal instruction %ld at address %zu\n", prg[prg_ctr - 1],
-             prg_ctr - 1);
+      printf("Illegal instruction %ld at address %zu\n", prg[prg_ctr - 1], prg_ctr - 1);
       return -1;
     }
   }
@@ -690,7 +682,7 @@ void heapStatistics() {
     }
 
     assert(freePtr[1].type == PTR);
-    freePtr = (word_t *)freePtr[1].data;
+    freePtr = (word_t *)(freePtr + 1)->data;
   }
 
   printf("Heap: %d blocks (%d words); of which %d free (%d words, largest %d words); %d orphans\n",
@@ -719,8 +711,8 @@ void markRecursiveR(word_t *blk_ptr) {
     PaintBlock(blk_ptr, Black);
 
     for (int i = 1; i <= BlockLen(blk_ptr); ++i) {
-      if (blk_ptr[i].type == PTR && blk_ptr[i].data != HULL) {
-        markRecursiveR((word_t *)blk_ptr[i].data);
+      if (blk_ptr[i].type == PTR && (blk_ptr + i)->data != HULL) {
+        markRecursiveR((word_t *)(blk_ptr + i)->data);
       }
     }
   }
@@ -730,27 +722,21 @@ void markRecursiveR(word_t *blk_ptr) {
 void markRecursiveB(word_t stk[], int stk_ptr, bool trace) {
   for (int i = stk_ptr; 0 <= i; --i) {
     if (stk[i].type == PTR) {
-      markRecursiveR((word_t *)stk[i].data);
+      markRecursiveR((word_t *)(stk + i)->data);
     }
   }
 }
 
 void markPhase(word_t stk[], int stk_ptr, bool trace) {
-  if (trace) {
-    printf("marking ...\n");
-  }
+  trace ? printf("marking recursively ...\n") : true;
 
   markRecursiveB(stk, stk_ptr, trace);
 
-  if (trace) {
-    printf("marking complete\n");
-  }
+  trace ? printf("recursive marking complete\n") : true;
 }
 
 void sweepPhase(bool trace) {
-  if (trace) {
-    printf("sweeping ...\n");
-  }
+  trace ? printf("sweeping...\n") : true;
 
   word_t *hdr = heap;
   while (hdr < afterHeap) {
@@ -793,30 +779,24 @@ void sweepPhase(bool trace) {
     hdr += (1 + len);
   }
 
-  if (trace) {
-    printf("sweep complete\n");
-    printf("compacting...\n");
-  }
+  trace ? printf("sweep complete\ncompacting...\n") : true;
 
   if (freelist == HULL) {
     printf("Freelist HULL\n");
     return;
   }
 
-  if (trace) {
-    printHeader(freelist);
-  }
+  trace ? printHeader(freelist) : true;
 }
 
 void collect(word_t stk[], int stk_ptr, bool trace) {
   markPhase(stk, stk_ptr, trace);
-  if (trace) {
-    heapStatistics();
-  }
+
+  trace ? heapStatistics() : true;
+
   sweepPhase(trace);
-  if (trace) {
-    heapStatistics();
-  }
+
+  trace ? heapStatistics() : true;
 }
 
 // Setup:
@@ -843,24 +823,23 @@ word_t *allocate(tag_t tag, size_t length, word_t stk[], int stk_ptr, bool trace
         // otherwise, create new block and copy stored pointer over
 
         if (remaining == 0) { // Exact fit with free block, so use stored pointer.
-          freelist = (word_t *)(*(free + 1)).data;
-        } else if (remaining == 1) {               // Fill with unusable block of legnth zero
-          freelist = (word_t *)(*(free + 1)).data; // So, use stored pointer for next next block.
-          // Create unusable block through header with zero length.
-          *(free + length + 1) = mkheader(TagFree, 0, Blue);
+          freelist = (word_t *)(free + 1)->data;
+        } else if (remaining == 1) {                         // Fill with unusable block of legnth zero
+          freelist = (word_t *)(free + 1)->data;             // Use next pointer for next next block.
+          *(free + length + 1) = mkheader(TagFree, 0, Blue); // Fresh header.
 
         } else {                          // Block will not be filled as excess length.
-          freelist = (free + length + 1); // Set freelist to after length used.
-          // Set a new header with the remaining capacity.
-          *(free + length + 1) = mkheader(TagFree, remaining - 1, Blue);
-          *(free + length + 2) = *(free + 1); // Copy over the stored pointer.
+          freelist = (free + length + 1); // freelist to after length used.
+
+          *(free + length + 1) = mkheader(TagFree, remaining - 1, Blue); // Fresh header.
+          *(free + length + 2) = *(free + 1);                            // Copy next pointer.
         }
 
         *free = mkheader(tag, length, White);
         return free;
       }
 
-      free = (word_t *)(*(free + 1)).data; // No capacity so use stored pointer to next block.
+      free = (word_t *)(free + 1)->data; // No capacity so use stored pointer to next block.
     }
 
     // On first attempt, if no free space, do a garbage collection and retry
@@ -893,9 +872,7 @@ int main(int argc, char **argv) {
     bool trace = argc >= 3 && 0 == strncmp(argv[1], "--trace", 7);
     initheap();
 
-    if (trace) {
-      printHeap();
-    }
+    trace ? printHeap() : true;
 
     int result = execute(argc, argv, trace);
 
