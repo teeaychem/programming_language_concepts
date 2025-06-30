@@ -71,11 +71,14 @@ type answer =
 let rec coEval1 (e: expr) (env: value env) (cont: int -> answer) : answer =
     match e with
     | CstI i -> cont i
+
     | CstB b -> cont (if b then 1 else 0)
+
     | Var x ->
         match lookup env x with
         | Int i -> cont i
         | _ -> Abort "coEval1 Var"
+
     | Prim(ope, e1, e2) ->
         coEval1 e1 env (fun i1 ->
             coEval1 e2 env (fun i2 ->
@@ -86,14 +89,18 @@ let rec coEval1 (e: expr) (env: value env) (cont: int -> answer) : answer =
                 | "=" -> cont (if i1 = i2 then 1 else 0)
                 | "<" -> cont (if i1 < i2 then 1 else 0)
                 | _ -> Abort "unknown primitive"))
+
     | Let(x, eRhs, letBody) ->
         coEval1 eRhs env (fun xVal ->
             let bodyEnv = (x, Int xVal) :: env
             coEval1 letBody bodyEnv cont)
+
     | If(e1, e2, e3) -> coEval1 e1 env (fun b -> if b <> 0 then coEval1 e2 env cont else coEval1 e3 env cont)
+
     | Letfun(f, x, fBody, letBody) ->
         let bodyEnv = (f, Closure(f, x, fBody, env)) :: env
         coEval1 letBody bodyEnv cont
+
     | Call(f, eArg) ->
         let fClosure = lookup env f
 
@@ -103,7 +110,9 @@ let rec coEval1 (e: expr) (env: value env) (cont: int -> answer) : answer =
                 let fBodyEnv = (x, Int xVal) :: (f, fClosure) :: fDeclEnv
                 coEval1 fBody fBodyEnv cont)
         | _ -> Abort "eval Call: not a function"
+
     | Raise(Exn s) -> Abort s
+
     | TryWith(_e1, _exn, _e2) -> Abort "Not implemented"
 
 
@@ -129,11 +138,14 @@ let run1 e = eval1 e []
 let rec coEval2 (e: expr) (env: value env) (cont: int -> answer) (econt: exn -> answer) : answer =
     match e with
     | CstI i -> cont i
+
     | CstB b -> cont (if b then 1 else 0)
+
     | Var x ->
         match lookup env x with
         | Int i -> cont i
         | _ -> Abort "coEval2 Var"
+
     | Prim(ope, e1, e2) ->
         coEval2
             e1
@@ -152,6 +164,7 @@ let rec coEval2 (e: expr) (env: value env) (cont: int -> answer) (econt: exn -> 
                         | _ -> Abort "unknown primitive")
                     econt)
             econt
+
     | Let(x, eRhs, letBody) ->
         coEval2
             eRhs
@@ -160,6 +173,7 @@ let rec coEval2 (e: expr) (env: value env) (cont: int -> answer) (econt: exn -> 
                 let bodyEnv = (x, Int xVal) :: env
                 coEval2 letBody bodyEnv cont econt)
             econt
+
     | If(e1, e2, e3) ->
         coEval2
             e1
@@ -170,9 +184,11 @@ let rec coEval2 (e: expr) (env: value env) (cont: int -> answer) (econt: exn -> 
                 else
                     coEval2 e3 env cont econt)
             econt
+
     | Letfun(f, x, fBody, letBody) ->
         let bodyEnv = (f, Closure(f, x, fBody, env)) :: env
         coEval2 letBody bodyEnv cont econt
+
     | Call(f, eArg) ->
         let fClosure = lookup env f
 
@@ -186,7 +202,9 @@ let rec coEval2 (e: expr) (env: value env) (cont: int -> answer) (econt: exn -> 
                     coEval2 fBody fBodyEnv cont econt)
                 econt
         | _ -> raise (Failure "eval Call: not a function")
+
     | Raise exn -> econt exn
+
     | TryWith(e1, exn, e2) ->
         let econt1 thrown =
             if thrown = exn then
