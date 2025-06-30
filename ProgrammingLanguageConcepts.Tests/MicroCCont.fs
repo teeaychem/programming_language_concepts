@@ -55,7 +55,7 @@ int main(int n) {
 }
     "
 
-    printfn "%A"(cProgram (fromString prg))
+    // printfn "%A"(cProgram (fromString prg))
 
     let unopt_instr =
         List.filter
@@ -66,3 +66,37 @@ int main(int n) {
             (cProgram (fromString prg))
 
     Assert.True(List.isEmpty unopt_instr)
+
+
+[<Fact>]
+let ``Exercise 12.3`` () =
+
+    let prg =
+        @"
+int main(int n) {
+    print true ? 111 : 2222;
+    print false ? 111 : 2222;
+
+    int x;
+    x = 3;
+
+    print (x == 3 ? 1 : 0);
+    print (x == 3 ? 0 : 1);
+
+    print 2;
+}
+    "
+
+    // printfn "%A"(cProgram (fromString prg))
+
+    let unopt_instr =
+        List.filter
+            (fun inst ->
+                match inst with
+                | IFZERO _ -> true
+                | _ -> false)
+            (cProgram (fromString prg))
+
+    Assert.Equal(2,List.length unopt_instr)
+
+    Assert.Equal("111 2222 1 0 2", call_machine (fromString prg) [])
