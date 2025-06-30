@@ -320,7 +320,11 @@ let cProgram (Prog topdecs) : instr list =
 
     let mainlab, _, mainparams = lookup funEnv "main"
     let argc = List.length mainparams
-    globalReserve @ globalInit @ [ LDARGS; CALL(argc, mainlab); STOP ] @ List.concat functions
+
+    globalReserve
+    @ globalInit
+    @ [ LDARGS; CALL(argc, mainlab); STOP ]
+    @ List.concat functions
 
 (* Compile a complete micro-C and write the resulting instruction list
    to file fname; also, return the program as a list of instructions. *)
@@ -334,3 +338,9 @@ let compileToFile program fname =
     let bytecode_str = String.concat " " (List.map string bytecode)
     File.WriteAllText(fname, bytecode_str)
     bytecode
+
+let codeToFile code fname =
+    let bytecode = code2ints code
+    let bytecode_str = String.concat " " (List.map string bytecode)
+    File.WriteAllText(fname, bytecode_str)
+    code

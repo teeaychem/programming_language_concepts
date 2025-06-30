@@ -3,6 +3,7 @@ module TestsMicroCComp
 open Xunit
 open MicroCParse
 open MicroCSupport
+open MicroCComp
 
 
 [<Fact>]
@@ -26,7 +27,7 @@ void main() {
 "
 
     let ep = fromString src
-    let er = call_machine ep []
+    let er = call_machine (cProgram ep) []
     let ee = "4 1 3 3 2 6 1 10"
 
     Assert.Equal(ee, er)
@@ -51,7 +52,7 @@ void main() {
 
     let ep = fromString src
 
-    let er = call_machine ep []
+    let er = call_machine (cProgram ep) []
     let ee = "111 223"
 
     Assert.Equal(ee, er)
@@ -79,7 +80,7 @@ void main() {
 
 
     let ep = fromString src
-    let er = call_machine ep []
+    let er = call_machine (cProgram ep) []
 
 
     Assert.Equal("0 1 2", er)
@@ -120,7 +121,7 @@ void main() {
 "
 
     let ep = fromString src
-    let er = call_machine ep []
+    let er = call_machine (cProgram ep) []
     let ee = "3 1 2 0 3"
 
     Assert.Equal(ee, er)
@@ -151,7 +152,7 @@ void main() {
 "
 
     let ep = fromString src
-    let er = call_machine ep []
+    let er = call_machine (cProgram ep) []
     let ee = "0 1 1 0"
 
     Assert.Equal(ee, er)
@@ -175,7 +176,7 @@ void main() {
 "
 
     let ep = fromString src
-    let er = call_machine ep []
+    let er = call_machine (cProgram ep) []
     let ee = "-1 -3 -6 -10 10"
 
     Assert.Equal(ee, er)
@@ -208,7 +209,7 @@ void main() {
 
     Assert.Equal("12 12 24", out.Value)
 
-    let er = call_machine ep []
+    let er = call_machine (cProgram ep) []
 
     Assert.Equal("12 12 24", er)
 
@@ -234,6 +235,6 @@ void main() {
 "
 
     let ep = fromString src
-    let er = call_machine ep []
+    let er = call_machine (cProgram ep) []
 
     Assert.Equal("12 12 24 33", er)
