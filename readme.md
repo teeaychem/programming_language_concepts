@@ -91,3 +91,5 @@ The machine reads a file, or runs a couple of internal tests.
 - 11.11: Project
 - 11.12: Project
 - 11.13: Somewhat hairy project
+
+- 12.4: No relevant tests (though modifications are present)
