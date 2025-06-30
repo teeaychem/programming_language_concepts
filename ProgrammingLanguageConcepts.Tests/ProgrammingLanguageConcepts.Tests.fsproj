@@ -18,6 +18,9 @@
     <Compile Include="MicroC.fs" />
     <Compile Include="MicroCComp.fs" />
     <Compile Include="ListCComp.fs" />
+    <Compile Include="Icon.fs" />
+    <Compile Include="Contimp.fs" />
+    <Compile Include="Contfun.fs" />
     <Compile Include="Cont.fs" />
 
     <Compile Include="Program.fs" />
