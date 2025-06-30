@@ -78,21 +78,24 @@ let rec eval e (store: naivestore) : int =
      executing a Throw statement), but it cannot catch thrown
      exceptions (because it has no error continuation). *)
 
-let rec coExec1 stmt store (cont: naivestore -> answer) (out: string ref) : answer =
+let rec coExec1 stmt store (out: string ref) (cont: naivestore -> answer) : answer =
     match stmt with
     | Asgn(x, e) -> cont (setSto store (x, eval e store))
+
     | If(e1, stmt1, stmt2) ->
         if eval e1 store <> 0 then
-            coExec1 stmt1 store cont out
+            coExec1 stmt1 store out cont
         else
-            coExec1 stmt2 store cont out
+            coExec1 stmt2 store out cont
+
     | Block stmts ->
         let rec loop ss sto =
             match ss with
             | [] -> cont sto
-            | s1 :: sr -> coExec1 s1 sto (fun sto -> loop sr sto) out
+            | s1 :: sr -> coExec1 s1 sto out (fun sto -> loop sr sto)
 
         loop stmts store
+
     | For(x, estart, estop, body) ->
         let start = eval estart store
         let stop = eval estop store
@@ -101,26 +104,30 @@ let rec coExec1 stmt store (cont: naivestore -> answer) (out: string ref) : answ
             if i > stop then
                 cont sto
             else
-                coExec1 body (setSto sto (x, i)) (fun sto -> loop (i + 1) sto) out
+                coExec1 body (setSto sto (x, i)) out (fun sto -> loop (i + 1) sto)
 
         loop start store
+
     | While(e, body) ->
         let rec loop sto =
             if eval e sto = 0 then
                 cont sto
             else
-                coExec1 body sto loop out
+                coExec1 body sto out loop
 
         loop store
+
     | Print e ->
         out.Value <- out.Value + sprintf "%d\n" (eval e store)
         cont store
+
     | Throw(Exn s) -> Abort("Uncaught exception: " + s)
+
     | TryCatch _ -> Abort "TryCatch is not implemented"
 
 
 let run1 stmt (out: string ref) : answer =
-    coExec1 stmt emptystore (fun _ -> Terminate) out
+    coExec1 stmt emptystore out (fun _ -> Terminate)
 
 
 (* This interpreter coExec2 takes the following arguments:
@@ -141,24 +148,28 @@ let run1 stmt (out: string ref) : answer =
 let rec coExec2
     stmt
     (store: naivestore)
+    (out: string ref)
     (cont: naivestore -> answer)
     (econt: exn * naivestore -> answer)
-    (out: string ref)
+
     : answer =
     match stmt with
     | Asgn(x, e) -> cont (setSto store (x, eval e store))
+
     | If(e1, stmt1, stmt2) ->
         if eval e1 store <> 0 then
-            coExec2 stmt1 store cont econt out
+            coExec2 stmt1 store out cont econt
         else
-            coExec2 stmt2 store cont econt out
+            coExec2 stmt2 store out cont econt
+
     | Block stmts ->
         let rec loop ss sto =
             match ss with
             | [] -> cont sto
-            | s1 :: sr -> coExec2 s1 sto (fun sto -> loop sr sto) econt out
+            | s1 :: sr -> coExec2 s1 sto out (fun sto -> loop sr sto) econt
 
         loop stmts store
+
     | For(x, estart, estop, stmt) ->
         let start = eval estart store
         let stop = eval estop store
@@ -167,30 +178,34 @@ let rec coExec2
             if i > stop then
                 cont sto
             else
-                coExec2 stmt (setSto sto (x, i)) (fun sto -> loop (i + 1) sto) econt out
+                coExec2 stmt (setSto sto (x, i)) out (fun sto -> loop (i + 1) sto) econt
 
         loop start store
+
     | While(e, stmt) ->
         let rec loop sto =
             if eval e sto = 0 then
                 cont sto
             else
-                coExec2 stmt sto (fun sto -> loop sto) econt out
+                coExec2 stmt sto out (fun sto -> loop sto) econt
 
         loop store
+
     | Print e ->
         out.Value <- out.Value + sprintf "%d\n" (eval e store)
         cont store
+
     | Throw exn -> econt (exn, store)
+
     | TryCatch(stmt1, exn, stmt2) ->
         let econt1 (exn1, sto1) =
             if exn1 = exn then
-                coExec2 stmt2 sto1 cont econt out
+                coExec2 stmt2 sto1 out cont econt
             else
                 econt (exn1, sto1)
 
-        coExec2 stmt1 store cont econt1 out
+        coExec2 stmt1 store out cont econt1
 
 
 let run2 stmt out : answer =
-    coExec2 stmt emptystore (fun _ -> Terminate) (fun (Exn s, _) -> Abort("Uncaught exception: " + s)) out
+    coExec2 stmt emptystore out (fun _ -> Terminate) (fun (Exn s, _) -> Abort("Uncaught exception: " + s))

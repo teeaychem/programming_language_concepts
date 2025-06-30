@@ -55,7 +55,7 @@ let write (v: value) (out: string ref) =
 
 (* Expression evaluation with backtracking *)
 
-let rec eval (e: expr) (cont: cont) (econt: econt) (out: string ref) =
+let rec eval (out: string ref) (e: expr) (cont: cont) (econt: econt) =
     match e with
     | CstI i -> cont (Int i) econt
 
@@ -72,21 +72,24 @@ let rec eval (e: expr) (cont: cont) (econt: econt) (out: string ref) =
 
     | Write e ->
         eval
+            out
             e
             (fun v ->
                 fun econt ->
                     write v out
                     cont v econt)
             econt
-            out
-    | If(e1, e2, e3) -> eval e1 (fun _ -> fun _ -> eval e2 cont econt out) (fun () -> eval e3 cont econt out) out
+
+    | If(e1, e2, e3) -> eval out e1 (fun _ -> fun _ -> eval out e2 cont econt) (fun () -> eval out e3 cont econt)
 
     | Prim(ope, e1, e2) ->
         eval
+            out
             e1
             (fun v1 ->
                 fun econt1 ->
                     eval
+                        out
                         e2
                         (fun v2 ->
                             fun econt2 ->
@@ -98,28 +101,24 @@ let rec eval (e: expr) (cont: cont) (econt: econt) (out: string ref) =
                                     | true -> cont (Int i2) econt2
                                     | false -> econt2 ()
                                 | _ -> Str "unknown prim2")
-                        econt1
-                        out)
+                        econt1)
             econt
-            out
-    | And(e1, e2) -> eval e1 (fun _ -> fun econt1 -> eval e2 cont econt1 out) econt out
 
-    | Or(e1, e2) -> eval e1 cont (fun () -> eval e2 cont econt out) out
+    | And(e1, e2) -> eval out e1 (fun _ -> fun econt1 -> eval out e2 cont econt1) econt
 
-    | Seq(e1, e2) -> eval e1 (fun _ -> fun _econt1 -> eval e2 cont econt out) (fun () -> eval e2 cont econt out) out
-    | Every e -> eval e (fun _ -> fun econt1 -> econt1 ()) (fun () -> cont (Int 0) econt) out
+    | Or(e1, e2) -> eval out e1 cont (fun () -> eval out e2 cont econt)
+
+    | Seq(e1, e2) -> eval out e1 (fun _ -> fun _econt1 -> eval out e2 cont econt) (fun () -> eval out e2 cont econt)
+    | Every e -> eval out e (fun _ -> fun econt1 -> econt1 ()) (fun () -> cont (Int 0) econt)
 
     | Fail -> econt ()
 
 
 let run e (out: string ref) =
-    eval
-        e
-        (fun v -> fun _ -> v)
-        (fun () ->
-            out.Value <- out.Value + "Failed"
-            Int 0)
-        out
+    eval out e (fun v -> fun _ -> v) (fun () ->
+        out.Value <- out.Value + "Failed"
+        Int 0)
+
 
 
 (* Examples in abstract syntax *)
