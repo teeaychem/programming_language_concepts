@@ -74,4 +74,54 @@ let ``Icon`` () =
     let _ = run ex8 ex8out
     Assert.Equal("5 ", ex8out.Value)
 
-    true
+
+[<Fact>]
+let ``Exercise 11.8(i)`` () =
+    let ex = Every(Write(Prim("+", CstI 1, Prim("*", CstI 2, FromTo(1, 4)))))
+    let exout = ref ""
+    let _ = run ex exout
+    Assert.Equal("3 5 7 9 ", exout.Value)
+
+
+    let ex = And(And(Write(CstI 21), Write(CstI 22)), Write(CstS "…"))
+    let exout = ref ""
+    let _ = run ex exout
+    Assert.Equal("21 22 … ", exout.Value)
+
+    let ex =
+        Every(Write(Prim("+", Prim("*", CstI 10, FromTo(2, 4)), Prim("+", CstI 1, FromTo(0, 1)))))
+
+    let exout = ref ""
+    let _ = run ex exout
+    Assert.Equal("21 22 31 32 41 42 ", exout.Value)
+
+
+
+[<Fact>]
+let ``Exercise 11.8(ii)`` () =
+    let ex = Write(Prim("<", CstI 50, Prim("*", CstI 7, FromTo(1,100))))
+    let exout = ref ""
+    let _ = run ex exout
+    Assert.Equal("56 ", exout.Value)
+
+
+[<Fact>]
+let ``Exercise 11.8(iii)`` () =
+    let ex = Every(Write(Prim1("sqr", FromTo(3,6))))
+    let exout = ref ""
+    let _ = run ex exout
+    Assert.Equal("9 16 25 36 ", exout.Value)
+
+    let ex = Every(Write(Prim1("even", FromTo(1,7))))
+    let exout = ref ""
+    let _ = run ex exout
+    Assert.Equal("2 4 6 ", exout.Value)
+
+
+[<Fact>]
+let ``Exercise 11.8(iv)`` () =
+    // Bounded to ten instances for testing
+    let ex = Every(Write(Prim1("multiples", FromTo(3,5))))
+    let exout = ref ""
+    let _ = run ex exout
+    Assert.Equal("0 3 6 9 12 15 18 21 24 27 30 ", exout.Value)

@@ -30,6 +30,7 @@ type expr =
     | Write of expr
     | If of expr * expr * expr
     | Prim of string * expr * expr
+    | Prim1 of string * expr
     | And of expr * expr
     | Or of expr * expr
     | Seq of expr * expr
@@ -102,6 +103,34 @@ let rec eval (out: string ref) (e: expr) (cont: cont) (econt: econt) =
                                     | false -> econt2 ()
                                 | _ -> Str "unknown prim2")
                         econt1)
+            econt
+
+    | Prim1(ope, e) ->
+        eval
+            out
+            e
+            (fun v ->
+                fun econt1 ->
+                    match ope, v with
+                    | "+", Int i -> cont (Int i) econt1
+                    | "-", Int i -> cont (Int -i) econt1
+                    | "sqr", Int i -> cont (Int(i * i)) econt1
+                    | "even", Int i ->
+                        match i % 2 = 0 with
+                        | true -> cont (Int i) econt1
+                        | false -> econt1 ()
+                    | "multiples", Int i ->
+                        let rec loop (t: int) =
+                            match t with
+                            | 11 -> econt () // Bound for testing
+                            | _ -> cont (Int(i * t)) (fun () -> loop (t + 1))
+
+                        loop 0
+
+
+
+
+                    | _ -> Str "unkown prim1")
             econt
 
     | And(e1, e2) -> eval out e1 (fun _ -> fun econt1 -> eval out e2 cont econt1) econt
