@@ -83,3 +83,11 @@ The machine reads a file, or runs a couple of internal tests.
 - 9.2
 
 - 10.1: No relevant tests to include.
+- 10.6: TODO
+- 10.7: TODO
+
+- 11.9: Nop particular interest, as no further use of Icon seems to be made.
+- 11.10: Negative intereset.
+- 11.11: Project
+- 11.12: Project
+- 11.13: Somewhat hairy project
