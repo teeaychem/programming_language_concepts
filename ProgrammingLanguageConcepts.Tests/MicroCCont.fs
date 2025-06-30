@@ -4,8 +4,9 @@ open Xunit
 
 open Machine
 open MicroCParse
-// open MicroCSupport
+open MicroCSupport
 open Contcomp
+
 
 [<Fact>]
 let ``Exercise 12.1`` () =
@@ -21,7 +22,7 @@ int main(int n) {
 }
     "
 
-    let zero_instrs =
+    let unopt_instr =
         List.filter
             (fun inst ->
                 match inst with
@@ -29,4 +30,39 @@ int main(int n) {
                 | _ -> false)
             (cProgram (fromString prg))
 
-    Assert.True(List.isEmpty zero_instrs)
+    Assert.True(List.isEmpty unopt_instr)
+
+
+
+[<Fact>]
+let ``Exercise 12.2`` () =
+
+    let prg =
+        @"
+int main(int n) {
+  if (3 < 4)
+    print 1;
+  if (3 <= 4)
+    print 2;
+  if (3 > 4)
+    print 3;
+  if (3 >= 4)
+    print 4;
+  if (3 == 4)
+    print 5;
+  if (3 != 4)
+    print 6;
+}
+    "
+
+    printfn "%A"(cProgram (fromString prg))
+
+    let unopt_instr =
+        List.filter
+            (fun inst ->
+                match inst with
+                | LT -> true
+                | _ -> false)
+            (cProgram (fromString prg))
+
+    Assert.True(List.isEmpty unopt_instr)
