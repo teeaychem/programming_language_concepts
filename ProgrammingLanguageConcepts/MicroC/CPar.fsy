@@ -154,8 +154,8 @@ ExprNotAccess:
   | Expr LT    Expr                     { Prim2("<",  $1, $3) }
   | Expr GE    Expr                     { Prim2(">=", $1, $3) }
   | Expr LE    Expr                     { Prim2("<=", $1, $3) }
-  | Expr SEQAND Expr                    { Andalso($1, $3)     }
-  | Expr SEQOR  Expr                    { Orelse($1, $3)      }
+  | Expr SEQAND Expr                    { Ite($1, $3, CstI 0) }
+  | Expr SEQOR  Expr                    { Ite($1, CstI 1, $3) }
   | Expr QMARK Expr COLON Expr          { Ite($1, $3, $5)     }
 ;
 
