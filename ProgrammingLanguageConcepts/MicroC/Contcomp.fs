@@ -354,9 +354,14 @@ and cExpr (e: expr) (varEnv: varEnv) (funEnv: funEnv) (C: instr list) : instr li
         let C = addIFZERO labele C // IFZERO L1
         cExpr e1 varEnv funEnv C // <e1>
 
-    // failwith "Not Implemented"
-    | PreDec _ -> failwith "Not Implemented"
-    | PreInc _ -> failwith "Not Implemented"
+
+    | PreDec acc -> cAccess acc varEnv funEnv (DUP :: LDI :: CSTI 1 :: SUB :: STI :: C)
+    | PreInc acc -> cAccess acc varEnv funEnv (DUP :: LDI :: CSTI 1 :: ADD :: STI :: C)
+
+
+
+
+
 
 (* Generate code to access variable, dereference pointer or index array: *)
 

@@ -94,8 +94,7 @@ let CODEPRINTC = 23
 let CODELDARGS = 24
 let CODESTOP = 25
 
-(* Bytecode emission, first pass: build environment that maps
-   each label to an integer address in the bytecode. *)
+(* Bytecode emission, first pass: build environment that maps each label to an integer address in the bytecode. *)
 
 let makelabenv (addr, labenv) instr =
     match instr with

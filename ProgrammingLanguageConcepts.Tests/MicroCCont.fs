@@ -97,6 +97,27 @@ int main(int n) {
                 | _ -> false)
             (cProgram (fromString prg))
 
-    Assert.Equal(2,List.length unopt_instr)
+    Assert.Equal(2, List.length unopt_instr)
 
-    Assert.Equal("111 2222 1 0 2", call_machine (fromString prg) [])
+    Assert.Equal("111 2222 1 0 2", call_machine (cProgram (fromString prg)) [])
+
+
+
+[<Fact>]
+let ``Inc`` () =
+
+    let prg =
+        @"
+int main(int n) {
+    int i;
+    i = 1;
+    print i;
+    print ++i;
+    print --i;
+}
+    "
+
+    // printfn "%A" (cProgram (fromString prg))
+    // printfn "%A" (fromString prg)
+
+    Assert.Equal("1 2 1", call_machine (cProgram (fromString prg)) [])
