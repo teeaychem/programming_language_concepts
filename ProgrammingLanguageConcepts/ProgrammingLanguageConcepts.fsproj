@@ -82,6 +82,8 @@
     <Compile Include="Cont/Contfun.fs" />
     <Compile Include="Cont/Contimp.fs" />
 
+    <Compile Include="MicroC/Contcomp.fs" />    
+
 
     <Compile Include="Library.fs" />
   </ItemGroup>

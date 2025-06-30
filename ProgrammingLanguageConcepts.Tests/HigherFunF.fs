@@ -101,14 +101,7 @@ let ``Exercise 5.4`` () =
     Assert.Equal(List.forall isEven [ 1..10 ], forall isEven [ 1..10 ])
     Assert.Equal(List.forall isEven (List.filter isEven [ 1..10 ]), forall isEven (filter isEven [ 1..10 ]))
 
-    let exists (p: 'a -> bool) (l: 'a list) : bool =
-        foldr
-            (fun e t ->
-                if t then true
-                else if p e then true
-                else false)
-            l
-            false
+    let exists (p: 'a -> bool) (l: 'a list) : bool = foldr (fun e t -> t || p e) l false
 
     Assert.Equal(List.exists isEven [ 1..10 ], exists isEven [ 1..10 ])
     Assert.Equal(List.exists isOdd (List.filter isEven [ 1..10 ]), exists isOdd (filter isEven [ 1..10 ]))
@@ -182,5 +175,3 @@ let ``Exercise 5.5`` () =
     Assert.True(EqualLists t2post (treePostOrder t2))
 
     Assert.True(EqualLists (List.map (fun n -> n + 1) t2pre) (treePreOrder (mapTree (fun n -> n + 1) t2)))
-
-
