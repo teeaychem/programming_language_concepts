@@ -147,7 +147,3 @@ let run e (out: string ref) =
     eval out e (fun v -> fun _ -> v) (fun () ->
         out.Value <- out.Value + "Failed"
         Int 0)
-
-
-
-(* Examples in abstract syntax *)

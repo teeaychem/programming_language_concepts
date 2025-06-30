@@ -124,8 +124,6 @@ let ``Exercise 4.8`` () =
     Assert.Equal(Bool true, eval (find_one list1) [])
     Assert.Equal(Bool false, eval (find_one list2) [])
 
-    true
-
 
 [<Fact>]
 let ``Exercise 4.8 / 4.9 / 5.7`` () =

@@ -102,5 +102,3 @@ let ``Exercise 3.7`` () =
     let okexpr = fromString nok
     Assert.Equal(fmt okexpr, nok)
     Assert.Equal(-1, eval okexpr [])
-
-    true

@@ -212,7 +212,6 @@ in add 2 end"
     Assert.Equal(Int 7, eval e3 [])
     // Assert.Equal(..., eval e4 [])
 
-    true
 
 [<Fact>]
 let ``Exercise 6.2`` () =
