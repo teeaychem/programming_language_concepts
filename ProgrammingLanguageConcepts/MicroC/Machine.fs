@@ -62,8 +62,7 @@ let rec lookup env x =
 
 (* An instruction list is emitted in two phases:
    * pass 1 builds an environment labenv mapping labels to addresses
-   * pass 2 emits the code to file, using the environment labenv to
-     resolve labels *)
+   * pass 2 emits the code to file, using the environment labenv to resolve labels *)
 
 (* These numeric instruction codes must agree with Machine.java: *)
 
@@ -96,7 +95,7 @@ let CODESTOP = 25
 
 (* Bytecode emission, first pass: build environment that maps each label to an integer address in the bytecode. *)
 
-let makelabenv (addr, labenv) instr =
+let makelabenv (addr, labenv) (instr: instr) : int * (label * int) list =
     match instr with
     | ADD -> addr + 1, labenv
     | CALL(_m, _lab) -> addr + 3, labenv

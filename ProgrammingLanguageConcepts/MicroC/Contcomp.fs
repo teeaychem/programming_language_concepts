@@ -266,9 +266,6 @@ and bStmtordec stmtOrDec (varEnv: varEnv) (funEnv: funEnv) : bstmtordec * varEnv
 
         BDecA(Calloc @ C2), varEnv
 
-
-
-
 (* Compiling micro-C expressions:
 
    * e       is the expression to compile
@@ -276,12 +273,10 @@ and bStmtordec stmtOrDec (varEnv: varEnv) (funEnv: funEnv) : bstmtordec * varEnv
    * funEnv  is the compile-time environment
    * C       is the code following the code for this expression
 
-   Net effect principle: if the compilation (cExpr e varEnv funEnv C) of
-   expression e returns the instruction sequence instrs, then the
-   execution of instrs will have the same effect as an instruction
-   sequence that first computes the value of expression e on the stack
-   top and then executes C, but because of optimizations instrs may
-   actually achieve this in a different way.  *)
+   Net effect principle:
+   If: The compilation (cExpr e varEnv funEnv C) of expression e returns the instruction sequence instrs,
+   Then: the execution of instrs will have the same effect as an instruction sequence that first computes the value of expression e on the stack top and then executes C,
+   But: Because of optimizations instrs may actually achieve this in a different way.  *)
 
 and cExpr (e: expr) (varEnv: varEnv) (funEnv: funEnv) (C: instr list) : instr list =
     match e with
@@ -326,32 +321,6 @@ and cExpr (e: expr) (varEnv: varEnv) (funEnv: funEnv) (C: instr list) : instr li
                  | ">" -> SWAP :: LT :: C
                  | "<=" -> SWAP :: LT :: addNOT C
                  | _ -> failwith "unknown primitive 2"))
-
-
-    | Andalso _ -> failwith "Replaced"
-    // | Andalso(e1, e2) ->
-
-    //     match C with
-    //     | IFZERO lab :: _ -> cExpr e1 varEnv funEnv (addIFZERO lab (cExpr e2 varEnv funEnv C))
-    //     | IFNZRO labthen :: C1 ->
-    //         let labelse, C2 = addLabel C1
-    //         cExpr e1 varEnv funEnv (addIFZERO labelse (cExpr e2 varEnv funEnv (addIFNZRO labthen C2)))
-    //     | _ ->
-    //         let jumpend, C1 = makeJump C
-    //         let labfalse, C2 = addLabel (addCST 0 C1)
-    //         cExpr e1 varEnv funEnv (addIFZERO labfalse (cExpr e2 varEnv funEnv (addJump jumpend C2)))
-
-    | Orelse _ -> failwith "Replaced"
-    // | Orelse(e1, e2) ->
-    //     match C with
-    //     | IFNZRO lab :: _ -> cExpr e1 varEnv funEnv (addIFNZRO lab (cExpr e2 varEnv funEnv C))
-    //     | IFZERO labthen :: C1 ->
-    //         let labelse, C2 = addLabel C1
-    //         cExpr e1 varEnv funEnv (addIFNZRO labelse (cExpr e2 varEnv funEnv (addIFZERO labthen C2)))
-    //     | _ ->
-    //         let jumpend, C1 = makeJump C
-    //         let labtrue, C2 = addLabel (addCST 1 C1)
-    //         cExpr e1 varEnv funEnv (addIFNZRO labtrue (cExpr e2 varEnv funEnv (addJump jumpend C2)))
 
     | Call(f, es) -> callfun f es varEnv funEnv C
 
