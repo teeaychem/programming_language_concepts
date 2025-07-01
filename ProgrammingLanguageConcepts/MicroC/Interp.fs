@@ -225,14 +225,6 @@ and eval e locEnv gloEnv store out : int * store =
 
         res, store2
 
-    | Andalso(e1, e2) ->
-        let i1, store1 as res = eval e1 locEnv gloEnv store out
-        if i1 <> 0 then eval e2 locEnv gloEnv store1 out else res
-
-    | Orelse(e1, e2) ->
-        let i1, store1 as res = eval e1 locEnv gloEnv store out
-        if i1 <> 0 then res else eval e2 locEnv gloEnv store1 out
-
     | Call(f, es) -> callfun f es locEnv gloEnv store out
 
     | PreInc acc ->

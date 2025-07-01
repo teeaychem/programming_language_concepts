@@ -197,24 +197,6 @@ and cExpr (e: expr) (varEnv: varEnv) (funEnv: funEnv) : instr list =
           | "<=" -> [ SWAP; LT; NOT ]
           | _ -> raise (Failure "unknown primitive 2")
 
-    | Andalso(e1, e2) ->
-        let labend = newLabel ()
-        let labfalse = newLabel ()
-
-        cExpr e1 varEnv funEnv
-        @ [ IFZERO labfalse ]
-        @ cExpr e2 varEnv funEnv
-        @ [ GOTO labend; Label labfalse; CSTI 0; Label labend ]
-
-    | Orelse(e1, e2) ->
-        let labend = newLabel ()
-        let labtrue = newLabel ()
-
-        cExpr e1 varEnv funEnv
-        @ [ IFNZRO labtrue ]
-        @ cExpr e2 varEnv funEnv
-        @ [ GOTO labend; Label labtrue; CSTI 1; Label labend ]
-
     | Call(f, es) -> callfun f es varEnv funEnv
 
     | PreInc acc -> cAccess acc varEnv funEnv @ [ DUP; LDI; CSTI 1; ADD; STI ]

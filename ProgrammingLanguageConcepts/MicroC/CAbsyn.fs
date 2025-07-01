@@ -16,12 +16,12 @@ type typ =
 and expr =
     | Access of access // x    or  *p    or  a[e]
     | Addr of access // &x   or  &*p   or  &a[e]
-    | Andalso of expr * expr // Sequential and
+    // | Andalso of expr * expr // Sequential and
     | Assign of access * expr // x=e  or  *p=e  or  a[e]=e
     | Call of string * expr list // Function call f(...)
     | CstI of int // Constant
     | Ite of expr * expr * expr
-    | Orelse of expr * expr // Sequential or
+    // | Orelse of expr * expr // Sequential or
     | PreDec of access // --i or --a[e]
     | PreInc of access // ++i or ++a[e]
     | Prim1 of string * expr // Unary primitive operator
