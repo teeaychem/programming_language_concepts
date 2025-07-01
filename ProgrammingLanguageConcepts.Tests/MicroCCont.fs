@@ -121,3 +121,29 @@ int main(int n) {
     // printfn "%A" (fromString prg)
 
     Assert.Equal("1 2 1", call_machine (cProgram (fromString prg)) [])
+
+
+[<Fact>]
+let ``Block local declaration assignment`` () =
+
+    let prg =
+        @"
+int main(int n) {
+
+    int i = (1 + 2);
+    print i;
+
+    int j = 1;
+    print j;
+
+    print i + j;
+
+
+}
+    "
+
+    // printfn "%A" (cProgram (fromString prg))
+    // printfn "%A" (fromString prg)
+
+    Assert.Equal("3 1 4", call_machine (cProgram (fromString prg)) [])
+
