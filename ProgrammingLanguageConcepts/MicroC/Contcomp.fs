@@ -29,6 +29,7 @@ open Machine
 type bstmtordec =
     | BDec of instr list // Declaration of local variable
     | BStmt of stmt // A statement
+    | BDecA of instr list // Declaration and assignment
 
 (* ------------------------------------------------------------------- *)
 
@@ -129,11 +130,7 @@ let rec addCST i C =
     | i, CSTI j :: LT :: C1 -> if i < j then addCST 1 C1 else addCST 0 C1
     | i, CSTI j :: SWAP :: LT :: C1 -> if j < i then addCST 1 C1 else addCST 0 C1
 
-
     | _ -> CSTI i :: C
-
-
-
 
 (* ------------------------------------------------------------------- *)
 
@@ -231,7 +228,7 @@ let rec cStmt stmt (varEnv: varEnv) (funEnv: funEnv) (C: instr list) : instr lis
             match stmts with
             | [] -> [], fdepth
             | s1 :: sr ->
-                let _, varEnv1 as res1 = bStmtordec s1 varEnv
+                let _, varEnv1 as res1 = bStmtordec s1 varEnv funEnv
                 let resr, fdepthr = pass1 sr varEnv1
                 res1 :: resr, fdepthr
 
@@ -241,7 +238,9 @@ let rec cStmt stmt (varEnv: varEnv) (funEnv: funEnv) (C: instr list) : instr lis
             match pairs with
             | [] -> C
             | (BDec code, _varEnv) :: sr -> code @ pass2 sr C
+            | (BDecA code, varEnv) :: sr -> code @ pass2 sr C
             | (BStmt stmt, varEnv) :: sr -> cStmt stmt varEnv funEnv (pass2 sr C)
+
 
         pass2 stmtsback (addINCSP (snd varEnv - fdepthend) C)
 
@@ -249,7 +248,7 @@ let rec cStmt stmt (varEnv: varEnv) (funEnv: funEnv) (C: instr list) : instr lis
 
     | Return(Some e) -> cExpr e varEnv funEnv (RET(snd varEnv) :: deadcode C)
 
-and bStmtordec stmtOrDec varEnv : bstmtordec * varEnv =
+and bStmtordec stmtOrDec (varEnv: varEnv) (funEnv: funEnv) : bstmtordec * varEnv =
     match stmtOrDec with
 
     | Stmt stmt -> BStmt stmt, varEnv
@@ -258,7 +257,17 @@ and bStmtordec stmtOrDec varEnv : bstmtordec * varEnv =
         let varEnv1, code = allocate Locvar (typ, x) varEnv
         BDec code, varEnv1
 
-    | DecA(_, _, _) -> failwith "Not Implemented"
+    | DecA(typ, acc, expr) ->
+        let varEnv, Calloc = allocate Locvar (typ, acc) varEnv
+
+        let C = [ STI; INCSP -1 ] // Discard the value stored
+        let C1 = cExpr expr varEnv funEnv C
+        let C2 = cAccess (AccVar acc) varEnv funEnv C1
+
+        BDecA(Calloc @ C2), varEnv
+
+
+
 
 (* Compiling micro-C expressions:
 
@@ -354,18 +363,13 @@ and cExpr (e: expr) (varEnv: varEnv) (funEnv: funEnv) (C: instr list) : instr li
         let C = addIFZERO labele C // IFZERO L1
         cExpr e1 varEnv funEnv C // <e1>
 
-
     | PreDec acc -> cAccess acc varEnv funEnv (DUP :: LDI :: CSTI 1 :: SUB :: STI :: C)
     | PreInc acc -> cAccess acc varEnv funEnv (DUP :: LDI :: CSTI 1 :: ADD :: STI :: C)
 
 
-
-
-
-
 (* Generate code to access variable, dereference pointer or index array: *)
 
-and cAccess access varEnv funEnv C =
+and cAccess (access: access) (varEnv: varEnv) (funEnv: funEnv) C : instr list =
     match access with
     | AccVar x ->
         match lookup (fst varEnv) x with
@@ -383,7 +387,7 @@ and cExprs es varEnv funEnv C =
 
 (* Generate code to evaluate arguments es and then call function f: *)
 
-and callfun f es varEnv funEnv C : instr list =
+and callfun (f: string) (es: expr list) (varEnv: varEnv) (funEnv: funEnv) C : instr list =
     let labf, _tyOpt, paramdecs = lookup funEnv f
     let argc = List.length es
 
