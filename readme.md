@@ -93,3 +93,5 @@ The machine reads a file, or runs a couple of internal tests.
 - 11.13: Somewhat hairy project
 
 - 12.4: No relevant tests (though modifications are present)
+- 12.6: No relevant tests
+- 12.7: Maybe TODO
