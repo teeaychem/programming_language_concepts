@@ -195,7 +195,9 @@ let makeGlobalEnvs (topdecs: topdec list) : varEnv * funEnv * instr list =
                 let varEnv1, code1 = allocate Glovar (typ, x) varEnv
                 let varEnvr, funEnvr, coder = addv decr varEnv1 funEnv
                 varEnvr, funEnvr, code1 @ coder
+
             | Fundec(tyOpt, f, xs, _body) -> addv decr varEnv ((f, (newLabel (), tyOpt, xs)) :: funEnv)
+
             | VardecA(_, _, _) -> failwith "Not Implemented"
 
     addv topdecs ([], 0) []
@@ -282,7 +284,29 @@ and cExpr (e: expr) (varEnv: varEnv) (funEnv: funEnv) (C: instr list) : instr li
     match e with
     | Access acc -> cAccess acc varEnv funEnv (LDI :: C)
 
-    | Assign(acc, e) -> cAccess acc varEnv funEnv (cExpr e varEnv funEnv (STI :: C))
+    | Assign(acc, e) ->
+
+        match e with
+        | Prim2(op, Access v, e1)
+        | Prim2(op, e1, Access v) when acc = v ->
+
+            let opc =
+                match op with
+                | "*" -> MUL
+                | "+" -> ADD
+                | "-" -> SUB
+                | "/" -> DIV
+                | "%" -> MOD
+                | _ -> failwith "Unsupported"
+
+            let C = opc :: STI :: C // apply the op and store
+            let C = cExpr e1 varEnv funEnv C // get the value of e1 on the stack
+            let C = DUP :: LDI :: C // duplicate location for write and read, read
+            let C = cAccess acc varEnv funEnv C // acc location on the stack
+
+            C
+
+        | _ -> cAccess acc varEnv funEnv (cExpr e varEnv funEnv (STI :: C))
 
     | CstI i -> addCST i C
 
@@ -383,7 +407,7 @@ let cProgram (Prog topdecs) : instr list =
             (function
             | Fundec(rTy, name, argTy, body) -> Some(compilefun (rTy, name, argTy, body))
             | Vardec _ -> None
-            | VardecA(_, _, _) -> failwith "Not Implemented")
+            | VardecA(_, _, _) -> None)
             topdecs
 
     let mainlab, _, mainparams = lookup funEnv "main"

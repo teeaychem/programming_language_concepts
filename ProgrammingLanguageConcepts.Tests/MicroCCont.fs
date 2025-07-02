@@ -117,9 +117,6 @@ int main(int n) {
 }
     "
 
-    // printfn "%A" (cProgram (fromString prg))
-    // printfn "%A" (fromString prg)
-
     Assert.Equal("1 2 1", call_machine (cProgram (fromString prg)) [])
 
 
@@ -142,8 +139,63 @@ int main(int n) {
 }
     "
 
-    // printfn "%A" (cProgram (fromString prg))
-    // printfn "%A" (fromString prg)
-
     Assert.Equal("3 1 4", call_machine (cProgram (fromString prg)) [])
 
+
+[<Fact>]
+let ``Exercise 12.4 simple`` () =
+
+    let prg =
+        @"
+int main() {
+
+    int i = 1;
+    i = i + 1;
+
+    print i;
+
+}
+    "
+
+    let unopt_instr =
+        List.filter
+            (fun inst ->
+                match inst with
+                | LDI -> true
+                | _ -> false)
+            (cProgram (fromString prg))
+
+    Assert.Equal(2, List.length unopt_instr)
+
+    Assert.Equal("2", call_machine (cProgram (fromString prg)) [])
+
+[<Fact>]
+let ``Exercise 12.4 less simple`` () =
+
+    let prg =
+        @"
+int main() {
+
+    int i = 1;
+    i = i + 1;
+
+    int j;
+    int j = i + 3;
+
+    print i;
+    print j;
+
+}
+    "
+
+    let unopt_instr =
+        List.filter
+            (fun inst ->
+                match inst with
+                | LDI -> true
+                | _ -> false)
+            (cProgram (fromString prg))
+
+    Assert.Equal(4, List.length unopt_instr)
+
+    Assert.Equal("2 5", call_machine (cProgram (fromString prg)) [])
