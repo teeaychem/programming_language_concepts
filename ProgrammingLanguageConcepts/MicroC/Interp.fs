@@ -244,6 +244,8 @@ and eval e locEnv gloEnv store out : int * store =
             eval y locEnv gloEnv store out
         else
             eval n locEnv gloEnv store out
+    | Andalso _ -> failwith "Repalced"
+    | Orelse _ -> failwith "Replaced"
 
 
 and access (acc: access) (locEnv: locEnv) (gloEnv: gloEnv) (store: store) (out: string ref) : int * store =

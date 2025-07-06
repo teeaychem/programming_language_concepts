@@ -240,7 +240,7 @@ let rec cStmt stmt (varEnv: varEnv) (funEnv: funEnv) (C: instr list) : instr lis
             match pairs with
             | [] -> C
             | (BDec code, _varEnv) :: sr -> code @ pass2 sr C
-            | (BDecA code, varEnv) :: sr -> code @ pass2 sr C
+            | (BDecA code, _varEnv) :: sr -> code @ pass2 sr C
             | (BStmt stmt, varEnv) :: sr -> cStmt stmt varEnv funEnv (pass2 sr C)
 
 
@@ -358,6 +358,9 @@ and cExpr (e: expr) (varEnv: varEnv) (funEnv: funEnv) (C: instr list) : instr li
 
     | PreDec acc -> cAccess acc varEnv funEnv (DUP :: LDI :: CSTI 1 :: SUB :: STI :: C)
     | PreInc acc -> cAccess acc varEnv funEnv (DUP :: LDI :: CSTI 1 :: ADD :: STI :: C)
+
+    | Andalso _ -> failwith "Replaced"
+    | Orelse _ -> failwith "Replaced"
 
 
 (* Generate code to access variable, dereference pointer or index array: *)
