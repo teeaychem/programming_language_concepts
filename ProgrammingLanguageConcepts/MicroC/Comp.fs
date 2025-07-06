@@ -215,6 +215,9 @@ and cExpr (e: expr) (varEnv: varEnv) (funEnv: funEnv) : instr list =
         @ cExpr n varEnv funEnv // Evaluate the `n` case.
         @ [ Label labend ] // Set the end label for the `y` case to jump to.
 
+    | Andalso _ -> failwith "Replaced"
+    | Orelse _ -> failwith "Replaced"
+
 (* Generate code to access variable, dereference pointer or index array.
    The effect of the compiled code is to leave an lvalue on the stack.   *)
 
