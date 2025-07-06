@@ -1,0 +1,27 @@
+{
+  "version": 10,
+  "cmakeMinimumRequired": {
+    "major": 4,
+    "minor": 0,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "default",
+      "displayName": "default configure preset",
+        "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+          "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "default",
+      "displayName": "default build preset",
+      "configurePreset": "default",
+      "jobs": 8,
+      "targets": "mc"
+    }
+  ]
+}
