@@ -188,6 +188,8 @@ ExprNotAccess:
   | Expr LT    Expr           { AST::Expr::pk_Prim2("<",  $1, $3);           }
   | Expr GE    Expr           { AST::Expr::pk_Prim2(">=", $1, $3);           }
   | Expr LE    Expr           { AST::Expr::pk_Prim2("<=", $1, $3);           }
+  | Expr SEQAND Expr          { AST::Expr::pk_Prim2("&&", $1, $3);           }
+  | Expr SEQOR  Expr          { AST::Expr::pk_Prim2("||", $1, $3);           }
 ;
 
 
