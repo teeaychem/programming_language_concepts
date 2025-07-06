@@ -1,0 +1,159 @@
+#pragma once
+
+#include "AST/AST.hh"
+#include <cstdint>
+#include <fmt/base.h>
+#include <fmt/format.h>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <vector>
+
+namespace AST {
+
+namespace Expr {
+
+// Access
+
+struct Access : ExprT {
+  enum class Mode {
+    Access,
+    Addr,
+  };
+
+  Mode mode;
+  AccessHandle acc;
+
+  Expr::Kind kind() const override { return Expr::Kind::Access; }
+  std::string to_string() const override {
+    return fmt::format("(Access {} {})", fmt::underlying(mode), acc->to_string());
+  }
+
+  Access(Access::Mode mode, AccessHandle acc) : mode(mode), acc(std::move(acc)) {}
+
+  const Access *as_Access() const & { return this; };
+};
+
+inline ExprHandle pk_Access(Access::Mode mode, AccessHandle acc) {
+  Access e(mode, std::move(acc));
+  return std::make_shared<Access>(std::move(e));
+}
+
+// Assign
+
+struct Assign : ExprT {
+
+  AccessHandle dest;
+  ExprHandle expr;
+
+  Expr::Kind kind() const override { return Expr::Kind::Access; }
+  std::string to_string() const override {
+    return fmt::format("(Assign {} {})", dest->to_string(), expr->to_string());
+  }
+
+  Assign(AccessHandle dest, ExprHandle expr) : dest(dest), expr(expr) {}
+
+  const Assign *as_Assign() const & { return this; };
+};
+
+inline ExprHandle pk_Assign(AccessHandle dest, ExprHandle expr) {
+  Assign e(dest, expr);
+  return std::make_shared<Assign>(std::move(e));
+}
+
+// Call
+
+struct Call : ExprT {
+  std::string name;
+  std::vector<ExprHandle> parameters;
+
+  Expr::Kind kind() const override { return Expr::Kind::Call; }
+  std::string to_string() const override {
+    std::stringstream ss{};
+    for (auto &param : parameters) {
+      ss << param->to_string();
+      ss << " ";
+    }
+    std::string params = ss.str();
+    params.pop_back();
+
+    return fmt::format("(Call {} {})", name, params);
+  }
+
+  Call(std::string name, std::vector<ExprHandle> params)
+      : name(name), parameters(std::move(params)) {}
+
+  const Call *as_Call() const & { return this; };
+};
+
+inline ExprHandle pk_Call(std::string name, std::vector<ExprHandle> params) {
+  Call e(std::move(name), std::move(params));
+  return std::make_shared<Call>(std::move(e));
+}
+
+// CstI
+
+struct CstI : ExprT {
+  int64_t i;
+
+  Expr::Kind kind() const override { return Expr::Kind::CstI; }
+  std::string to_string() const override { return fmt::format("(CstI {})", i); }
+
+  CstI(int64_t i) : i(i) {}
+
+  const CstI *as_CstI() const & { return this; }
+};
+
+inline ExprHandle pk_CstI(std::int64_t i) {
+  CstI e(i);
+  return std::make_shared<CstI>(std::move(e));
+}
+
+// Prim1
+
+struct Prim1 : ExprT {
+  std::string op;
+  ExprHandle expr;
+
+  Expr::Kind kind() const override { return Expr::Kind::Prim1; }
+  std::string to_string() const override {
+    return fmt::format("(Prim1 {} {})", op, expr->to_string());
+  }
+
+  Prim1(std::string op, ExprHandle expr)
+      : op(op), expr(std::move(expr)) {}
+
+  const Prim1 *as_Prim1() const & { return this; }
+};
+
+inline ExprHandle pk_Prim1(std::string op, ExprHandle expr) {
+  Prim1 e(op, std::move(expr));
+  return std::make_shared<Prim1>(std::move(e));
+}
+
+// Prim2
+
+struct Prim2 : ExprT {
+  std::string op;
+  ExprHandle a;
+  ExprHandle b;
+
+  Expr::Kind kind() const override { return Expr::Kind::Prim2; }
+  std::string to_string() const override {
+    return fmt::format("(Prim2 {} {} {})", op, a->to_string(), b->to_string());
+  }
+  Prim2(std::string op, ExprHandle a, ExprHandle b)
+      : op(op), a(std::move(a)), b(std::move(b)) {}
+
+  const Prim2 *as_Prim2() const & { return this; }
+};
+
+inline ExprHandle pk_Prim2(std::string op, ExprHandle a, ExprHandle b) {
+  Prim2 e(op, std::move(a), std::move(b));
+  return std::make_shared<Prim2>(std::move(e));
+}
+
+} // namespace Expr
+
+//
+} // namespace AST

@@ -484,7 +484,7 @@ $RECYCLE.BIN/
 *.swp
 
 # Project specific files
-/ProgrammingLanguageConcepts/Intcomp/machine
+/ProgrammingLanguageConcepts/**/machine
 /ProgrammingLanguageConcepts/*Lex.fs
 /ProgrammingLanguageConcepts/*Lex.fsi
 /ProgrammingLanguageConcepts/*Par.fs
@@ -493,3 +493,6 @@ $RECYCLE.BIN/
 /ProgrammingLanguageConcepts/MicroC/ex/
 /ProgrammingLanguageConcepts/MicroC/prog*
 /ProgrammingLanguageConcepts.Tests/MicroC/
+
+/MicroC/**/build
+/MicroC/**/install
