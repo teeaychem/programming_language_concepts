@@ -121,7 +121,7 @@ name  [a-zA-Z][a-zA-Z_0-9]*
 <BLOCK_COMMENT>{
   "*/" BEGIN(INITIAL);
   "*"     //
-  [^\n]+  //
+  [^\n]   //
   \n      yylineno++;
   <<EOF>> { throw yy::parser::syntax_error(loc, "Unterminated comment"); }
 }
