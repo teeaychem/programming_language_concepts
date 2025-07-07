@@ -6,7 +6,13 @@
 
 namespace AST {
 
-// Typ
+struct NodeT {
+  [[nodiscard]] virtual std::string to_string() const = 0;
+
+  virtual ~NodeT() = default;
+};
+
+// Types
 
 namespace Typ {
 
@@ -28,20 +34,15 @@ struct TypPtr;
 
 } // namespace Typ
 
-struct TypT {
+struct TypT : NodeT {
   [[nodiscard]] virtual Typ::Kind kind() const = 0;
-  [[nodiscard]] virtual std::string to_string() const = 0;
 
   const Typ::TypArr *as_TypArr() const & { return nullptr; }
   const Typ::TypPtr *as_TypPtr() const & { return nullptr; }
   const Typ::TypData *as_TypData() const & { return nullptr; }
 
   virtual void complete_data(AST::Typ::Data d_typ) = 0;
-
-  virtual ~TypT() = default;
 };
-
-typedef std::shared_ptr<TypT> TypHandle;
 
 // Access
 
@@ -59,18 +60,13 @@ struct Var;
 
 } // namespace Access
 
-struct AccessT {
+struct AccessT : NodeT {
   [[nodiscard]] virtual Access::Kind kind() const = 0;
-  [[nodiscard]] virtual std::string to_string() const = 0;
 
   const Access::Deref *as_Deref() const & { return nullptr; }
   const Access::Index *as_Index() const & { return nullptr; }
   const Access::Var *as_Var() const & { return nullptr; }
-
-  virtual ~AccessT() = default;
 };
-
-typedef std::shared_ptr<AccessT> AccessHandle;
 
 // Expressions
 
@@ -92,9 +88,8 @@ enum class Kind {
 };
 } // namespace Expr
 
-struct ExprT {
+struct ExprT : NodeT {
   [[nodiscard]] virtual Expr::Kind kind() const = 0;
-  [[nodiscard]] virtual std::string to_string() const = 0;
 
   const Expr::Access *as_Access() const & { return nullptr; }
   const Expr::Assign *as_Assign() const & { return nullptr; }
@@ -102,11 +97,9 @@ struct ExprT {
   const Expr::CstI *as_CstI() const & { return nullptr; }
   const Expr::Prim1 *as_Prim1() const & { return nullptr; }
   const Expr::Prim2 *as_Prim2() const & { return nullptr; }
-
-  virtual ~ExprT() = default;
 };
 
-typedef std::shared_ptr<ExprT> ExprHandle;
+// Statements
 
 namespace Stmt {
 
@@ -125,20 +118,17 @@ struct Return;
 struct While;
 } // namespace Stmt
 
-struct StmtT {
+struct StmtT : NodeT {
   [[nodiscard]] virtual Stmt::Kind kind() const = 0;
-  [[nodiscard]] virtual std::string to_string() const = 0;
 
   const Stmt::Block *as_Block() const & { return nullptr; }
   const Stmt::Expr *as_Expr() const & { return nullptr; }
   const Stmt::If *as_If() const & { return nullptr; }
   const Stmt::Return *as_Return() const & { return nullptr; }
   const Stmt::While *as_While() const & { return nullptr; }
-
-  virtual ~StmtT() = default;
 };
 
-typedef std::shared_ptr<StmtT> StmtHandle;
+// Declarations
 
 namespace Dec {
 enum class Kind {
@@ -150,19 +140,24 @@ struct Var;
 struct Fn;
 } // namespace Dec
 
-struct DecT {
+struct DecT : NodeT {
   [[nodiscard]] virtual Dec::Kind kind() const = 0;
-  [[nodiscard]] virtual std::string to_string() const = 0;
 
   const Dec::Var *as_Var() const & { return nullptr; }
   const Dec::Fn *as_Fn() const & { return nullptr; }
-
-  virtual ~DecT() = default;
 };
 
-typedef std::shared_ptr<DecT> DecHandle;
+// Handles
 
-typedef std::vector<std::variant<StmtHandle, DecHandle>> BlockVec;
+typedef std::shared_ptr<AccessT> AccessHandle;
+typedef std::shared_ptr<DecT> DecHandle;
+typedef std::shared_ptr<ExprT> ExprHandle;
+typedef std::shared_ptr<StmtT> StmtHandle;
+typedef std::shared_ptr<TypT> TypHandle;
+
+// Etc
+
 typedef std::vector<std::pair<TypHandle, std::string>> ParamVec;
+typedef std::vector<std::variant<StmtHandle, DecHandle>> BlockVec;
 
 } // namespace AST
