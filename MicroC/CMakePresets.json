@@ -21,7 +21,7 @@
       "displayName": "default build preset",
       "configurePreset": "default",
       "jobs": 8,
-      "targets": "mc"
+        "targets": ["mc", "collatz"]
     }
   ]
 }
