@@ -494,5 +494,5 @@ $RECYCLE.BIN/
 /ProgrammingLanguageConcepts/MicroC/prog*
 /ProgrammingLanguageConcepts.Tests/MicroC/
 
-/MicroC/**/build
-/MicroC/**/install
+/MicroC/build
+/MicroC/install
