@@ -8,6 +8,7 @@ A project MicroC compiler, written in C++.
 
 - Bison 3.8.2
 - Flex 2.6.4
+- LLVM 20
 
 ## Build
 
@@ -46,8 +47,8 @@ Completion is recursively applied until the base data type is found.
 
 # Resources
 
-Sestoft (2017) [Programming Language Concepts](studwww.itu.dk/~sestoft/plc/): MicroC spec, etc.
-[Bison docs](https://www.gnu.org/software/bison/manual/bison.html): Initial flex and bison configuration.
-[Flex docs](https://westes.github.io/flex/manual/Indices.html#Indices): Hints on flex.
-Lai (2024) [Representing an Abstract Syntax Tree in C++](https://lesleylai.info/en/ast-in-cpp-part-1-variant/): AST design.
-[LLVM Fibonacci](https://github.com/llvm/llvm-project/tree/main/llvm/examples/Fibonacci)
+- Sestoft (2017) [Programming Language Concepts](studwww.itu.dk/~sestoft/plc/): MicroC spec, etc.
+- [Bison docs](https://www.gnu.org/software/bison/manual/bison.html): Initial flex and bison configuration.
+- [Flex docs](https://westes.github.io/flex/manual/Indices.html#Indices): Hints on flex.
+- Lai (2024) [Representing an Abstract Syntax Tree in C++](https://lesleylai.info/en/ast-in-cpp-part-1-variant/): AST design.
+- [LLVM Fibonacci](https://github.com/llvm/llvm-project/tree/main/llvm/examples/Fibonacci)
