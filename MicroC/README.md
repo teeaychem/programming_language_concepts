@@ -50,3 +50,4 @@ Sestoft (2017) [Programming Language Concepts](studwww.itu.dk/~sestoft/plc/): Mi
 [Bison docs](https://www.gnu.org/software/bison/manual/bison.html): Initial flex and bison configuration.
 [Flex docs](https://westes.github.io/flex/manual/Indices.html#Indices): Hints on flex.
 Lai (2024) [Representing an Abstract Syntax Tree in C++](https://lesleylai.info/en/ast-in-cpp-part-1-variant/): AST design.
+[LLVM Fibonacci](https://github.com/llvm/llvm-project/tree/main/llvm/examples/Fibonacci)
