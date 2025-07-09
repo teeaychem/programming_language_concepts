@@ -11,9 +11,8 @@
 %code requires {
   #include <string>
   #include "AST/AST.hh"
-  #include "AST/Dec.hh"
-  #include "AST/Expr.hh"
-  class Driver;
+
+  struct Driver;
 }
 
 %param { Driver& drv } // Parsing context
@@ -27,11 +26,14 @@
 %code {
 #include "driver.hh"
 
-#include "AST/AST.hh"
-#include "AST/Access.hh"
-#include "AST/Expr.hh"
-#include "AST/Stmt.hh"
-#include "AST/Typ.hh"
+#include "AST/Node/Access.hh"
+#include "AST/Node/Dec.hh"
+#include "AST/Node/Expr.hh"
+#include "AST/Node/Stmt.hh"
+
+#include "AST/Types.hh"
+
+
 
 AST::ExprHandle AccessAssign(std::string op, AST::AccessHandle dest, AST::ExprHandle expr);
 AST::ExprHandle char_nl = AST::Expr::pk_CstI(10);

@@ -4,15 +4,11 @@
 #include <memory>
 #include <string>
 
-namespace AST {
-
-struct NodeT {
-  [[nodiscard]] virtual std::string to_string() const = 0;
-
-  virtual ~NodeT() = default;
-};
+#include "CodegenLLVM.hh"
 
 // Types
+
+namespace AST {
 
 namespace Typ {
 
@@ -34,15 +30,31 @@ struct TypPtr;
 
 } // namespace Typ
 
-struct TypT : NodeT {
+struct TypT {
   [[nodiscard]] virtual Typ::Kind kind() const = 0;
+  [[nodiscard]] virtual std::string to_string() const = 0;
 
   const Typ::TypArr *as_TypArr() const & { return nullptr; }
   const Typ::TypPtr *as_TypPtr() const & { return nullptr; }
   const Typ::TypData *as_TypData() const & { return nullptr; }
 
   virtual void complete_data(AST::Typ::Data d_typ) = 0;
+
+  virtual ~TypT() = default;
 };
+
+struct NodeT {
+  virtual llvm::Value *codegen(LLVMBundle &hdl) = 0;
+
+  [[nodiscard]] virtual std::string to_string() const = 0;
+
+  virtual ~NodeT() = default;
+};
+} // namespace AST
+
+// Nodes
+
+namespace AST {
 
 // Access
 
@@ -146,6 +158,11 @@ struct DecT : NodeT {
   const Dec::Var *as_Var() const & { return nullptr; }
   const Dec::Fn *as_Fn() const & { return nullptr; }
 };
+} // namespace AST
+
+// etc.
+
+namespace AST {
 
 // Handles
 
