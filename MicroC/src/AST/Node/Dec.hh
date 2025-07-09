@@ -27,6 +27,7 @@ struct Var : DecT {
 
   std::string to_string() const override { return fmt::format("(Dec {} {} {})", fmt::underlying(scope), typ->to_string(), var); }
   Dec::Kind kind() const override { return Dec::Kind::Var; }
+  llvm::Value *codegen(LLVMBundle &hdl) override;
 
   const Dec::Var *as_Var() const & { return this; }
 };
@@ -73,6 +74,7 @@ struct Fn : DecT {
 
     return fmt::format("(Fn {} {} [{}]) [{}]", r_typ->to_string(), var, param_str, body.size());
   }
+  llvm::Value *codegen(LLVMBundle &hdl) override;
 
   Dec::Kind kind() const override { return Dec::Kind::Fn; }
   const Dec::Fn *as_Fn() const & { return this; }

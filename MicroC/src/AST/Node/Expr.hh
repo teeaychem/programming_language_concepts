@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+#include "llvm/IR/IRBuilder.h"
+
 namespace AST {
 
 namespace Expr {
@@ -28,6 +30,7 @@ struct Access : ExprT {
   std::string to_string() const override {
     return fmt::format("(Access {} {})", fmt::underlying(mode), acc->to_string());
   }
+  llvm::Value *codegen(LLVMBundle &hdl) override;
 
   Access(Access::Mode mode, AccessHandle acc) : mode(mode), acc(std::move(acc)) {}
 
@@ -50,6 +53,7 @@ struct Assign : ExprT {
   std::string to_string() const override {
     return fmt::format("(Assign {} {})", dest->to_string(), expr->to_string());
   }
+  llvm::Value *codegen(LLVMBundle &hdl) override;
 
   Assign(AccessHandle dest, ExprHandle expr) : dest(dest), expr(expr) {}
 
@@ -79,6 +83,7 @@ struct Call : ExprT {
 
     return fmt::format("(Call {} {})", name, params);
   }
+  llvm::Value *codegen(LLVMBundle &hdl) override;
 
   Call(std::string name, std::vector<ExprHandle> params)
       : name(name), parameters(std::move(params)) {}
@@ -98,6 +103,7 @@ struct CstI : ExprT {
 
   Expr::Kind kind() const override { return Expr::Kind::CstI; }
   std::string to_string() const override { return fmt::format("(CstI {})", i); }
+  llvm::Value *codegen(LLVMBundle &hdl) override;
 
   CstI(int64_t i) : i(i) {}
 
@@ -119,6 +125,7 @@ struct Prim1 : ExprT {
   std::string to_string() const override {
     return fmt::format("(Prim1 {} {})", op, expr->to_string());
   }
+  llvm::Value *codegen(LLVMBundle &hdl) override;
 
   Prim1(std::string op, ExprHandle expr)
       : op(op), expr(std::move(expr)) {}
@@ -142,6 +149,8 @@ struct Prim2 : ExprT {
   std::string to_string() const override {
     return fmt::format("(Prim2 {} {} {})", op, a->to_string(), b->to_string());
   }
+  llvm::Value *codegen(LLVMBundle &hdl) override;
+
   Prim2(std::string op, ExprHandle a, ExprHandle b)
       : op(op), a(std::move(a)), b(std::move(b)) {}
 

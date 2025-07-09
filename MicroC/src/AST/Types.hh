@@ -23,7 +23,9 @@ struct TypData : TypT {
       : d_typ(d_typ) {};
 
   Typ::Kind kind() const override { return Typ::Kind::Data; }
-  std::string to_string() const override { return fmt::format("{}", fmt::underlying(d_typ)); }
+  std::string to_string() const override {
+    return fmt::format("{}", fmt::underlying(d_typ));
+  }
 
   void complete_data(Data d_typ) override {
     if (d_typ == Data::Void) {

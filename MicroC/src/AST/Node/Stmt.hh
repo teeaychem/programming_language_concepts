@@ -33,6 +33,7 @@ struct Block : StmtT {
     return fmt::format("(Expr)");
   }
   Stmt::Kind kind() const override { return Stmt::Kind::Block; }
+  llvm::Value *codegen(LLVMBundle &hdl) override;
 
   const Stmt::Block *as_Block() const & { return this; }
 };
@@ -52,6 +53,7 @@ struct Expr : StmtT {
 
   std::string to_string() const override { return fmt::format("(Expr)"); }
   Stmt::Kind kind() const override { return Stmt::Kind::Expr; }
+  llvm::Value *codegen(LLVMBundle &hdl) override;
 
   const Stmt::Expr *as_Expr() const & { return this; }
 };
@@ -73,6 +75,7 @@ struct If : StmtT {
 
   std::string to_string() const override { return fmt::format("(If)"); }
   Stmt::Kind kind() const override { return Stmt::Kind::If; }
+  llvm::Value *codegen(LLVMBundle &hdl) override;
 
   const Stmt::If *as_If() const & { return this; }
 };
@@ -92,6 +95,7 @@ struct Return : StmtT {
 
   std::string to_string() const override { return fmt::format("(If)"); }
   Stmt::Kind kind() const override { return Stmt::Kind::Return; }
+  llvm::Value *codegen(LLVMBundle &hdl) override;
 
   const Stmt::Return *as_Return() const & { return this; }
 };
@@ -112,6 +116,7 @@ struct While : StmtT {
 
   std::string to_string() const override { return fmt::format("(While)"); }
   Stmt::Kind kind() const override { return Stmt::Kind::If; }
+  llvm::Value *codegen(LLVMBundle &hdl) override;
 
   const Stmt::While *as_While() const & { return this; }
 };

@@ -19,6 +19,7 @@ struct Var : AccessT {
 
   std::string to_string() const override { return fmt::format("(Var {})", var); }
   Access::Kind kind() const override { return Access::Kind::Var; }
+  llvm::Value *codegen(LLVMBundle &hdl) override;
 
   const Access::Var *as_Var() const & { return this; }
 };
@@ -39,6 +40,7 @@ struct Deref : AccessT {
   std::string to_string() const override {
     return fmt::format("(Deref *)", expr->to_string());
   }
+  llvm::Value *codegen(LLVMBundle &hdl) override;
 
   const Deref *as_Deref() const & { return this; }
 };
@@ -62,6 +64,7 @@ struct Index : AccessT {
     return fmt::format("(Index {} {})", array->to_string(),
                        index->to_string());
   }
+  llvm::Value *codegen(LLVMBundle &hdl) override;
 
   const Index *as_Index() const & { return this; }
 };
