@@ -27,14 +27,10 @@ struct Access : ExprT {
   AccessHandle acc;
 
   Expr::Kind kind() const override { return Expr::Kind::Access; }
-  std::string to_string() const override {
-    return fmt::format("(Access {} {})", fmt::underlying(mode), acc->to_string());
-  }
+  std::string to_string() const override;
   llvm::Value *codegen(LLVMBundle &hdl) override;
 
   Access(Access::Mode mode, AccessHandle acc) : mode(mode), acc(std::move(acc)) {}
-
-  const Access *as_Access() const & { return this; };
 };
 
 inline ExprHandle pk_Access(Access::Mode mode, AccessHandle acc) {
@@ -50,14 +46,10 @@ struct Assign : ExprT {
   ExprHandle expr;
 
   Expr::Kind kind() const override { return Expr::Kind::Access; }
-  std::string to_string() const override {
-    return fmt::format("(Assign {} {})", dest->to_string(), expr->to_string());
-  }
+  std::string to_string() const override;
   llvm::Value *codegen(LLVMBundle &hdl) override;
 
   Assign(AccessHandle dest, ExprHandle expr) : dest(dest), expr(expr) {}
-
-  const Assign *as_Assign() const & { return this; };
 };
 
 inline ExprHandle pk_Assign(AccessHandle dest, ExprHandle expr) {
@@ -72,23 +64,11 @@ struct Call : ExprT {
   std::vector<ExprHandle> parameters;
 
   Expr::Kind kind() const override { return Expr::Kind::Call; }
-  std::string to_string() const override {
-    std::stringstream ss{};
-    for (auto &param : parameters) {
-      ss << param->to_string();
-      ss << " ";
-    }
-    std::string params = ss.str();
-    params.pop_back();
-
-    return fmt::format("(Call {} {})", name, params);
-  }
+  std::string to_string() const override;
   llvm::Value *codegen(LLVMBundle &hdl) override;
 
   Call(std::string name, std::vector<ExprHandle> params)
       : name(name), parameters(std::move(params)) {}
-
-  const Call *as_Call() const & { return this; };
 };
 
 inline ExprHandle pk_Call(std::string name, std::vector<ExprHandle> params) {
@@ -102,12 +82,10 @@ struct CstI : ExprT {
   int64_t i;
 
   Expr::Kind kind() const override { return Expr::Kind::CstI; }
-  std::string to_string() const override { return fmt::format("(CstI {})", i); }
+  std::string to_string() const override;
   llvm::Value *codegen(LLVMBundle &hdl) override;
 
   CstI(int64_t i) : i(i) {}
-
-  const CstI *as_CstI() const & { return this; }
 };
 
 inline ExprHandle pk_CstI(std::int64_t i) {
@@ -122,15 +100,11 @@ struct Prim1 : ExprT {
   ExprHandle expr;
 
   Expr::Kind kind() const override { return Expr::Kind::Prim1; }
-  std::string to_string() const override {
-    return fmt::format("(Prim1 {} {})", op, expr->to_string());
-  }
+  std::string to_string() const override;
   llvm::Value *codegen(LLVMBundle &hdl) override;
 
   Prim1(std::string op, ExprHandle expr)
       : op(op), expr(std::move(expr)) {}
-
-  const Prim1 *as_Prim1() const & { return this; }
 };
 
 inline ExprHandle pk_Prim1(std::string op, ExprHandle expr) {
@@ -146,15 +120,11 @@ struct Prim2 : ExprT {
   ExprHandle b;
 
   Expr::Kind kind() const override { return Expr::Kind::Prim2; }
-  std::string to_string() const override {
-    return fmt::format("(Prim2 {} {} {})", op, a->to_string(), b->to_string());
-  }
+  std::string to_string() const override;
   llvm::Value *codegen(LLVMBundle &hdl) override;
 
   Prim2(std::string op, ExprHandle a, ExprHandle b)
       : op(op), a(std::move(a)), b(std::move(b)) {}
-
-  const Prim2 *as_Prim2() const & { return this; }
 };
 
 inline ExprHandle pk_Prim2(std::string op, ExprHandle a, ExprHandle b) {

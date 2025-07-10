@@ -17,11 +17,9 @@ struct Var : AccessT {
 
   Var(std::string &&v) : var(std::move(v)) {}
 
-  std::string to_string() const override { return fmt::format("(Var {})", var); }
+  std::string to_string() const override;
   Access::Kind kind() const override { return Access::Kind::Var; }
   llvm::Value *codegen(LLVMBundle &hdl) override;
-
-  const Access::Var *as_Var() const & { return this; }
 };
 
 inline AccessHandle pk_Var(std::string var) {
@@ -37,12 +35,9 @@ struct Deref : AccessT {
   Deref(ExprHandle &&expr) : expr(std::move(expr)) {}
 
   Access::Kind kind() const override { return Access::Kind::Deref; }
-  std::string to_string() const override {
-    return fmt::format("(Deref *)", expr->to_string());
-  }
-  llvm::Value *codegen(LLVMBundle &hdl) override;
+  std::string to_string() const override;
 
-  const Deref *as_Deref() const & { return this; }
+  llvm::Value *codegen(LLVMBundle &hdl) override;
 };
 
 inline AccessHandle pk_Deref(ExprHandle expr) {
@@ -60,13 +55,9 @@ struct Index : AccessT {
       : array(std::move(arr)), index(std::move(idx)) {}
 
   Access::Kind kind() const override { return Access::Kind::Index; }
-  std::string to_string() const override {
-    return fmt::format("(Index {} {})", array->to_string(),
-                       index->to_string());
-  }
-  llvm::Value *codegen(LLVMBundle &hdl) override;
 
-  const Index *as_Index() const & { return this; }
+  std::string to_string() const override;
+  llvm::Value *codegen(LLVMBundle &hdl) override;
 };
 
 inline AccessHandle pk_Index(AccessHandle arr, ExprHandle idx) {

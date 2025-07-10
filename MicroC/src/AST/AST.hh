@@ -31,12 +31,10 @@ struct TypPtr;
 } // namespace Typ
 
 struct TypT {
+  virtual llvm::Type *typegen(LLVMBundle &hdl) = 0;
+
   [[nodiscard]] virtual Typ::Kind kind() const = 0;
   [[nodiscard]] virtual std::string to_string() const = 0;
-
-  const Typ::TypArr *as_TypArr() const & { return nullptr; }
-  const Typ::TypPtr *as_TypPtr() const & { return nullptr; }
-  const Typ::TypData *as_TypData() const & { return nullptr; }
 
   virtual void complete_data(AST::Typ::Data d_typ) = 0;
 
@@ -74,10 +72,6 @@ struct Var;
 
 struct AccessT : NodeT {
   [[nodiscard]] virtual Access::Kind kind() const = 0;
-
-  const Access::Deref *as_Deref() const & { return nullptr; }
-  const Access::Index *as_Index() const & { return nullptr; }
-  const Access::Var *as_Var() const & { return nullptr; }
 };
 
 // Expressions
@@ -102,13 +96,6 @@ enum class Kind {
 
 struct ExprT : NodeT {
   [[nodiscard]] virtual Expr::Kind kind() const = 0;
-
-  const Expr::Access *as_Access() const & { return nullptr; }
-  const Expr::Assign *as_Assign() const & { return nullptr; }
-  const Expr::Call *as_Call() const & { return nullptr; }
-  const Expr::CstI *as_CstI() const & { return nullptr; }
-  const Expr::Prim1 *as_Prim1() const & { return nullptr; }
-  const Expr::Prim2 *as_Prim2() const & { return nullptr; }
 };
 
 // Statements
@@ -132,12 +119,6 @@ struct While;
 
 struct StmtT : NodeT {
   [[nodiscard]] virtual Stmt::Kind kind() const = 0;
-
-  const Stmt::Block *as_Block() const & { return nullptr; }
-  const Stmt::Expr *as_Expr() const & { return nullptr; }
-  const Stmt::If *as_If() const & { return nullptr; }
-  const Stmt::Return *as_Return() const & { return nullptr; }
-  const Stmt::While *as_While() const & { return nullptr; }
 };
 
 // Declarations
@@ -154,9 +135,6 @@ struct Fn;
 
 struct DecT : NodeT {
   [[nodiscard]] virtual Dec::Kind kind() const = 0;
-
-  const Dec::Var *as_Var() const & { return nullptr; }
-  const Dec::Fn *as_Fn() const & { return nullptr; }
 };
 } // namespace AST
 

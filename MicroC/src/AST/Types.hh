@@ -23,9 +23,7 @@ struct TypData : TypT {
       : d_typ(d_typ) {};
 
   Typ::Kind kind() const override { return Typ::Kind::Data; }
-  std::string to_string() const override {
-    return fmt::format("{}", fmt::underlying(d_typ));
-  }
+  std::string to_string() const override;
 
   void complete_data(Data d_typ) override {
     if (d_typ == Data::Void) {
@@ -62,15 +60,13 @@ struct TypArr : TypT {
       : typ(std::move(typ)), size(size) {}
 
   Typ::Kind kind() const override { return Typ::Kind::Arr; }
-  std::string to_string() const override {
-    return fmt::format("(TypArr {})", size.value_or(0));
-  }
+  std::string to_string() const override;
 
-  void complete_data(Data d_typ) override {
-    typ->complete_data(d_typ);
-  }
+  void complete_data(Data d_typ) override { typ->complete_data(d_typ); }
 
-  const TypArr *as_TypArr() const & { return this; }
+  llvm::Type *typegen(LLVMBundle &hdl) override {
+    return llvm::ArrayType::get(typ->typegen(hdl), size.value_or(0));
+  }
 };
 
 inline TypHandle pk_Arr(TypHandle typ, std::optional<std::int64_t> size) {
@@ -91,15 +87,12 @@ struct TypPtr : TypT {
   TypPtr(TypHandle of) : dest(std::move(of)) {}
 
   Typ::Kind kind() const override { return Typ::Kind::Ptr; }
-  std::string to_string() const override {
-    return fmt::format("(TypPtr {})", dest->to_string());
-  }
+  std::string to_string() const override;
 
-  void complete_data(Data d_typ) override {
-    dest->complete_data(d_typ);
+  void complete_data(Data d_typ) override { dest->complete_data(d_typ); }
+  llvm::Type *typegen(LLVMBundle &hdl) override {
+    return llvm::PointerType::getUnqual(*hdl.Context);
   }
-
-  const TypPtr *as_TypPtr() const & { return this; }
 };
 
 inline TypHandle pk_Ptr(TypHandle of) {
