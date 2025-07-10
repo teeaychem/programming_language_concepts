@@ -179,19 +179,19 @@ ExprNotAccess:
   | NOT Expr                  { $$ = AST::Expr::pk_Prim1("!", $2);           }
   | PRINT Expr                { $$ = AST::Expr::pk_Prim1("printi", $2);      }
   | PRINTLN                   { $$ = AST::Expr::pk_Prim1("printc", char_nl); }
-  | Expr PLUS  Expr           { AST::Expr::pk_Prim2("+",  $1, $3);           }
-  | Expr MINUS Expr           { AST::Expr::pk_Prim2("-",  $1, $3);           }
-  | Expr STAR  Expr           { AST::Expr::pk_Prim2("*",  $1, $3);           }
-  | Expr SLASH Expr           { AST::Expr::pk_Prim2("/",  $1, $3);           }
-  | Expr MOD   Expr           { AST::Expr::pk_Prim2("%",  $1, $3);           }
-  | Expr EQ    Expr           { AST::Expr::pk_Prim2("==", $1, $3);           }
-  | Expr NE    Expr           { AST::Expr::pk_Prim2("!=", $1, $3);           }
-  | Expr GT    Expr           { AST::Expr::pk_Prim2(">",  $1, $3);           }
-  | Expr LT    Expr           { AST::Expr::pk_Prim2("<",  $1, $3);           }
-  | Expr GE    Expr           { AST::Expr::pk_Prim2(">=", $1, $3);           }
-  | Expr LE    Expr           { AST::Expr::pk_Prim2("<=", $1, $3);           }
-  | Expr SEQAND Expr          { AST::Expr::pk_Prim2("&&", $1, $3);           }
-  | Expr SEQOR  Expr          { AST::Expr::pk_Prim2("||", $1, $3);           }
+  | Expr PLUS  Expr           { $$ = AST::Expr::pk_Prim2("+",  $1, $3);      }
+  | Expr MINUS Expr           { $$ = AST::Expr::pk_Prim2("-",  $1, $3);      }
+  | Expr STAR  Expr           { $$ = AST::Expr::pk_Prim2("*",  $1, $3);      }
+  | Expr SLASH Expr           { $$ = AST::Expr::pk_Prim2("/",  $1, $3);      }
+  | Expr MOD   Expr           { $$ = AST::Expr::pk_Prim2("%",  $1, $3);      }
+  | Expr EQ    Expr           { $$ = AST::Expr::pk_Prim2("==", $1, $3);      }
+  | Expr NE    Expr           { $$ = AST::Expr::pk_Prim2("!=", $1, $3);      }
+  | Expr GT    Expr           { $$ = AST::Expr::pk_Prim2(">",  $1, $3);      }
+  | Expr LT    Expr           { $$ = AST::Expr::pk_Prim2("<",  $1, $3);      }
+  | Expr GE    Expr           { $$ = AST::Expr::pk_Prim2(">=", $1, $3);      }
+  | Expr LE    Expr           { $$ = AST::Expr::pk_Prim2("<=", $1, $3);      }
+  | Expr SEQAND Expr          { $$ = AST::Expr::pk_Prim2("&&", $1, $3);      }
+  | Expr SEQOR  Expr          { $$ = AST::Expr::pk_Prim2("||", $1, $3);      }
 ;
 
 
