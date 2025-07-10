@@ -3,7 +3,6 @@
 #include "AST/AST.hh"
 #include <fmt/format.h>
 #include <memory>
-#include <sstream>
 #include <string>
 
 namespace AST {
@@ -25,11 +24,10 @@ struct Var : DecT {
   Var(Scope scope, TypHandle typ, std::string var)
       : scope(scope), typ(std::move(typ)), var(var) {}
 
-  std::string to_string() const override { return fmt::format("(Dec {} {} {})", fmt::underlying(scope), typ->to_string(), var); }
+  std::string to_string() const override;
+
   Dec::Kind kind() const override { return Dec::Kind::Var; }
   llvm::Value *codegen(LLVMBundle &hdl) override;
-
-  const Dec::Var *as_Var() const & { return this; }
 };
 
 inline DecHandle pk_Var(Scope scope, TypHandle typ, std::string var) {
@@ -54,30 +52,11 @@ struct Fn : DecT {
         params(std::move(params)),
         body(std::move(body)) {}
 
-  std::string to_string() const override {
-    std::string param_str{};
-    {
-      std::stringstream param_stream{};
-      for (auto &p : params) {
-        param_stream << p.first->to_string();
-        param_stream << " ";
-        param_stream << p.second;
-        param_stream << ", ";
-      }
-      param_str = param_stream.str();
+  std::string to_string() const override;
 
-      if (params.size()) {
-        param_str.pop_back();
-        param_str.pop_back();
-      }
-    }
-
-    return fmt::format("(Fn {} {} [{}]) [{}]", r_typ->to_string(), var, param_str, body.size());
-  }
   llvm::Value *codegen(LLVMBundle &hdl) override;
 
   Dec::Kind kind() const override { return Dec::Kind::Fn; }
-  const Dec::Fn *as_Fn() const & { return this; }
 };
 
 inline DecHandle pk_Fn(TypHandle r_typ, std::string var, ParamVec params, BlockVec body) {

@@ -1,8 +1,9 @@
 #pragma once
 
 #include "AST/AST.hh"
+#include "CodegenLLVM.hh"
 #include "parser.hh"
-#include <fmt/base.h>
+
 #include <string>
 
 // Give flex the prototype of yylex
@@ -32,11 +33,4 @@ struct Driver {
   yy::location location; // Token location.
 
   // tmp
-  void note_expr(AST::ExprHandle expr) {
-    fmt::println("{}", expr->to_string());
-  }
-
-  void note_dec(AST::DecHandle dec) {
-    fmt::println("{}", dec->to_string());
-  }
 };

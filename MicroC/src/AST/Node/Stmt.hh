@@ -21,21 +21,9 @@ struct Block : StmtT {
   Block(BlockVec &&bv)
       : block(std::move(bv)) {}
 
-  std::string to_string() const override {
-    // TODO
-    // std::stringstream ss{};
-    // ss << fmt::format("(Block [)");
-    // for (auto &e : block) {
-    //   std::visit([&ss](auto &v) { ss << v->to_string(); }, e);
-    // }
-
-    // return ss.str();
-    return fmt::format("(Expr)");
-  }
+  std::string to_string() const override;
   Stmt::Kind kind() const override { return Stmt::Kind::Block; }
   llvm::Value *codegen(LLVMBundle &hdl) override;
-
-  const Stmt::Block *as_Block() const & { return this; }
 };
 
 inline StmtHandle pk_Block(BlockVec &&bv) {
@@ -51,11 +39,9 @@ struct Expr : StmtT {
   Expr(ExprHandle expr)
       : expr(std::move(expr)) {}
 
-  std::string to_string() const override { return fmt::format("(Expr)"); }
+  std::string to_string() const override;
   Stmt::Kind kind() const override { return Stmt::Kind::Expr; }
   llvm::Value *codegen(LLVMBundle &hdl) override;
-
-  const Stmt::Expr *as_Expr() const & { return this; }
 };
 
 inline StmtHandle pk_Expr(ExprHandle expr) {
@@ -73,11 +59,9 @@ struct If : StmtT {
   If(ExprHandle condition, StmtHandle yes, StmtHandle no)
       : condition(condition), yes(yes), no(no) {}
 
-  std::string to_string() const override { return fmt::format("(If)"); }
+  std::string to_string() const override;
   Stmt::Kind kind() const override { return Stmt::Kind::If; }
   llvm::Value *codegen(LLVMBundle &hdl) override;
-
-  const Stmt::If *as_If() const & { return this; }
 };
 
 inline StmtHandle pk_If(ExprHandle condition, StmtHandle yes, StmtHandle no) {
@@ -93,11 +77,9 @@ struct Return : StmtT {
   Return(std::optional<ExprHandle> value)
       : value(std::move(value)) {}
 
-  std::string to_string() const override { return fmt::format("(If)"); }
+  std::string to_string() const override;
   Stmt::Kind kind() const override { return Stmt::Kind::Return; }
   llvm::Value *codegen(LLVMBundle &hdl) override;
-
-  const Stmt::Return *as_Return() const & { return this; }
 };
 
 inline StmtHandle pk_Return(std::optional<ExprHandle> value) {
@@ -114,11 +96,9 @@ struct While : StmtT {
   While(ExprHandle condition, StmtHandle bv)
       : condition(condition), block(bv) {}
 
-  std::string to_string() const override { return fmt::format("(While)"); }
+  std::string to_string() const override;
   Stmt::Kind kind() const override { return Stmt::Kind::If; }
   llvm::Value *codegen(LLVMBundle &hdl) override;
-
-  const Stmt::While *as_While() const & { return this; }
 };
 
 inline StmtHandle pk_While(ExprHandle condition, StmtHandle bv) {
