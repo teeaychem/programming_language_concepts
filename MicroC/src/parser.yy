@@ -132,7 +132,10 @@ AtExprNotAccess:
 
 
 Block:
-    LBRACE StmtOrDecSeq RBRACE  { $$ = $2; }
+    LBRACE StmtOrDecSeq RBRACE
+      { std::reverse($2.begin(), $2.end());
+        $$ = $2;
+      }
 ;
 
 
