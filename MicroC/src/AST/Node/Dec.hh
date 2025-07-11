@@ -1,7 +1,6 @@
 #pragma once
 
 #include "AST/AST.hh"
-#include <fmt/format.h>
 #include <memory>
 #include <string>
 
@@ -24,7 +23,7 @@ struct Var : DecT {
   Var(Scope scope, TypHandle typ, std::string var)
       : scope(scope), typ(std::move(typ)), var(var) {}
 
-  std::string to_string() const override;
+  std::string to_string(size_t indent) const override;
 
   Dec::Kind kind() const override { return Dec::Kind::Var; }
   llvm::Value *codegen(LLVMBundle &hdl) override;
@@ -52,7 +51,7 @@ struct Fn : DecT {
         params(std::move(params)),
         body(std::move(body)) {}
 
-  std::string to_string() const override;
+  std::string to_string(size_t indent) const override;
 
   llvm::Value *codegen(LLVMBundle &hdl) override;
 

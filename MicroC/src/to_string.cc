@@ -1,6 +1,4 @@
 #include <cstdio>
-#include <fmt/base.h>
-#include <fmt/format.h>
 #include <iostream>
 #include <memory>
 #include <optional>
@@ -15,15 +13,19 @@
 
 #include "AST/Types.hh"
 
+size_t const OFFSET = 2;
+
+// Support
+
 // Types
 
 template <>
-struct fmt::formatter<AST::Typ::Data> : formatter<string_view> {
+struct std::formatter<AST::Typ::Data> : formatter<string_view> {
   auto format(AST::Typ::Data c, format_context &ctx) const -> format_context::iterator;
 };
 
-auto fmt::formatter<AST::Typ::Data>::format(AST::Typ::Data c, fmt::format_context &ctx) const
-    -> fmt::format_context::iterator {
+auto std::formatter<AST::Typ::Data>::format(AST::Typ::Data c, std::format_context &ctx) const
+    -> std::format_context::iterator {
   string_view name = "unknown";
   switch (c) {
   case AST::Typ::Data::Int: {
@@ -35,52 +37,55 @@ auto fmt::formatter<AST::Typ::Data>::format(AST::Typ::Data c, fmt::format_contex
   case AST::Typ::Data::Void: {
     name = "void";
   } break;
-    break;
   }
-  return fmt::formatter<string_view>::format(name, ctx);
+  return std::formatter<string_view>::format(name, ctx);
 }
 
-std::string AST::Typ::TypData::to_string() const {
-  return fmt::format("{}", d_typ);
+std::string AST::Typ::TypData::to_string(size_t indent) const {
+  return std::format("{}", d_typ);
 }
 
-std::string AST::Typ::TypArr::to_string() const {
-  return fmt::format("(TypArr {})", size.value_or(0));
+std::string AST::Typ::TypArr::to_string(size_t indent) const {
+  if (this->size.has_value()) {
+    return std::format("{}[{}]", this->typ->to_string(indent), size.value());
+  } else {
+    return std::format("{}[]", this->typ->to_string(indent));
+  }
 }
 
-std::string AST::Typ::TypPtr::to_string() const {
-  return fmt::format("*{}", dest->to_string());
+std::string AST::Typ::TypPtr::to_string(size_t indent) const {
+  return std::format("*{}", dest->to_string(indent));
 }
 
 // Nodes
 
 // Access
 
-std::string AST::Access::Deref::to_string() const {
-  return fmt::format("*{}", this->expr->to_string());
+std::string AST::Access::Deref::to_string(size_t indent) const {
+  return std::format("*{}", this->expr->to_string(indent));
 }
 
-std::string AST::Access::Index::to_string() const {
-  return fmt::format("(Index {} {})", this->array->to_string(), this->index->to_string());
+std::string AST::Access::Index::to_string(size_t indent) const {
+  return std::format("{}[{}]", this->array->to_string(indent), this->index->to_string(indent));
 }
 
-std::string AST::Access::Var::to_string() const {
-  return fmt::format("{}", this->var);
+std::string AST::Access::Var::to_string(size_t indent) const {
+  return this->var;
 }
 
 // Dec
 
-std::string AST::Dec::Fn::to_string() const {
+std::string AST::Dec::Fn::to_string(size_t indent) const {
   std::stringstream fn_ss{};
 
-  fn_ss << r_typ->to_string() << " ";
+  fn_ss << r_typ->to_string(indent) << " ";
   fn_ss << " " << this->var << " ";
 
   std::string param_str{};
   {
     std::stringstream param_stream{};
     for (auto &p : params) {
-      param_stream << p.first->to_string();
+      param_stream << p.first->to_string(indent);
       param_stream << " ";
       param_stream << p.second;
       param_stream << ", ";
@@ -97,81 +102,115 @@ std::string AST::Dec::Fn::to_string() const {
   fn_ss << " ";
   fn_ss << "{" << "\n";
 
-  auto v_str = [&fn_ss](const auto v) { fn_ss << v->to_string() << "\n"; };
+  auto v_str = [&fn_ss, &indent](const auto v) {
+    size_t updated_offset = indent + OFFSET;
+    fn_ss << std::string(updated_offset, ' ') << v->to_string(updated_offset) << "\n"; };
 
   for (auto &part : body) {
     std::visit(v_str, part);
   }
 
-  fn_ss << "}";
+  fn_ss << std::string(indent, ' ') << "}";
 
   return fn_ss.str();
 }
 
-std::string AST::Dec::Var::to_string() const {
-  return fmt::format("{} {}", typ->to_string(), var);
+std::string AST::Dec::Var::to_string(size_t indent) const {
+  return std::format("{} {};", typ->to_string(indent), var);
 }
 
 // Expr
 
-std::string AST::Expr::Access::to_string() const {
-  return fmt::format("{}", this->acc->to_string());
+std::string AST::Expr::Access::to_string(size_t indent) const {
+  return std::format("{}", this->acc->to_string(indent));
 }
-std::string AST::Expr::Assign::to_string() const {
-  return fmt::format("{} = {}", this->dest->to_string(), this->expr->to_string());
+std::string AST::Expr::Assign::to_string(size_t indent) const {
+  return std::format("{} = {}", this->dest->to_string(indent), this->expr->to_string(indent));
 }
-std::string AST::Expr::Call::to_string() const {
+std::string AST::Expr::Call::to_string(size_t indent) const {
   std::stringstream ss{};
   for (auto &param : parameters) {
-    ss << param->to_string();
-    ss << " ";
+    ss << param->to_string(indent);
+    ss << ", ";
   }
   std::string params = ss.str();
   params.pop_back();
+  params.pop_back();
 
-  return fmt::format("{}({})", this->name, params);
+  return std::format("{}({})", this->name, params);
 }
-std::string AST::Expr::CstI::to_string() const {
-  return fmt::format("{}", i);
+std::string AST::Expr::CstI::to_string(size_t indent) const {
+  return std::format("{}", i);
 }
-std::string AST::Expr::Prim1::to_string() const {
-  return fmt::format("{}{}", op, expr->to_string());
+std::string AST::Expr::Prim1::to_string(size_t indent) const {
+  return std::format("{}{}", op, expr->to_string(indent));
 }
-std::string AST::Expr::Prim2::to_string() const {
-  return fmt::format("({} {} {})", this->a->to_string(), this->op, this->b->to_string());
+std::string AST::Expr::Prim2::to_string(size_t indent) const {
+  return std::format("({} {} {})", this->a->to_string(indent), this->op, this->b->to_string(indent));
 }
 
 // Stmt
 
-std::string AST::Stmt::Block::to_string() const {
+std::string AST::Stmt::Block::to_string(size_t indent) const {
 
   std::stringstream block_ss{};
+  block_ss << "{" << "\n";
 
-  auto v_out = [&block_ss](const auto v) { block_ss << v->to_string() << "\n"; };
+  auto variant_out = [&block_ss, &indent](const auto v) {
+    size_t updated_offset = indent + OFFSET;
+    block_ss << std::string(updated_offset, ' ') << v->to_string(updated_offset) << "\n"; };
 
-  for (auto &x : block) {
-    std::visit(v_out, x);
+  for (auto &block_variant : block) {
+    std::visit(variant_out, block_variant);
   }
+
+  block_ss << std::string(indent, ' ') << "}";
 
   return block_ss.str();
 }
-std::string AST::Stmt::Expr::to_string() const {
-  return fmt::format("{};", expr->to_string());
+
+std::string AST::Stmt::Expr::to_string(size_t indent) const {
+  return std::format("{};", expr->to_string(indent));
 }
-std::string AST::Stmt::If::to_string() const {
-  return "TODO: if";
+
+std::string AST::Stmt::If::to_string(size_t indent) const {
+  std::stringstream if_ss{};
+  if_ss << "if"
+        << " "
+        << this->condition->to_string(indent)
+        << " "
+        << this->yes->to_string(indent);
+
+  if (this->no->kind() == AST::Stmt::Kind::Block) {
+    auto as_block = std::static_pointer_cast<AST::Stmt::Block>(this->no);
+    if (!as_block->block.empty()) {
+      if_ss << " else "
+            << this->no->to_string(indent);
+    }
+  }
+
+  return if_ss.str();
 }
-std::string AST::Stmt::Return::to_string() const {
+
+std::string AST::Stmt::Return::to_string(size_t indent) const {
   std::stringstream r_ss{};
 
   r_ss << "return";
   if (this->value.has_value()) {
-    r_ss << " " << this->value.value()->to_string();
+    r_ss << " " << this->value.value()->to_string(indent);
   }
   r_ss << ";";
 
   return r_ss.str();
 }
-std::string AST::Stmt::While::to_string() const {
-  return "TODO: while";
+std::string AST::Stmt::While::to_string(size_t indent) const {
+
+  std::stringstream while_ss{};
+  while_ss << "while"
+           << " "
+           << this->condition->to_string(indent)
+           << " "
+           << this->block->to_string(indent);
+
+  return while_ss.str();
 }

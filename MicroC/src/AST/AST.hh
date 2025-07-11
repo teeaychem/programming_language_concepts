@@ -1,6 +1,6 @@
 #pragma once
 
-#include <fmt/format.h>
+#include <cstdio>
 #include <memory>
 #include <string>
 
@@ -34,7 +34,7 @@ struct TypT {
   virtual llvm::Type *typegen(LLVMBundle &hdl) = 0;
 
   [[nodiscard]] virtual Typ::Kind kind() const = 0;
-  [[nodiscard]] virtual std::string to_string() const = 0;
+  [[nodiscard]] virtual std::string to_string(size_t indent) const = 0;
 
   virtual void complete_data(AST::Typ::Data d_typ) = 0;
 
@@ -44,7 +44,7 @@ struct TypT {
 struct NodeT {
   virtual llvm::Value *codegen(LLVMBundle &hdl) = 0;
 
-  [[nodiscard]] virtual std::string to_string() const = 0;
+  [[nodiscard]] virtual std::string to_string(size_t indent) const = 0;
 
   virtual ~NodeT() = default;
 };
