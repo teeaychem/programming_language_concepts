@@ -1,7 +1,5 @@
 #pragma once
 
-#include <fmt/base.h>
-#include <fmt/format.h>
 #include <memory>
 #include <string>
 
@@ -17,7 +15,7 @@ struct Var : AccessT {
 
   Var(std::string &&v) : var(std::move(v)) {}
 
-  std::string to_string() const override;
+  std::string to_string(size_t indent) const override;
   Access::Kind kind() const override { return Access::Kind::Var; }
   llvm::Value *codegen(LLVMBundle &hdl) override;
 };
@@ -35,7 +33,7 @@ struct Deref : AccessT {
   Deref(ExprHandle &&expr) : expr(std::move(expr)) {}
 
   Access::Kind kind() const override { return Access::Kind::Deref; }
-  std::string to_string() const override;
+  std::string to_string(size_t indent) const override;
 
   llvm::Value *codegen(LLVMBundle &hdl) override;
 };
@@ -56,7 +54,7 @@ struct Index : AccessT {
 
   Access::Kind kind() const override { return Access::Kind::Index; }
 
-  std::string to_string() const override;
+  std::string to_string(size_t indent) const override;
   llvm::Value *codegen(LLVMBundle &hdl) override;
 };
 

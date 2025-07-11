@@ -1,7 +1,5 @@
 #pragma once
 
-#include <fmt/base.h>
-#include <fmt/format.h>
 #include <memory>
 #include <optional>
 #include <string>
@@ -21,7 +19,7 @@ struct Block : StmtT {
   Block(BlockVec &&bv)
       : block(std::move(bv)) {}
 
-  std::string to_string() const override;
+  std::string to_string(size_t indent) const override;
   Stmt::Kind kind() const override { return Stmt::Kind::Block; }
   llvm::Value *codegen(LLVMBundle &hdl) override;
 };
@@ -39,7 +37,7 @@ struct Expr : StmtT {
   Expr(ExprHandle expr)
       : expr(std::move(expr)) {}
 
-  std::string to_string() const override;
+  std::string to_string(size_t indent) const override;
   Stmt::Kind kind() const override { return Stmt::Kind::Expr; }
   llvm::Value *codegen(LLVMBundle &hdl) override;
 };
@@ -59,7 +57,7 @@ struct If : StmtT {
   If(ExprHandle condition, StmtHandle yes, StmtHandle no)
       : condition(condition), yes(yes), no(no) {}
 
-  std::string to_string() const override;
+  std::string to_string(size_t indent) const override;
   Stmt::Kind kind() const override { return Stmt::Kind::If; }
   llvm::Value *codegen(LLVMBundle &hdl) override;
 };
@@ -77,7 +75,7 @@ struct Return : StmtT {
   Return(std::optional<ExprHandle> value)
       : value(std::move(value)) {}
 
-  std::string to_string() const override;
+  std::string to_string(size_t indent) const override;
   Stmt::Kind kind() const override { return Stmt::Kind::Return; }
   llvm::Value *codegen(LLVMBundle &hdl) override;
 };
@@ -96,7 +94,7 @@ struct While : StmtT {
   While(ExprHandle condition, StmtHandle bv)
       : condition(condition), block(bv) {}
 
-  std::string to_string() const override;
+  std::string to_string(size_t indent) const override;
   Stmt::Kind kind() const override { return Stmt::Kind::If; }
   llvm::Value *codegen(LLVMBundle &hdl) override;
 };
