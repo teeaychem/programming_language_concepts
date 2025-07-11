@@ -1,5 +1,4 @@
 #include <cstdio>
-#include <iostream>
 #include <memory>
 #include <optional>
 #include <sstream>
@@ -98,19 +97,11 @@ std::string AST::Dec::Fn::to_string(size_t indent) const {
     }
   }
 
-  fn_ss << "(" << param_str << ")";
-  fn_ss << " ";
-  fn_ss << "{" << "\n";
-
-  auto v_str = [&fn_ss, &indent](const auto v) {
-    size_t updated_offset = indent + OFFSET;
-    fn_ss << std::string(updated_offset, ' ') << v->to_string(updated_offset) << "\n"; };
-
-  for (auto &part : body) {
-    std::visit(v_str, part);
-  }
-
-  fn_ss << std::string(indent, ' ') << "}";
+  fn_ss << "(" << param_str << ")"
+        << " "
+        << "{" << "\n"
+        << this->body->to_string(indent)
+        << std::string(indent, ' ') << "}";
 
   return fn_ss.str();
 }
@@ -210,7 +201,7 @@ std::string AST::Stmt::While::to_string(size_t indent) const {
            << " "
            << this->condition->to_string(indent)
            << " "
-           << this->block->to_string(indent);
+           << this->stmt->to_string(indent);
 
   return while_ss.str();
 }

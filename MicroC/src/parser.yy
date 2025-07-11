@@ -82,7 +82,7 @@ AST::ExprHandle char_nl = AST::Expr::pk_CstI(10);
 %nterm <AST::ParamVec> Paramdecs
 %nterm <AST::ParamVec> ParamdecsNE
 
-%nterm <AST::BlockVec> Block
+%nterm <AST::BlockHandle> Block
 %nterm <AST::BlockVec> StmtOrDecSeq
 
 %nterm <AST::StmtHandle> Stmt
@@ -134,7 +134,7 @@ AtExprNotAccess:
 Block:
     LBRACE StmtOrDecSeq RBRACE
       { std::reverse($2.begin(), $2.end());
-        $$ = $2;
+        $$ = AST::Stmt::pk_Block(std::move($2));
       }
 ;
 
@@ -228,19 +228,19 @@ Stmt:
 
 
 StmtA:  /* No unbalanced if-else */
-    Expr SEMI                           { $$ = AST::Stmt::pk_Expr($1);             }
-  | RETURN SEMI                         { $$ = AST::Stmt::pk_Return(std::nullopt); }
-  | RETURN Expr SEMI                    { $$ = AST::Stmt::pk_Return($2);           }
-  | Block                               { $$ = AST::Stmt::pk_Block(std::move($1)); }
-  | IF LPAR Expr RPAR StmtA ELSE StmtA  { $$ = AST::Stmt::pk_If($3, $5, $7);       }
-  | WHILE LPAR Expr RPAR StmtA          { $$ = AST::Stmt::pk_While($3, $5);        }
+    Expr SEMI                           { $$ = AST::Stmt::pk_Expr($1);                   }
+  | RETURN SEMI                         { $$ = AST::Stmt::pk_Return(std::nullopt);       }
+  | RETURN Expr SEMI                    { $$ = AST::Stmt::pk_Return($2);                 }
+  | Block                               { $$ = std::static_pointer_cast<AST::StmtT>($1); }
+  | IF LPAR Expr RPAR StmtA ELSE StmtA  { $$ = AST::Stmt::pk_If($3, $5, $7);             }
+  | WHILE LPAR Expr RPAR StmtA          { $$ = AST::Stmt::pk_While($3, $5);              }
 ;
 
 
 StmtB:
     IF LPAR Expr RPAR StmtA ELSE StmtB  { $$ = AST::Stmt::pk_If($3, $5, $7); }
   | IF LPAR Expr RPAR Stmt              {
-      auto empty_block = AST::Stmt::pk_Block(AST::BlockVec{});
+      auto empty_block = AST::Stmt::pk_BlockStmt(AST::BlockVec{});
       $$ = AST::Stmt::pk_If($3, $5, empty_block);                            }
   | WHILE LPAR Expr RPAR StmtB          { $$ = AST::Stmt::pk_While($3, $5);  }
 ;
