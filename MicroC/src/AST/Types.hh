@@ -1,8 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <fmt/base.h>
-#include <fmt/format.h>
 #include <memory>
 #include <optional>
 #include <stdexcept>
@@ -23,7 +21,7 @@ struct TypData : TypT {
       : d_typ(d_typ) {};
 
   Typ::Kind kind() const override { return Typ::Kind::Data; }
-  std::string to_string() const override;
+  std::string to_string(size_t indent) const override;
 
   void complete_data(Data d_typ) override {
     if (d_typ == Data::Void) {
@@ -37,7 +35,16 @@ struct TypData : TypT {
     }
   }
 
-  const TypData *as_TypData() const & { return this; }
+  llvm::Type *typegen(LLVMBundle &hdl) override {
+    switch (d_typ) {
+    case Data::Int:
+      return llvm::Type::getInt64Ty(*hdl.Context);
+    case Data::Char:
+      return llvm::Type::getInt8Ty(*hdl.Context);
+    case Data::Void:
+      return llvm::Type::getVoidTy(*hdl.Context);
+    }
+  }
 };
 
 inline TypHandle pk_Data(Data d_typ) {
@@ -60,7 +67,7 @@ struct TypArr : TypT {
       : typ(std::move(typ)), size(size) {}
 
   Typ::Kind kind() const override { return Typ::Kind::Arr; }
-  std::string to_string() const override;
+  std::string to_string(size_t indent) const override;
 
   void complete_data(Data d_typ) override { typ->complete_data(d_typ); }
 
@@ -87,7 +94,7 @@ struct TypPtr : TypT {
   TypPtr(TypHandle of) : dest(std::move(of)) {}
 
   Typ::Kind kind() const override { return Typ::Kind::Ptr; }
-  std::string to_string() const override;
+  std::string to_string(size_t indent) const override;
 
   void complete_data(Data d_typ) override { dest->complete_data(d_typ); }
   llvm::Type *typegen(LLVMBundle &hdl) override {
