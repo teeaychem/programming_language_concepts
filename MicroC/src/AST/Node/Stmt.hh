@@ -24,7 +24,12 @@ struct Block : StmtT {
   llvm::Value *codegen(LLVMBundle &hdl) override;
 };
 
-inline StmtHandle pk_Block(BlockVec &&bv) {
+inline BlockHandle pk_Block(BlockVec &&bv) {
+  Block b(std::move(bv));
+  return std::make_shared<Block>(std::move(b));
+}
+
+inline StmtHandle pk_BlockStmt(BlockVec &&bv) {
   Block b(std::move(bv));
   return std::make_shared<Block>(std::move(b));
 }
@@ -89,10 +94,10 @@ inline StmtHandle pk_Return(std::optional<ExprHandle> value) {
 
 struct While : StmtT {
   ExprHandle condition;
-  StmtHandle block;
+  StmtHandle stmt;
 
   While(ExprHandle condition, StmtHandle bv)
-      : condition(condition), block(bv) {}
+      : condition(condition), stmt(bv) {}
 
   std::string to_string(size_t indent) const override;
   Stmt::Kind kind() const override { return Stmt::Kind::If; }

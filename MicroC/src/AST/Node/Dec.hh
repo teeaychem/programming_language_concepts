@@ -42,10 +42,9 @@ struct Fn : DecT {
 
   ParamVec params;
 
-  AST::BlockVec body;
+  BlockHandle body;
 
-  Fn(TypHandle r_typ, std::string var, ParamVec params,
-     BlockVec body)
+  Fn(TypHandle r_typ, std::string var, ParamVec params, BlockHandle body)
       : r_typ(std::move(r_typ)),
         var(var),
         params(std::move(params)),
@@ -58,7 +57,7 @@ struct Fn : DecT {
   Dec::Kind kind() const override { return Dec::Kind::Fn; }
 };
 
-inline DecHandle pk_Fn(TypHandle r_typ, std::string var, ParamVec params, BlockVec body) {
+inline DecHandle pk_Fn(TypHandle r_typ, std::string var, ParamVec params, BlockHandle body) {
   Fn dec(std::move(r_typ), var, std::move(params), std::move(body));
   return std::make_shared<Fn>(std::move(dec));
 }
