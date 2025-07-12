@@ -12,7 +12,7 @@
 
 #include "AST/Types.hh"
 
-size_t const OFFSET = 2;
+size_t const INDENT_SIZE = 2;
 
 // Support
 
@@ -77,31 +77,27 @@ std::string AST::Access::Var::to_string(size_t indent) const {
 std::string AST::Dec::Fn::to_string(size_t indent) const {
   std::stringstream fn_ss{};
 
-  fn_ss << r_typ->to_string(indent) << " ";
-  fn_ss << " " << this->var << " ";
+  fn_ss << r_typ->to_string(indent)
+        << " "
+        << this->var
+        << " "
+        << "(";
 
-  std::string param_str{};
-  {
-    std::stringstream param_stream{};
+  if (!params.empty()) {
     for (auto &p : params) {
-      param_stream << p.first->to_string(indent);
-      param_stream << " ";
-      param_stream << p.second;
-      param_stream << ", ";
+      fn_ss << p.first->to_string(indent)
+            << " "
+            << p.second
+            << ", ";
     }
-    param_str = param_stream.str();
 
-    if (params.size()) {
-      param_str.pop_back();
-      param_str.pop_back();
-    }
+    fn_ss.seekp(-2, std::ios_base::end);
   }
 
-  fn_ss << "(" << param_str << ")"
+  fn_ss << ")"
         << " "
-        << "{" << "\n"
         << this->body->to_string(indent)
-        << std::string(indent, ' ') << "}";
+        << std::string(indent, ' ');
 
   return fn_ss.str();
 }
@@ -119,16 +115,22 @@ std::string AST::Expr::Assign::to_string(size_t indent) const {
   return std::format("{} = {}", this->dest->to_string(indent), this->expr->to_string(indent));
 }
 std::string AST::Expr::Call::to_string(size_t indent) const {
-  std::stringstream ss{};
-  for (auto &param : parameters) {
-    ss << param->to_string(indent);
-    ss << ", ";
-  }
-  std::string params = ss.str();
-  params.pop_back();
-  params.pop_back();
+  std::stringstream call_ss{};
 
-  return std::format("{}({})", this->name, params);
+  call_ss << this->name
+          << "(";
+
+  if (!parameters.empty()) {
+    for (auto &param : parameters) {
+      call_ss << param->to_string(indent)
+              << ", ";
+    }
+    call_ss.seekp(-2, std::ios_base::end);
+  }
+
+  call_ss << ")";
+
+  return call_ss.str();
 }
 std::string AST::Expr::CstI::to_string(size_t indent) const {
   return std::format("{}", i);
@@ -145,17 +147,23 @@ std::string AST::Expr::Prim2::to_string(size_t indent) const {
 std::string AST::Stmt::Block::to_string(size_t indent) const {
 
   std::stringstream block_ss{};
-  block_ss << "{" << "\n";
+
+  block_ss << "{"
+           << "\n";
 
   auto variant_out = [&block_ss, &indent](const auto v) {
-    size_t updated_offset = indent + OFFSET;
-    block_ss << std::string(updated_offset, ' ') << v->to_string(updated_offset) << "\n"; };
+    size_t updated_offset = indent + INDENT_SIZE;
+    block_ss << std::string(updated_offset, ' ')
+             << v->to_string(updated_offset)
+             << "\n";
+  };
 
   for (auto &block_variant : block) {
     std::visit(variant_out, block_variant);
   }
 
-  block_ss << std::string(indent, ' ') << "}";
+  block_ss << std::string(indent, ' ')
+           << "}";
 
   return block_ss.str();
 }
@@ -188,7 +196,8 @@ std::string AST::Stmt::Return::to_string(size_t indent) const {
 
   r_ss << "return";
   if (this->value.has_value()) {
-    r_ss << " " << this->value.value()->to_string(indent);
+    r_ss << " "
+         << this->value.value()->to_string(indent);
   }
   r_ss << ";";
 
