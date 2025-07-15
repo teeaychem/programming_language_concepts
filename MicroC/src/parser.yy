@@ -35,8 +35,7 @@
 
 
 
-AST::ExprHandle AccessAssign(std::string op, AST::AccessHandle dest, AST::ExprHandle expr);
-AST::ExprHandle char_nl = AST::Expr::pk_CstI(10);
+AST::ExprHandle AccessAssign(Driver &drv, std::string op, AST::AccessHandle dest, AST::ExprHandle expr);
 }
 
 %define api.token.prefix {TOK_}
@@ -114,36 +113,36 @@ program:
 
 
 Access:
-    NAME                       { $$ = AST::Access::pk_Var($1);              }
-  | LPAR Access RPAR           { $$ = $2;                                   }
+    NAME                       { $$ = drv.pk_AccessVar($1);              }
+  | LPAR Access RPAR           { $$ = $2;                                }
   | STAR Access                {
-      auto acc = AST::Expr::pk_Access(AST::Expr::Access::Mode::Access, $2);
-      $$ = AST::Access::pk_Deref(std::move(acc));                           }
-  | STAR AtExprNotAccess       { $$ = AST::Access::pk_Deref($2);            }
-  | Access LBRACK Expr RBRACK  { $$ = AST::Access::pk_Index($1, $3);        }
+      auto acc = drv.pk_ExprAccess(AST::Expr::Access::Mode::Access, $2);
+      $$ = drv.pk_AccessDeref(std::move(acc));                           }
+  | STAR AtExprNotAccess       { $$ = drv.pk_AccessDeref($2);            }
+  | Access LBRACK Expr RBRACK  { $$ = drv.pk_AccessIndex($1, $3);        }
 ;
 
 
 AtExprNotAccess:
-    Const                    { $$ = $1;                                                      }
-  | LPAR ExprNotAccess RPAR  { $$ = $2;                                                      }
-  | AMP Access               { $$ = AST::Expr::pk_Access(AST::Expr::Access::Mode::Addr, $2); }
+    Const                    { $$ = $1;                                                   }
+  | LPAR ExprNotAccess RPAR  { $$ = $2;                                                   }
+  | AMP Access               { $$ = drv.pk_ExprAccess(AST::Expr::Access::Mode::Addr, $2); }
 ;
 
 
 Block:
     LBRACE StmtOrDecSeq RBRACE
       { std::reverse($2.begin(), $2.end());
-        $$ = AST::Stmt::pk_Block(std::move($2));
+        $$ = drv.pk_StmtBlock(std::move($2));
       }
 ;
 
 
 Const:
-    CSTINT        { $$ = AST::Expr::pk_CstI($1);                           }
-  | CSTBOOL       { $$ = std::move(AST::Expr::pk_CstI($1));                }
-  | MINUS CSTINT  { $$ = AST::Expr::pk_Prim1("-", AST::Expr::pk_CstI($2)); }
-  | NULL          { $$ = AST::Expr::pk_Prim1("-", AST::Expr::pk_CstI(1));  }
+    CSTINT        { $$ = drv.pk_ExprCstI($1);                        }
+  | CSTBOOL       { $$ = std::move(drv.pk_ExprCstI($1));             }
+  | MINUS CSTINT  { $$ = drv.pk_ExprPrim1("-", drv.pk_ExprCstI($2)); }
+  | NULL          { $$ = drv.pk_ExprPrim1("-", drv.pk_ExprCstI(1));  }
 ;
 
 
@@ -154,8 +153,8 @@ DataType:
 
 
 Expr:
-    Access         { $$ = AST::Expr::pk_Access(AST::Expr::Access::Mode::Access, $1); }
-  | ExprNotAccess  { $$ = $1;                                                        }
+    Access         { $$ = drv.pk_ExprAccess(AST::Expr::Access::Mode::Access, $1); }
+  | ExprNotAccess  { $$ = $1;                                                     }
 ;
 
 
@@ -171,42 +170,42 @@ ExprsNE:
 
 
 ExprNotAccess:
-    AtExprNotAccess           { $$ = $1;                                     }
-  | Access ASSIGN Expr        { $$ = AST::Expr::pk_Assign($1, $3);           }
-  | Access PLUS_ASSIGN Expr   { $$ = AccessAssign("+", $1, $3);              }
-  | Access MINUS_ASSIGN Expr  { $$ = AccessAssign("-", $1, $3);              }
-  | Access STAR_ASSIGN Expr   { $$ = AccessAssign("*", $1, $3);              }
-  | Access SLASH_ASSIGN Expr  { $$ = AccessAssign("/", $1, $3);              }
-  | Access MOD_ASSIGN Expr    { $$ = AccessAssign("%", $1, $3);              }
-  | NAME LPAR Exprs RPAR      { $$ = AST::Expr::pk_Call($1, $3);             }
-  | NOT Expr                  { $$ = AST::Expr::pk_Prim1("!", $2);           }
-  | PRINT Expr                { $$ = AST::Expr::pk_Prim1("printi", $2);      }
-  | PRINTLN                   { $$ = AST::Expr::pk_Prim1("printc", char_nl); }
-  | Expr PLUS  Expr           { $$ = AST::Expr::pk_Prim2("+",  $1, $3);      }
-  | Expr MINUS Expr           { $$ = AST::Expr::pk_Prim2("-",  $1, $3);      }
-  | Expr STAR  Expr           { $$ = AST::Expr::pk_Prim2("*",  $1, $3);      }
-  | Expr SLASH Expr           { $$ = AST::Expr::pk_Prim2("/",  $1, $3);      }
-  | Expr MOD   Expr           { $$ = AST::Expr::pk_Prim2("%",  $1, $3);      }
-  | Expr EQ    Expr           { $$ = AST::Expr::pk_Prim2("==", $1, $3);      }
-  | Expr NE    Expr           { $$ = AST::Expr::pk_Prim2("!=", $1, $3);      }
-  | Expr GT    Expr           { $$ = AST::Expr::pk_Prim2(">",  $1, $3);      }
-  | Expr LT    Expr           { $$ = AST::Expr::pk_Prim2("<",  $1, $3);      }
-  | Expr GE    Expr           { $$ = AST::Expr::pk_Prim2(">=", $1, $3);      }
-  | Expr LE    Expr           { $$ = AST::Expr::pk_Prim2("<=", $1, $3);      }
-  | Expr SEQAND Expr          { $$ = AST::Expr::pk_Prim2("&&", $1, $3);      }
-  | Expr SEQOR  Expr          { $$ = AST::Expr::pk_Prim2("||", $1, $3);      }
+    AtExprNotAccess           { $$ = $1;                                  }
+  | Access ASSIGN Expr        { $$ = drv.pk_ExprAssign($1, $3);           }
+  | Access PLUS_ASSIGN Expr   { $$ = AccessAssign(drv, "+", $1, $3);      }
+  | Access MINUS_ASSIGN Expr  { $$ = AccessAssign(drv, "-", $1, $3);      }
+  | Access STAR_ASSIGN Expr   { $$ = AccessAssign(drv, "*", $1, $3);      }
+  | Access SLASH_ASSIGN Expr  { $$ = AccessAssign(drv, "/", $1, $3);      }
+  | Access MOD_ASSIGN Expr    { $$ = AccessAssign(drv, "%", $1, $3);      }
+  | NAME LPAR Exprs RPAR      { $$ = drv.pk_ExprCall($1, $3);             }
+  | NOT Expr                  { $$ = drv.pk_ExprPrim1("!", $2);           }
+  | PRINT Expr                { $$ = drv.pk_ExprPrim1("printi", $2);      }
+  | PRINTLN                   { $$ = drv.pk_ExprPrim1("printc", drv.pk_ExprCstI(10)); }
+  | Expr PLUS  Expr           { $$ = drv.pk_ExprPrim2("+",  $1, $3);      }
+  | Expr MINUS Expr           { $$ = drv.pk_ExprPrim2("-",  $1, $3);      }
+  | Expr STAR  Expr           { $$ = drv.pk_ExprPrim2("*",  $1, $3);      }
+  | Expr SLASH Expr           { $$ = drv.pk_ExprPrim2("/",  $1, $3);      }
+  | Expr MOD   Expr           { $$ = drv.pk_ExprPrim2("%",  $1, $3);      }
+  | Expr EQ    Expr           { $$ = drv.pk_ExprPrim2("==", $1, $3);      }
+  | Expr NE    Expr           { $$ = drv.pk_ExprPrim2("!=", $1, $3);      }
+  | Expr GT    Expr           { $$ = drv.pk_ExprPrim2(">",  $1, $3);      }
+  | Expr LT    Expr           { $$ = drv.pk_ExprPrim2("<",  $1, $3);      }
+  | Expr GE    Expr           { $$ = drv.pk_ExprPrim2(">=", $1, $3);      }
+  | Expr LE    Expr           { $$ = drv.pk_ExprPrim2("<=", $1, $3);      }
+  | Expr SEQAND Expr          { $$ = drv.pk_ExprPrim2("&&", $1, $3);      }
+  | Expr SEQOR  Expr          { $$ = drv.pk_ExprPrim2("||", $1, $3);      }
 ;
 
 
 Fndec:
     VOID NAME LPAR Paramdecs RPAR Block      {
       auto r_typ = AST::Typ::pk_Void();
-      auto f = AST::Dec::pk_Fn(r_typ, $2, $4, $6);
-      $$ = f;                                     }
+      auto f = drv.pk_DecFn(r_typ, $2, $4, $6);
+      $$ = f;                                   }
   | DataType NAME LPAR Paramdecs RPAR Block  {
       auto r_typ = AST::Typ::pk_Data($1);
-      auto f = AST::Dec::pk_Fn(r_typ, $2, $4, $6);
-      $$ = f;                                     }
+      auto f = drv.pk_DecFn(r_typ, $2, $4, $6);
+      $$ = f;                                   }
 ;
 
 
@@ -228,21 +227,21 @@ Stmt:
 
 
 StmtA:  /* No unbalanced if-else */
-    Expr SEMI                           { $$ = AST::Stmt::pk_Expr($1);                   }
-  | RETURN SEMI                         { $$ = AST::Stmt::pk_Return(std::nullopt);       }
-  | RETURN Expr SEMI                    { $$ = AST::Stmt::pk_Return($2);                 }
+    Expr SEMI                           { $$ = drv.pk_StmtExpr($1);                   }
+  | RETURN SEMI                         { $$ = drv.pk_StmtReturn(std::nullopt);       }
+  | RETURN Expr SEMI                    { $$ = drv.pk_StmtReturn($2);                 }
   | Block                               { $$ = std::static_pointer_cast<AST::StmtT>($1); }
-  | IF LPAR Expr RPAR StmtA ELSE StmtA  { $$ = AST::Stmt::pk_If($3, $5, $7);             }
-  | WHILE LPAR Expr RPAR StmtA          { $$ = AST::Stmt::pk_While($3, $5);              }
+  | IF LPAR Expr RPAR StmtA ELSE StmtA  { $$ = drv.pk_StmtIf($3, $5, $7);             }
+  | WHILE LPAR Expr RPAR StmtA          { $$ = drv.pk_StmtWhile($3, $5);              }
 ;
 
 
 StmtB:
-    IF LPAR Expr RPAR StmtA ELSE StmtB  { $$ = AST::Stmt::pk_If($3, $5, $7); }
+    IF LPAR Expr RPAR StmtA ELSE StmtB  { $$ = drv.pk_StmtIf($3, $5, $7); }
   | IF LPAR Expr RPAR Stmt              {
-      auto empty_block = AST::Stmt::pk_BlockStmt(AST::BlockVec{});
-      $$ = AST::Stmt::pk_If($3, $5, empty_block);                            }
-  | WHILE LPAR Expr RPAR StmtB          { $$ = AST::Stmt::pk_While($3, $5);  }
+      auto empty_block = drv.pk_StmtBlockStmt(AST::BlockVec{});
+      $$ = drv.pk_StmtIf($3, $5, empty_block);                            }
+  | WHILE LPAR Expr RPAR StmtB          { $$ = drv.pk_StmtWhile($3, $5);  }
 ;
 
 
@@ -250,7 +249,7 @@ StmtOrDecSeq:
     %empty                    { $$ = AST::BlockVec{};                           }
   | Stmt StmtOrDecSeq         { $2.push_back($1); $$ = $2;                      }
   | Vardec SEMI StmtOrDecSeq  {
-      auto dec = AST::Dec::pk_Var(AST::Dec::Scope::Local, $1.first, $1.second);
+      auto dec = drv.pk_DecVar(AST::Dec::Scope::Local, $1.first, $1.second);
       $3.push_back(dec);
       $$ = $3;                                                                  }
 ;
@@ -267,7 +266,7 @@ Topdecs:
 
 Topdec:
    Vardec SEMI  {
-     auto dec = AST::Dec::pk_Var(AST::Dec::Scope::Global, $1.first, $1.second);
+     auto dec = drv.pk_DecVar(AST::Dec::Scope::Global, $1.first, $1.second);
      drv.push_dec(dec);                                                         }
   | Fndec       { drv.push_dec($1);                                             }
 ;
@@ -297,10 +296,10 @@ Vardesc:
 
 %%
 
-AST::ExprHandle AccessAssign(std::string op, AST::AccessHandle dest, AST::ExprHandle expr) {
+AST::ExprHandle AccessAssign(Driver &drv,  std::string op, AST::AccessHandle dest, AST::ExprHandle expr) {
   auto mode = AST::Expr::Access::Mode::Access;
-  auto acc = AST::Expr::pk_Access(mode, dest);
-  auto r_expr = AST::Expr::pk_Prim2(op, acc, expr);
+  auto acc = drv.pk_ExprAccess(mode, dest);
+  auto r_expr = drv.pk_ExprPrim2(op, acc, expr);
   return r_expr;
 }
 

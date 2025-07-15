@@ -29,11 +29,6 @@ struct Var : DecT {
   llvm::Value *codegen(LLVMBundle &hdl) override;
 };
 
-inline DecHandle pk_Var(Scope scope, TypHandle typ, std::string var) {
-  Var dec(scope, std::move(typ), var);
-  return std::make_shared<Var>(std::move(dec));
-}
-
 // Fn
 
 struct Fn : DecT {
@@ -56,11 +51,6 @@ struct Fn : DecT {
 
   Dec::Kind kind() const override { return Dec::Kind::Fn; }
 };
-
-inline DecHandle pk_Fn(TypHandle r_typ, std::string var, ParamVec params, BlockHandle body) {
-  Fn dec(std::move(r_typ), var, std::move(params), std::move(body));
-  return std::make_shared<Fn>(std::move(dec));
-}
 
 } // namespace Dec
 
