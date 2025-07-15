@@ -20,11 +20,6 @@ struct Var : AccessT {
   llvm::Value *codegen(LLVMBundle &hdl) override;
 };
 
-inline AccessHandle pk_Var(std::string var) {
-  Var access(std::move(var));
-  return std::make_shared<Var>(std::move(access));
-}
-
 // Deref
 
 struct Deref : AccessT {
@@ -37,11 +32,6 @@ struct Deref : AccessT {
 
   llvm::Value *codegen(LLVMBundle &hdl) override;
 };
-
-inline AccessHandle pk_Deref(ExprHandle expr) {
-  Deref access(std::move(expr));
-  return std::make_shared<Deref>(std::move(access));
-}
 
 // Index
 
@@ -57,11 +47,6 @@ struct Index : AccessT {
   std::string to_string(size_t indent) const override;
   llvm::Value *codegen(LLVMBundle &hdl) override;
 };
-
-inline AccessHandle pk_Index(AccessHandle arr, ExprHandle idx) {
-  Index access(std::move(arr), std::move(idx));
-  return std::make_shared<Index>(std::move(access));
-}
 
 } // namespace Access
 } // namespace AST
