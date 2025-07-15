@@ -79,7 +79,7 @@ std::string AST::Dec::Fn::to_string(size_t indent) const {
 
   fn_ss << r_typ->to_string(indent)
         << " "
-        << this->var
+        << this->name
         << " "
         << "(";
 
@@ -130,7 +130,13 @@ std::string AST::Expr::Call::to_string(size_t indent) const {
 
   call_ss << ")";
 
-  return call_ss.str();
+  std::string call_str = call_ss.str();
+
+  if (!parameters.empty()) {
+    call_str.pop_back();
+  }
+
+  return call_str;
 }
 std::string AST::Expr::CstI::to_string(size_t indent) const {
   return std::format("{}", i);
@@ -169,7 +175,10 @@ std::string AST::Stmt::Block::to_string(size_t indent) const {
 }
 
 std::string AST::Stmt::Expr::to_string(size_t indent) const {
-  return std::format("{};", expr->to_string(indent));
+  std::string expr_str = expr->to_string(indent);
+  expr_str.push_back(';');
+
+  return expr_str;
 }
 
 std::string AST::Stmt::If::to_string(size_t indent) const {

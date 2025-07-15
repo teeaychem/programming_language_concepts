@@ -38,7 +38,7 @@ inline DecHandle pk_Var(Scope scope, TypHandle typ, std::string var) {
 
 struct Fn : DecT {
   TypHandle r_typ;
-  std::string var;
+  std::string name;
 
   ParamVec params;
 
@@ -46,7 +46,7 @@ struct Fn : DecT {
 
   Fn(TypHandle r_typ, std::string var, ParamVec params, BlockHandle body)
       : r_typ(std::move(r_typ)),
-        var(var),
+        name(var),
         params(std::move(params)),
         body(std::move(body)) {}
 

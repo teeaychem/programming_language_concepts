@@ -40,10 +40,23 @@ struct TypT {
 
   virtual ~TypT() = default;
 };
+} // namespace AST
+
+// Nodes
+
+namespace AST {
+
+enum class Kind {
+  Access,
+  Expr,
+  Stmt,
+  Dec,
+};
 
 struct NodeT {
   virtual llvm::Value *codegen(LLVMBundle &hdl) = 0;
 
+  [[nodiscard]] virtual AST::Kind base_kind() const = 0;
   [[nodiscard]] virtual std::string to_string(size_t indent) const = 0;
 
   virtual ~NodeT() = default;
@@ -71,7 +84,10 @@ struct Var;
 } // namespace Access
 
 struct AccessT : NodeT {
+  AST::Kind base_kind() const override { return AST::Kind::Access; }
   [[nodiscard]] virtual Access::Kind kind() const = 0;
+
+  // virtual llvm::Type *typegen(LLVMBundle &hdl) = 0;
 };
 
 // Expressions
@@ -95,6 +111,7 @@ enum class Kind {
 } // namespace Expr
 
 struct ExprT : NodeT {
+  AST::Kind base_kind() const override { return AST::Kind::Expr; }
   [[nodiscard]] virtual Expr::Kind kind() const = 0;
 };
 
@@ -118,6 +135,7 @@ struct While;
 } // namespace Stmt
 
 struct StmtT : NodeT {
+  AST::Kind base_kind() const override { return AST::Kind::Stmt; }
   [[nodiscard]] virtual Stmt::Kind kind() const = 0;
 };
 
@@ -134,6 +152,7 @@ struct Fn;
 } // namespace Dec
 
 struct DecT : NodeT {
+  AST::Kind base_kind() const override { return AST::Kind::Dec; }
   [[nodiscard]] virtual Dec::Kind kind() const = 0;
 };
 } // namespace AST

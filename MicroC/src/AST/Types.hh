@@ -38,11 +38,11 @@ struct TypData : TypT {
   llvm::Type *typegen(LLVMBundle &hdl) override {
     switch (d_typ) {
     case Data::Int:
-      return llvm::Type::getInt64Ty(*hdl.Context);
+      return llvm::Type::getInt64Ty(*hdl.context);
     case Data::Char:
-      return llvm::Type::getInt8Ty(*hdl.Context);
+      return llvm::Type::getInt8Ty(*hdl.context);
     case Data::Void:
-      return llvm::Type::getVoidTy(*hdl.Context);
+      return llvm::Type::getVoidTy(*hdl.context);
     }
   }
 };
@@ -98,7 +98,7 @@ struct TypPtr : TypT {
 
   void complete_data(Data d_typ) override { dest->complete_data(d_typ); }
   llvm::Type *typegen(LLVMBundle &hdl) override {
-    return llvm::PointerType::getUnqual(*hdl.Context);
+    return llvm::PointerType::getUnqual(*hdl.context);
   }
 };
 

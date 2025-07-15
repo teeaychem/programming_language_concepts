@@ -4,6 +4,14 @@ A project MicroC compiler, written in C++.
 
 # Setup
 
+## Building
+
+``` shell
+conan install . --build=missing
+cmake --preset conan-release
+cmake --build --preset conan-release
+```
+
 ## Requirements
 
 - Bison 3.8.2
@@ -44,6 +52,12 @@ If the data type is not yet known during parsing the defualt data type void is u
 A type with void data type is considered incomplete, and any incomplete data type may be completed.
 Completion is recursively applied until the base data type is found.
 
+
+# LLVM 
+
+``` shell
+clang -S -O0 -emit-llvm -Xclang -disable-llvm-passes -fno-discard-value-names <c_file>
+```
 
 # Resources
 

@@ -1,9 +1,12 @@
+#include <cstdio>
+#include <memory>
+#include <sstream>
+
+#include "CodegenLLVM.hh"
 #include "driver.hh"
 #include "parser.hh"
 
-Driver::Driver()
-    : trace_parsing(false), trace_scanning(false) {
-}
+#include "AST/AST.hh"
 
 int Driver::parse(const std::string &f) {
   file = f;
@@ -17,4 +20,29 @@ int Driver::parse(const std::string &f) {
     scan_end();
   }
   return res;
+}
+
+std::string Driver::prg_string() {
+  std::stringstream prg_ss{};
+  for (auto &dec : prg) {
+    prg_ss << dec->to_string(0);
+    if (dec->kind() == AST::Dec::Kind::Var) {
+      prg_ss << ";";
+    }
+    prg_ss << "\n\n";
+  }
+
+  return prg_ss.str();
+}
+
+void Driver::generate_llvm() {
+  for (auto &dec : prg) {
+    dec->codegen(llvm);
+  }
+};
+
+void Driver::print_llvm() {
+  printf("\n----------\n");
+  llvm.module->print(llvm::outs(), nullptr);
+  printf("\n----------\n");
 }
