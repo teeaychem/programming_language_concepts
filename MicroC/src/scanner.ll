@@ -1,7 +1,7 @@
 %{
 #include <climits>
 #include <string>
-#include "driver.hh"
+#include "Driver.hh"
 #include "parser.hh"
 
 std::string str_buf{};

@@ -40,6 +40,8 @@ Value *AST::Access::Index::codegen(LLVMBundle &hdl) {
   Value *value = this->array->codegen(hdl);
   Value *index = this->index->codegen(hdl);
 
+  std::cout << "X: " << this->array->to_string(0) << "\n";
+
   auto ptr = hdl.builder.CreateGEP(Type::getInt64Ty(*hdl.context), value, ArrayRef<Value *>(index));
 
   return ptr;
@@ -158,44 +160,29 @@ Value *AST::Stmt::Block::codegen(LLVMBundle &hdl) {
 
   bool stop = false;
 
-  auto variant_out = [&stop, &hdl](const auto v) {
-    switch (v->base_kind()) {
+  for (auto &fresh_dec : block.fresh_vars) {
+    fresh_dec->codegen(hdl);
+  }
 
-    case AST::Kind::Dec: {
-      DecHandle dec = std::reinterpret_pointer_cast<AST::DecT>(v);
-      v->codegen(hdl);
+  for (auto &shadow_dec : block.shadow_vars) {
+    shadow_dec->codegen(hdl);
+  }
+
+  for (auto &stmt : block.statements) {
+
+    switch (stmt->kind()) {
+
+    case AST::Stmt::Kind::Return: {
+      stmt->codegen(hdl);
+      stop = true;
     } break;
 
-    case AST::Kind::Stmt: {
-      StmtHandle stmt = std::reinterpret_pointer_cast<AST::StmtT>(v);
-      switch (stmt->kind()) {
-
-      case AST::Stmt::Kind::Return: {
-        v->codegen(hdl);
-        stop = true;
-      } break;
-
-      case AST::Stmt::Kind::Expr: {
-        v->codegen(hdl);
-      } break;
-
-      default:
-        v->codegen(hdl);
-      }
-
+    case AST::Stmt::Kind::Expr: {
+      stmt->codegen(hdl);
     } break;
 
-    default: {
-      std::cerr << "Unexpected node in block" << "\n";
-      exit(-1);
-    }
-    }
-  };
-
-  for (auto &block_variant : block) {
-    std::visit(variant_out, block_variant);
-    if (stop) {
-      break;
+    default:
+      stmt->codegen(hdl);
     }
   }
 

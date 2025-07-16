@@ -1,12 +1,10 @@
 #pragma once
 
-#include <memory>
 #include <optional>
 #include <string>
-#include <variant>
-#include <vector>
 
 #include "AST/AST.hh"
+#include "AST/Block.hh"
 
 namespace AST {
 namespace Stmt {
@@ -14,9 +12,9 @@ namespace Stmt {
 // Block
 
 struct Block : StmtT {
-  BlockVec block{};
+  AST::Block block{};
 
-  Block(BlockVec &&bv)
+  Block(AST::Block &&bv)
       : block(std::move(bv)) {}
 
   std::string to_string(size_t indent) const override;
