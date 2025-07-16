@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <iostream>
 #include <memory>
 #include <optional>
 #include <stdexcept>
@@ -35,6 +36,11 @@ struct TypData : TypT {
     }
   }
 
+  TypHandle deref() const override {
+    std::cerr << "deref() called on TypData" << std::endl;
+    exit(-1);
+  }
+
   llvm::Type *typegen(LLVMBundle &hdl) override {
     switch (d_typ) {
     case Data::Int:
@@ -59,17 +65,27 @@ inline TypHandle pk_Void() {
 
 // TypArr
 
-struct TypArr : TypT {
+struct TypIndex : TypT {
   TypHandle typ;
-  std::optional<std::int64_t> size;
+  std::optional<std::size_t> size;
 
-  TypArr(TypHandle typ, std::optional<std::int64_t> size)
+  TypIndex(TypHandle typ, std::optional<std::int64_t> size)
       : typ(std::move(typ)), size(size) {}
 
   Typ::Kind kind() const override { return Typ::Kind::Arr; }
   std::string to_string(size_t indent) const override;
+  TypHandle expr_type() const {
+    return typ;
+  }
+  std::optional<std::size_t> type_size() const {
+    return size;
+  }
 
   void complete_data(Data d_typ) override { typ->complete_data(d_typ); }
+
+  TypHandle deref() const override {
+    return typ;
+  }
 
   llvm::Type *typegen(LLVMBundle &hdl) override {
     return llvm::ArrayType::get(typ->typegen(hdl), size.value_or(0));
@@ -77,13 +93,13 @@ struct TypArr : TypT {
 };
 
 inline TypHandle pk_Arr(TypHandle typ, std::optional<std::int64_t> size) {
-  TypArr t(std::move(typ), std::move(size));
-  return std::make_shared<TypArr>(std::move(t));
+  TypIndex t(std::move(typ), std::move(size));
+  return std::make_shared<TypIndex>(std::move(t));
 }
 
 inline TypHandle pk_Arr() {
-  TypArr t(std::move(pk_Void()), std::nullopt);
-  return std::make_shared<TypArr>(std::move(t));
+  TypIndex t(std::move(pk_Void()), std::nullopt);
+  return std::make_shared<TypIndex>(std::move(t));
 }
 
 // TypPtr
@@ -97,6 +113,11 @@ struct TypPtr : TypT {
   std::string to_string(size_t indent) const override;
 
   void complete_data(Data d_typ) override { dest->complete_data(d_typ); }
+
+  TypHandle deref() const override {
+    return dest;
+  }
+
   llvm::Type *typegen(LLVMBundle &hdl) override {
     return llvm::PointerType::getUnqual(*hdl.context);
   }

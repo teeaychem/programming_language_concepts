@@ -22,12 +22,12 @@ struct Driver; // Required forward dec
 namespace AST {
 struct Block {
 
-  std::vector<AST::DecHandle> fresh_vars{};
-  std::vector<AST::DecHandle> shadow_vars{};
+  std::vector<AST::DecVarHandle> fresh_vars{};
+  std::vector<AST::DecVarHandle> shadow_vars{};
 
   std::vector<AST::StmtHandle> statements{};
 
-  std::vector<std::pair<std::string, AST::DecHandle>> shadowed_vars{};
+  std::vector<AST::DecVarHandle> shadowed_vars{};
 
   bool empty() { return this->statements.empty() && this->fresh_vars.empty() && this->shadowed_vars.empty(); };
 

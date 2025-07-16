@@ -45,7 +45,7 @@ std::string AST::Typ::TypData::to_string(size_t indent) const {
   return std::format("{}", d_typ);
 }
 
-std::string AST::Typ::TypArr::to_string(size_t indent) const {
+std::string AST::Typ::TypIndex::to_string(size_t indent) const {
   if (this->size.has_value()) {
     return std::format("{}[{}]", this->typ->to_string(indent), size.value());
   } else {
@@ -66,7 +66,7 @@ std::string AST::Access::Deref::to_string(size_t indent) const {
 }
 
 std::string AST::Access::Index::to_string(size_t indent) const {
-  return std::format("{}[{}]", this->array->to_string(indent), this->index->to_string(indent));
+  return std::format("{}[{}]", this->access->to_string(indent), this->index->to_string(indent));
 }
 
 std::string AST::Access::Var::to_string(size_t indent) const {
