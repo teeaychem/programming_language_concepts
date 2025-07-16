@@ -27,7 +27,7 @@ struct Block {
 
   std::vector<AST::StmtHandle> statements{};
 
-  std::vector<AST::DecVarHandle> shadowed_vars{};
+  std::vector<AST::DecHandle> shadowed_vars{};
 
   bool empty() { return this->statements.empty() && this->fresh_vars.empty() && this->shadowed_vars.empty(); };
 

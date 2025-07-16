@@ -5,7 +5,7 @@
 #include <memory>
 
 void AST::Block::push_DecVar(Driver &driver, AST::DecVarHandle &dec_var) {
-  std::string var{dec_var->var};
+  std::string var{dec_var->id};
 
   auto shadowed = driver.env.find(var);
 
@@ -28,13 +28,13 @@ void AST::Block::push_Stmt(AST::StmtHandle &stmt) {
 
 void AST::Block::finalize(Driver &driver) {
   for (auto &shadowed : this->shadowed_vars) {
-    std::cout << "Unshadowing: " << shadowed->var << "\n";
-    driver.env[shadowed->var] = shadowed;
+    std::cout << "Unshadowing: " << shadowed->name() << "\n";
+    driver.env[shadowed->name()] = shadowed;
   }
 
   for (auto &fresh : this->fresh_vars) {
-    std::cout << "Erasing: " << fresh->var << " ... ";
-    driver.env.erase(fresh->var);
+    std::cout << "Erasing: " << fresh->id << " ... ";
+    driver.env.erase(fresh->id);
     std::cout << "OK" << "\n";
   }
 }

@@ -230,11 +230,11 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) {
 
   case Scope::Local: {
     auto typ = this->typ->typegen(hdl);
-    auto alloca = hdl.builder.CreateAlloca(typ, nullptr, this->var);
-    hdl.named_values[this->var] = alloca;
+    auto alloca = hdl.builder.CreateAlloca(typ, nullptr, this->id);
+    hdl.named_values[this->id] = alloca;
   } break;
   case Scope::Global: {
-    auto x = hdl.module->getOrInsertGlobal(this->var, this->typ->typegen(hdl));
+    auto x = hdl.module->getOrInsertGlobal(this->id, this->typ->typegen(hdl));
   } break;
   }
 
@@ -257,9 +257,9 @@ Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) {
   }
 
   auto fn_typ = FunctionType::get(r_typ, param_typs, false);
-  Function *fn = Function::Create(fn_typ, Function::ExternalLinkage, this->name, hdl.module.get());
+  Function *fn = Function::Create(fn_typ, Function::ExternalLinkage, this->id, hdl.module.get());
 
-  BasicBlock *fn_body = BasicBlock::Create(*hdl.context, std::format("entry", this->name), fn);
+  BasicBlock *fn_body = BasicBlock::Create(*hdl.context, std::format("entry", this->id), fn);
   hdl.builder.SetInsertPoint(fn_body);
 
   { // Parameters

@@ -80,7 +80,7 @@ std::string AST::Dec::Fn::to_string(size_t indent) const {
 
   fn_ss << r_typ->to_string(indent)
         << " "
-        << this->name
+        << this->id
         << " "
         << "(";
 
@@ -104,7 +104,7 @@ std::string AST::Dec::Fn::to_string(size_t indent) const {
 }
 
 std::string AST::Dec::Var::to_string(size_t indent) const {
-  return std::format("{} {};", typ->to_string(indent), var);
+  return std::format("{} {};", typ->to_string(indent), id);
 }
 
 // Expr
