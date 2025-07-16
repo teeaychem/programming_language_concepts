@@ -24,8 +24,9 @@ struct Var : DecT {
       : scope(scope), typ(std::move(typ)), var(var) {}
 
   std::string to_string(size_t indent) const override;
-
   Dec::Kind kind() const override { return Dec::Kind::Var; }
+  TypHandle type() const override { return typ; };
+
   llvm::Value *codegen(LLVMBundle &hdl) override;
 };
 
@@ -46,10 +47,10 @@ struct Fn : DecT {
         body(std::move(body)) {}
 
   std::string to_string(size_t indent) const override;
+  Dec::Kind kind() const override { return Dec::Kind::Fn; }
+  TypHandle type() const override { return r_typ; };
 
   llvm::Value *codegen(LLVMBundle &hdl) override;
-
-  Dec::Kind kind() const override { return Dec::Kind::Fn; }
 };
 
 } // namespace Dec

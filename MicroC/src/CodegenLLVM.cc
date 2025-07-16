@@ -37,10 +37,8 @@ Value *AST::Access::Deref::codegen(LLVMBundle &hdl) {
 }
 
 Value *AST::Access::Index::codegen(LLVMBundle &hdl) {
-  Value *value = this->array->codegen(hdl);
+  Value *value = this->access->codegen(hdl);
   Value *index = this->index->codegen(hdl);
-
-  std::cout << "X: " << this->array->to_string(0) << "\n";
 
   auto ptr = hdl.builder.CreateGEP(Type::getInt64Ty(*hdl.context), value, ArrayRef<Value *>(index));
 

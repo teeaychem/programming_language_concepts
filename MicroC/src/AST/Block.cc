@@ -2,6 +2,7 @@
 #include "AST/AST.hh"
 #include "Driver.hh"
 #include <iostream>
+#include <memory>
 
 void AST::Block::push_DecVar(Driver &driver, AST::DecVarHandle &dec_var) {
   std::string var{dec_var->var};
@@ -11,7 +12,8 @@ void AST::Block::push_DecVar(Driver &driver, AST::DecVarHandle &dec_var) {
   if (shadowed != driver.env.end()) {
     std::cout << "Shadowing: " << var << "\n";
     this->shadow_vars.push_back(dec_var);
-    this->shadowed_vars.push_back(*shadowed);
+
+    this->shadowed_vars.push_back(std::static_pointer_cast<Dec::Var>(shadowed->second));
   } else {
     std::cout << "Fresh: " << var << "\n";
     this->fresh_vars.push_back(dec_var);
@@ -26,7 +28,13 @@ void AST::Block::push_Stmt(AST::StmtHandle &stmt) {
 
 void AST::Block::finalize(Driver &driver) {
   for (auto &shadowed : this->shadowed_vars) {
-    std::cout << "Unshadowing: " << shadowed.first << "\n";
-    driver.env[shadowed.first] = shadowed.second;
+    std::cout << "Unshadowing: " << shadowed->var << "\n";
+    driver.env[shadowed->var] = shadowed;
+  }
+
+  for (auto &fresh : this->fresh_vars) {
+    std::cout << "Erasing: " << fresh->var << " ... ";
+    driver.env.erase(fresh->var);
+    std::cout << "OK" << "\n";
   }
 }

@@ -118,7 +118,10 @@ program:
 
 
 Access:
-    NAME                       { $$ = driver.pk_AccessVar($1);              }
+    NAME                       {
+      auto typ = driver.env[$1]->type();
+      $$ = driver.pk_AccessVar(typ, $1);
+    }
   | LPAR Access RPAR           { $$ = $2;                                   }
   | STAR Access                {
       auto acc = driver.pk_ExprAccess(AST::Expr::Access::Mode::Access, $2);

@@ -24,7 +24,7 @@ enum class Data {
   Void,
 };
 
-struct TypArr;
+struct TypIndex;
 struct TypData;
 struct TypPtr;
 
@@ -35,11 +35,15 @@ struct TypT {
 
   [[nodiscard]] virtual Typ::Kind kind() const = 0;
   [[nodiscard]] virtual std::string to_string(size_t indent) const = 0;
+  [[nodiscard]] virtual std::shared_ptr<TypT> deref() const = 0;
 
   virtual void complete_data(AST::Typ::Data d_typ) = 0;
 
   virtual ~TypT() = default;
 };
+
+typedef std::shared_ptr<TypT> TypHandle;
+typedef std::shared_ptr<Typ::TypIndex> TypIndexHandle;
 } // namespace AST
 
 // Nodes
@@ -86,8 +90,7 @@ struct Var;
 struct AccessT : NodeT {
   AST::Kind kind_abstract() const override { return AST::Kind::Access; }
   [[nodiscard]] virtual Access::Kind kind() const = 0;
-
-  // virtual llvm::Type *typegen(LLVMBundle &hdl) = 0;
+  [[nodiscard]] virtual AST::TypHandle eval_type() const = 0;
 };
 
 // Expressions
@@ -113,6 +116,7 @@ enum class Kind {
 struct ExprT : NodeT {
   AST::Kind kind_abstract() const override { return AST::Kind::Expr; }
   [[nodiscard]] virtual Expr::Kind kind() const = 0;
+  [[nodiscard]] virtual AST::TypHandle type() const = 0;
 };
 
 // Statements
@@ -154,6 +158,7 @@ struct Fn;
 struct DecT : NodeT {
   AST::Kind kind_abstract() const override { return AST::Kind::Dec; }
   [[nodiscard]] virtual Dec::Kind kind() const = 0;
+  [[nodiscard]] virtual AST::TypHandle type() const = 0;
 };
 } // namespace AST
 
@@ -166,6 +171,8 @@ struct Block;
 // Handles
 
 typedef std::shared_ptr<AccessT> AccessHandle;
+typedef std::shared_ptr<Access::Index> AccessIndexHandle;
+
 typedef std::shared_ptr<DecT> DecHandle;
 
 typedef std::shared_ptr<Dec::Var> DecVarHandle;
@@ -174,7 +181,6 @@ typedef std::shared_ptr<Dec::Fn> DecFnHandle;
 typedef std::shared_ptr<ExprT> ExprHandle;
 typedef std::shared_ptr<StmtT> StmtHandle;
 typedef std::shared_ptr<AST::Stmt::Block> BlockHandle;
-typedef std::shared_ptr<TypT> TypHandle;
 
 // Etc
 

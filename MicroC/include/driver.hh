@@ -51,14 +51,14 @@ struct Driver {
 
   // pk Access
 
-  AST::AccessHandle pk_AccessVar(std::string var) {
+  AST::AccessHandle pk_AccessVar(AST::TypHandle typ, std::string var) {
     auto details = this->env.find(var);
 
     if (details == this->env.end()) {
-      std::cerr << "Unknow variable: " << var << "\n";
+      std::cerr << "Unknown variable: " << var << std::endl;
     }
 
-    AST::Access::Var access(std::move(var));
+    AST::Access::Var access(std::move(typ), std::move(var));
     return std::make_shared<AST::Access::Var>(std::move(access));
   }
 
@@ -67,7 +67,7 @@ struct Driver {
     return std::make_shared<AST::Access::Deref>(std::move(access));
   }
 
-  AST::AccessHandle pk_AccessIndex(AST::AccessHandle arr, AST::ExprHandle idx) {
+  AST::AccessIndexHandle pk_AccessIndex(AST::AccessHandle arr, AST::ExprHandle idx) {
     AST::Access::Index access(std::move(arr), std::move(idx));
     return std::make_shared<AST::Access::Index>(std::move(access));
   }
@@ -76,13 +76,22 @@ struct Driver {
 
   AST::DecVarHandle pk_DecVar(AST::Dec::Scope scope, AST::TypHandle typ, std::string var) {
     AST::Dec::Var dec(scope, std::move(typ), var);
-
     return std::make_shared<AST::Dec::Var>(std::move(dec));
   }
 
   AST::DecHandle pk_DecFn(AST::TypHandle r_typ, std::string var, AST::ParamVec params, AST::BlockHandle body) {
+
+    if (this->env.find(var) != this->env.end()) {
+      std::cerr << "Existing use of: '" << var << "' unable to declare function." << std::endl;
+      exit(-1);
+    }
+
     AST::Dec::Fn dec(std::move(r_typ), var, std::move(params), std::move(body));
-    return std::make_shared<AST::Dec::Fn>(std::move(dec));
+
+    auto handle = std::make_shared<AST::Dec::Fn>(std::move(dec));
+    this->env[var] = handle;
+
+    return handle;
   }
 
   // pk Expr
@@ -98,7 +107,17 @@ struct Driver {
   }
 
   AST::ExprHandle pk_ExprCall(std::string name, std::vector<AST::ExprHandle> params) {
-    AST::Expr::Call e(std::move(name), std::move(params));
+
+    auto dec = this->env.find(name);
+    if (dec == this->env.end() || dec->second->kind() != AST::Dec::Kind::Fn) {
+      std::cerr << "Failed to find fn: " << name << std::endl;
+      exit(-1);
+    }
+
+    auto as_FnDec = std::static_pointer_cast<AST::Dec::Fn>(dec->second);
+
+    AST::Expr::Call e(std::move(name), as_FnDec->r_typ, std::move(params));
+
     return std::make_shared<AST::Expr::Call>(std::move(e));
   }
 
