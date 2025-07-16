@@ -11,11 +11,12 @@
 %code requires {
   #include <string>
   #include "AST/AST.hh"
+  #include "AST/Block.hh"  
 
   struct Driver;
 }
 
-%param { Driver& drv } // Parsing context
+%param { Driver& driver } // Parsing context
 
 %locations
 
@@ -24,7 +25,9 @@
 %define parse.lac full
 
 %code {
-#include "driver.hh"
+#include "Driver.hh"
+
+#include "AST/Block.hh"
 
 #include "AST/Node/Access.hh"
 #include "AST/Node/Dec.hh"
@@ -35,7 +38,9 @@
 
 
 
-AST::ExprHandle AccessAssign(Driver &drv, std::string op, AST::AccessHandle dest, AST::ExprHandle expr);
+
+
+AST::ExprHandle AccessAssign(Driver &driver, std::string op, AST::AccessHandle dest, AST::ExprHandle expr);
 }
 
 %define api.token.prefix {TOK_}
@@ -82,7 +87,7 @@ AST::ExprHandle AccessAssign(Driver &drv, std::string op, AST::AccessHandle dest
 %nterm <AST::ParamVec> ParamdecsNE
 
 %nterm <AST::BlockHandle> Block
-%nterm <AST::BlockVec> StmtOrDecSeq
+%nterm <AST::Block> StmtOrDecSeq
 
 %nterm <AST::StmtHandle> Stmt
 %nterm <AST::StmtHandle> StmtA
@@ -113,36 +118,36 @@ program:
 
 
 Access:
-    NAME                       { $$ = drv.pk_AccessVar($1);              }
-  | LPAR Access RPAR           { $$ = $2;                                }
+    NAME                       { $$ = driver.pk_AccessVar($1);              }
+  | LPAR Access RPAR           { $$ = $2;                                   }
   | STAR Access                {
-      auto acc = drv.pk_ExprAccess(AST::Expr::Access::Mode::Access, $2);
-      $$ = drv.pk_AccessDeref(std::move(acc));                           }
-  | STAR AtExprNotAccess       { $$ = drv.pk_AccessDeref($2);            }
-  | Access LBRACK Expr RBRACK  { $$ = drv.pk_AccessIndex($1, $3);        }
+      auto acc = driver.pk_ExprAccess(AST::Expr::Access::Mode::Access, $2);
+      $$ = driver.pk_AccessDeref(std::move(acc));                           }
+  | STAR AtExprNotAccess       { $$ = driver.pk_AccessDeref($2);            }
+  | Access LBRACK Expr RBRACK  { $$ = driver.pk_AccessIndex($1, $3);        }
 ;
 
 
 AtExprNotAccess:
-    Const                    { $$ = $1;                                                   }
-  | LPAR ExprNotAccess RPAR  { $$ = $2;                                                   }
-  | AMP Access               { $$ = drv.pk_ExprAccess(AST::Expr::Access::Mode::Addr, $2); }
+    Const                    { $$ = $1;                                                      }
+  | LPAR ExprNotAccess RPAR  { $$ = $2;                                                      }
+  | AMP Access               { $$ = driver.pk_ExprAccess(AST::Expr::Access::Mode::Addr, $2); }
 ;
 
 
 Block:
     LBRACE StmtOrDecSeq RBRACE
-      { std::reverse($2.begin(), $2.end());
-        $$ = drv.pk_StmtBlock(std::move($2));
+      { $2.finalize(driver);
+        $$ = driver.pk_StmtBlock(std::move($2));
       }
 ;
 
 
 Const:
-    CSTINT        { $$ = drv.pk_ExprCstI($1);                        }
-  | CSTBOOL       { $$ = std::move(drv.pk_ExprCstI($1));             }
-  | MINUS CSTINT  { $$ = drv.pk_ExprPrim1("-", drv.pk_ExprCstI($2)); }
-  | NULL          { $$ = drv.pk_ExprPrim1("-", drv.pk_ExprCstI(1));  }
+    CSTINT        { $$ = driver.pk_ExprCstI($1);                           }
+  | CSTBOOL       { $$ = std::move(driver.pk_ExprCstI($1));                }
+  | MINUS CSTINT  { $$ = driver.pk_ExprPrim1("-", driver.pk_ExprCstI($2)); }
+  | NULL          { $$ = driver.pk_ExprPrim1("-", driver.pk_ExprCstI(1));  }
 ;
 
 
@@ -153,8 +158,8 @@ DataType:
 
 
 Expr:
-    Access         { $$ = drv.pk_ExprAccess(AST::Expr::Access::Mode::Access, $1); }
-  | ExprNotAccess  { $$ = $1;                                                     }
+    Access         { $$ = driver.pk_ExprAccess(AST::Expr::Access::Mode::Access, $1); }
+  | ExprNotAccess  { $$ = $1;                                                        }
 ;
 
 
@@ -170,42 +175,42 @@ ExprsNE:
 
 
 ExprNotAccess:
-    AtExprNotAccess           { $$ = $1;                                  }
-  | Access ASSIGN Expr        { $$ = drv.pk_ExprAssign($1, $3);           }
-  | Access PLUS_ASSIGN Expr   { $$ = AccessAssign(drv, "+", $1, $3);      }
-  | Access MINUS_ASSIGN Expr  { $$ = AccessAssign(drv, "-", $1, $3);      }
-  | Access STAR_ASSIGN Expr   { $$ = AccessAssign(drv, "*", $1, $3);      }
-  | Access SLASH_ASSIGN Expr  { $$ = AccessAssign(drv, "/", $1, $3);      }
-  | Access MOD_ASSIGN Expr    { $$ = AccessAssign(drv, "%", $1, $3);      }
-  | NAME LPAR Exprs RPAR      { $$ = drv.pk_ExprCall($1, $3);             }
-  | NOT Expr                  { $$ = drv.pk_ExprPrim1("!", $2);           }
-  | PRINT Expr                { $$ = drv.pk_ExprPrim1("printi", $2);      }
-  | PRINTLN                   { $$ = drv.pk_ExprPrim1("printc", drv.pk_ExprCstI(10)); }
-  | Expr PLUS  Expr           { $$ = drv.pk_ExprPrim2("+",  $1, $3);      }
-  | Expr MINUS Expr           { $$ = drv.pk_ExprPrim2("-",  $1, $3);      }
-  | Expr STAR  Expr           { $$ = drv.pk_ExprPrim2("*",  $1, $3);      }
-  | Expr SLASH Expr           { $$ = drv.pk_ExprPrim2("/",  $1, $3);      }
-  | Expr MOD   Expr           { $$ = drv.pk_ExprPrim2("%",  $1, $3);      }
-  | Expr EQ    Expr           { $$ = drv.pk_ExprPrim2("==", $1, $3);      }
-  | Expr NE    Expr           { $$ = drv.pk_ExprPrim2("!=", $1, $3);      }
-  | Expr GT    Expr           { $$ = drv.pk_ExprPrim2(">",  $1, $3);      }
-  | Expr LT    Expr           { $$ = drv.pk_ExprPrim2("<",  $1, $3);      }
-  | Expr GE    Expr           { $$ = drv.pk_ExprPrim2(">=", $1, $3);      }
-  | Expr LE    Expr           { $$ = drv.pk_ExprPrim2("<=", $1, $3);      }
-  | Expr SEQAND Expr          { $$ = drv.pk_ExprPrim2("&&", $1, $3);      }
-  | Expr SEQOR  Expr          { $$ = drv.pk_ExprPrim2("||", $1, $3);      }
+    AtExprNotAccess           { $$ = $1;                                                    }
+  | Access ASSIGN Expr        { $$ = driver.pk_ExprAssign($1, $3);                          }
+  | Access PLUS_ASSIGN Expr   { $$ = AccessAssign(driver, "+", $1, $3);                     }
+  | Access MINUS_ASSIGN Expr  { $$ = AccessAssign(driver, "-", $1, $3);                     }
+  | Access STAR_ASSIGN Expr   { $$ = AccessAssign(driver, "*", $1, $3);                     }
+  | Access SLASH_ASSIGN Expr  { $$ = AccessAssign(driver, "/", $1, $3);                     }
+  | Access MOD_ASSIGN Expr    { $$ = AccessAssign(driver, "%", $1, $3);                     }
+  | NAME LPAR Exprs RPAR      { $$ = driver.pk_ExprCall($1, $3);                            }
+  | NOT Expr                  { $$ = driver.pk_ExprPrim1("!", $2);                          }
+  | PRINT Expr                { $$ = driver.pk_ExprPrim1("printi", $2);                     }
+  | PRINTLN                   { $$ = driver.pk_ExprPrim1("printc", driver.pk_ExprCstI(10)); }
+  | Expr PLUS  Expr           { $$ = driver.pk_ExprPrim2("+",  $1, $3);                      }
+  | Expr MINUS Expr           { $$ = driver.pk_ExprPrim2("-",  $1, $3);                      }
+  | Expr STAR  Expr           { $$ = driver.pk_ExprPrim2("*",  $1, $3);                      }
+  | Expr SLASH Expr           { $$ = driver.pk_ExprPrim2("/",  $1, $3);                      }
+  | Expr MOD   Expr           { $$ = driver.pk_ExprPrim2("%",  $1, $3);                      }
+  | Expr EQ    Expr           { $$ = driver.pk_ExprPrim2("==", $1, $3);                      }
+  | Expr NE    Expr           { $$ = driver.pk_ExprPrim2("!=", $1, $3);                      }
+  | Expr GT    Expr           { $$ = driver.pk_ExprPrim2(">",  $1, $3);                      }
+  | Expr LT    Expr           { $$ = driver.pk_ExprPrim2("<",  $1, $3);                      }
+  | Expr GE    Expr           { $$ = driver.pk_ExprPrim2(">=", $1, $3);                      }
+  | Expr LE    Expr           { $$ = driver.pk_ExprPrim2("<=", $1, $3);                      }
+  | Expr SEQAND Expr          { $$ = driver.pk_ExprPrim2("&&", $1, $3);                      }
+  | Expr SEQOR  Expr          { $$ = driver.pk_ExprPrim2("||", $1, $3);                      }
 ;
 
 
 Fndec:
     VOID NAME LPAR Paramdecs RPAR Block      {
       auto r_typ = AST::Typ::pk_Void();
-      auto f = drv.pk_DecFn(r_typ, $2, $4, $6);
-      $$ = f;                                   }
+      auto f = driver.pk_DecFn(r_typ, $2, $4, $6);
+      $$ = f;                                      }
   | DataType NAME LPAR Paramdecs RPAR Block  {
       auto r_typ = AST::Typ::pk_Data($1);
-      auto f = drv.pk_DecFn(r_typ, $2, $4, $6);
-      $$ = f;                                   }
+      auto f = driver.pk_DecFn(r_typ, $2, $4, $6);
+      $$ = f;                                     }
 ;
 
 
@@ -227,31 +232,31 @@ Stmt:
 
 
 StmtA:  /* No unbalanced if-else */
-    Expr SEMI                           { $$ = drv.pk_StmtExpr($1);                   }
-  | RETURN SEMI                         { $$ = drv.pk_StmtReturn(std::nullopt);       }
-  | RETURN Expr SEMI                    { $$ = drv.pk_StmtReturn($2);                 }
+    Expr SEMI                           { $$ = driver.pk_StmtExpr($1);                   }
+  | RETURN SEMI                         { $$ = driver.pk_StmtReturn(std::nullopt);       }
+  | RETURN Expr SEMI                    { $$ = driver.pk_StmtReturn($2);                 }
   | Block                               { $$ = std::static_pointer_cast<AST::StmtT>($1); }
-  | IF LPAR Expr RPAR StmtA ELSE StmtA  { $$ = drv.pk_StmtIf($3, $5, $7);             }
-  | WHILE LPAR Expr RPAR StmtA          { $$ = drv.pk_StmtWhile($3, $5);              }
+  | IF LPAR Expr RPAR StmtA ELSE StmtA  { $$ = driver.pk_StmtIf($3, $5, $7);             }
+  | WHILE LPAR Expr RPAR StmtA          { $$ = driver.pk_StmtWhile($3, $5);              }
 ;
 
 
 StmtB:
-    IF LPAR Expr RPAR StmtA ELSE StmtB  { $$ = drv.pk_StmtIf($3, $5, $7); }
+    IF LPAR Expr RPAR StmtA ELSE StmtB  { $$ = driver.pk_StmtIf($3, $5, $7); }
   | IF LPAR Expr RPAR Stmt              {
-      auto empty_block = drv.pk_StmtBlockStmt(AST::BlockVec{});
-      $$ = drv.pk_StmtIf($3, $5, empty_block);                            }
-  | WHILE LPAR Expr RPAR StmtB          { $$ = drv.pk_StmtWhile($3, $5);  }
+      auto empty_block = driver.pk_StmtBlockStmt(AST::Block{});
+      $$ = driver.pk_StmtIf($3, $5, empty_block);                            }
+  | WHILE LPAR Expr RPAR StmtB          { $$ = driver.pk_StmtWhile($3, $5);  }
 ;
 
 
 StmtOrDecSeq:
-    %empty                    { $$ = AST::BlockVec{};                           }
-  | Stmt StmtOrDecSeq         { $2.push_back($1); $$ = $2;                      }
-  | Vardec SEMI StmtOrDecSeq  {
-      auto dec = drv.pk_DecVar(AST::Dec::Scope::Local, $1.first, $1.second);
-      $3.push_back(dec);
-      $$ = $3;                                                                  }
+    %empty                    { $$ = AST::Block{};                              }
+  | StmtOrDecSeq Stmt         { $1.push_Stmt($2); $$ = $1;                      }
+  | StmtOrDecSeq Vardec SEMI  {
+      auto dec = driver.pk_DecVar(AST::Dec::Scope::Local, $2.first, $2.second);
+      $1.push_DecVar(driver, dec);
+      $$ = $1;                                                                  }
 ;
 
 
@@ -266,9 +271,9 @@ Topdecs:
 
 Topdec:
    Vardec SEMI  {
-     auto dec = drv.pk_DecVar(AST::Dec::Scope::Global, $1.first, $1.second);
-     drv.push_dec(dec);                                                         }
-  | Fndec       { drv.push_dec($1);                                             }
+     auto dec = driver.pk_DecVar(AST::Dec::Scope::Global, $1.first, $1.second);
+     driver.push_dec(dec);                                                      }
+  | Fndec       { driver.push_dec($1);                                          }
 ;
 
 
@@ -296,10 +301,10 @@ Vardesc:
 
 %%
 
-AST::ExprHandle AccessAssign(Driver &drv,  std::string op, AST::AccessHandle dest, AST::ExprHandle expr) {
+AST::ExprHandle AccessAssign(Driver &driver,  std::string op, AST::AccessHandle dest, AST::ExprHandle expr) {
   auto mode = AST::Expr::Access::Mode::Access;
-  auto acc = drv.pk_ExprAccess(mode, dest);
-  auto r_expr = drv.pk_ExprPrim2(op, acc, expr);
+  auto acc = driver.pk_ExprAccess(mode, dest);
+  auto r_expr = driver.pk_ExprPrim2(op, acc, expr);
   return r_expr;
 }
 

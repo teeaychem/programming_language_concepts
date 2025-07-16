@@ -56,7 +56,7 @@ enum class Kind {
 struct NodeT {
   virtual llvm::Value *codegen(LLVMBundle &hdl) = 0;
 
-  [[nodiscard]] virtual AST::Kind base_kind() const = 0;
+  [[nodiscard]] virtual AST::Kind kind_abstract() const = 0;
   [[nodiscard]] virtual std::string to_string(size_t indent) const = 0;
 
   virtual ~NodeT() = default;
@@ -84,7 +84,7 @@ struct Var;
 } // namespace Access
 
 struct AccessT : NodeT {
-  AST::Kind base_kind() const override { return AST::Kind::Access; }
+  AST::Kind kind_abstract() const override { return AST::Kind::Access; }
   [[nodiscard]] virtual Access::Kind kind() const = 0;
 
   // virtual llvm::Type *typegen(LLVMBundle &hdl) = 0;
@@ -111,7 +111,7 @@ enum class Kind {
 } // namespace Expr
 
 struct ExprT : NodeT {
-  AST::Kind base_kind() const override { return AST::Kind::Expr; }
+  AST::Kind kind_abstract() const override { return AST::Kind::Expr; }
   [[nodiscard]] virtual Expr::Kind kind() const = 0;
 };
 
@@ -135,7 +135,7 @@ struct While;
 } // namespace Stmt
 
 struct StmtT : NodeT {
-  AST::Kind base_kind() const override { return AST::Kind::Stmt; }
+  AST::Kind kind_abstract() const override { return AST::Kind::Stmt; }
   [[nodiscard]] virtual Stmt::Kind kind() const = 0;
 };
 
@@ -152,7 +152,7 @@ struct Fn;
 } // namespace Dec
 
 struct DecT : NodeT {
-  AST::Kind base_kind() const override { return AST::Kind::Dec; }
+  AST::Kind kind_abstract() const override { return AST::Kind::Dec; }
   [[nodiscard]] virtual Dec::Kind kind() const = 0;
 };
 } // namespace AST
@@ -161,10 +161,16 @@ struct DecT : NodeT {
 
 namespace AST {
 
+struct Block;
+
 // Handles
 
 typedef std::shared_ptr<AccessT> AccessHandle;
 typedef std::shared_ptr<DecT> DecHandle;
+
+typedef std::shared_ptr<Dec::Var> DecVarHandle;
+typedef std::shared_ptr<Dec::Fn> DecFnHandle;
+
 typedef std::shared_ptr<ExprT> ExprHandle;
 typedef std::shared_ptr<StmtT> StmtHandle;
 typedef std::shared_ptr<AST::Stmt::Block> BlockHandle;

@@ -3,7 +3,7 @@
 #include <sstream>
 
 #include "CodegenLLVM.hh"
-#include "driver.hh"
+#include "Driver.hh"
 #include "parser.hh"
 
 #include "AST/AST.hh"

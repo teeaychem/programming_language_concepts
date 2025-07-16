@@ -5,6 +5,7 @@
 #include <string>
 
 #include "AST/AST.hh"
+#include "AST/Block.hh"
 #include "AST/Node/Access.hh"
 #include "AST/Node/Dec.hh"
 #include "AST/Node/Expr.hh"
@@ -142,7 +143,11 @@ std::string AST::Expr::CstI::to_string(size_t indent) const {
   return std::format("{}", i);
 }
 std::string AST::Expr::Prim1::to_string(size_t indent) const {
-  return std::format("{}{}", op, expr->to_string(indent));
+  if (1 < this->op.size()) {
+    return std::format("{} {}", op, expr->to_string(indent));
+  } else {
+    return std::format("{}{}", op, expr->to_string(indent));
+  }
 }
 std::string AST::Expr::Prim2::to_string(size_t indent) const {
   return std::format("({} {} {})", this->a->to_string(indent), this->op, this->b->to_string(indent));
@@ -157,15 +162,23 @@ std::string AST::Stmt::Block::to_string(size_t indent) const {
   block_ss << "{"
            << "\n";
 
-  auto variant_out = [&block_ss, &indent](const auto v) {
-    size_t updated_offset = indent + INDENT_SIZE;
+  size_t updated_offset = indent + INDENT_SIZE;
+  auto variant_out = [&block_ss, &indent, &updated_offset](const auto v) {
     block_ss << std::string(updated_offset, ' ')
              << v->to_string(updated_offset)
              << "\n";
   };
 
-  for (auto &block_variant : block) {
-    std::visit(variant_out, block_variant);
+  for (auto &fresh_var : block.fresh_vars) {
+    variant_out(fresh_var);
+  }
+
+  for (auto &shadow_var : block.shadow_vars) {
+    variant_out(shadow_var);
+  }
+
+  for (auto &stmt : block.statements) {
+    variant_out(stmt);
   }
 
   block_ss << std::string(indent, ' ')

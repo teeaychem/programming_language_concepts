@@ -16,18 +16,10 @@
 #define YY_DECL yy::parser::symbol_type yylex(Driver &drv)
 YY_DECL; // Declare the prototype for bison
 
-struct Environment {
-  std::optional<std::shared_ptr<Environment>> enclosing;
-  std::map<std::string, std::unique_ptr<AST::TypT>> map{};
-
-  Environment() : enclosing(std::nullopt) {};
-  Environment(std::shared_ptr<Environment> enclosing) : enclosing(enclosing) {};
-};
-
 struct Driver {
   std::vector<AST::DecHandle> prg{};
 
-  std::shared_ptr<Environment> env{std::make_shared<Environment>(Environment{})};
+  std::map<std::string, AST::DecHandle> env{};
 
   LLVMBundle llvm;
 
@@ -55,24 +47,17 @@ struct Driver {
 
   std::string prg_string();
 
-  void env_narrow() {
-    this->env = std::make_shared<Environment>(Environment{this->env});
-  }
-
-  void env_expand() {
-    if (!this->env->enclosing.has_value()) {
-      std::cerr << "Attempt to expand top env" << "\n";
-      std::exit(-1);
-    }
-
-    this->env = this->env->enclosing.value();
-  }
-
   // pk start
 
   // pk Access
 
   AST::AccessHandle pk_AccessVar(std::string var) {
+    auto details = this->env.find(var);
+
+    if (details == this->env.end()) {
+      std::cerr << "Unknow variable: " << var << "\n";
+    }
+
     AST::Access::Var access(std::move(var));
     return std::make_shared<AST::Access::Var>(std::move(access));
   }
@@ -89,12 +74,13 @@ struct Driver {
 
   // pk Dec
 
-  AST::DecHandle pk_DecVar(AST::Dec::Scope scope, AST::TypHandle typ, std::string var) {
+  AST::DecVarHandle pk_DecVar(AST::Dec::Scope scope, AST::TypHandle typ, std::string var) {
     AST::Dec::Var dec(scope, std::move(typ), var);
+
     return std::make_shared<AST::Dec::Var>(std::move(dec));
   }
 
-  inline AST::DecHandle pk_DecFn(AST::TypHandle r_typ, std::string var, AST::ParamVec params, AST::BlockHandle body) {
+  AST::DecHandle pk_DecFn(AST::TypHandle r_typ, std::string var, AST::ParamVec params, AST::BlockHandle body) {
     AST::Dec::Fn dec(std::move(r_typ), var, std::move(params), std::move(body));
     return std::make_shared<AST::Dec::Fn>(std::move(dec));
   }
@@ -133,12 +119,12 @@ struct Driver {
 
   // pk Stmt
 
-  AST::BlockHandle pk_StmtBlock(AST::BlockVec &&bv) {
+  AST::BlockHandle pk_StmtBlock(AST::Block &&bv) {
     AST::Stmt::Block b(std::move(bv));
     return std::make_shared<AST::Stmt::Block>(std::move(b));
   }
 
-  AST::StmtHandle pk_StmtBlockStmt(AST::BlockVec &&bv) {
+  AST::StmtHandle pk_StmtBlockStmt(AST::Block &&bv) {
     AST::Stmt::Block b(std::move(bv));
     return std::make_shared<AST::Stmt::Block>(std::move(b));
   }
