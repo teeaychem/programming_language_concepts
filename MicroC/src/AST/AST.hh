@@ -159,6 +159,7 @@ struct DecT : NodeT {
   AST::Kind kind_abstract() const override { return AST::Kind::Dec; }
   [[nodiscard]] virtual Dec::Kind kind() const = 0;
   [[nodiscard]] virtual AST::TypHandle type() const = 0;
+  [[nodiscard]] virtual std::string name() const = 0;
 };
 } // namespace AST
 
