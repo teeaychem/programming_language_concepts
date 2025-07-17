@@ -75,8 +75,20 @@ struct Driver {
   // pk Dec
 
   AST::DecVarHandle pk_DecVar(AST::Dec::Scope scope, AST::TypHandle typ, std::string var) {
+
+    if (scope == AST::Dec::Scope::Global) {
+      if (this->env.find(var) != this->env.end()) {
+        std::cerr << "Redeclaration of global: " << var << "\n";
+        exit(-1);
+      }
+    }
+
     AST::Dec::Var dec(scope, std::move(typ), var);
-    return std::make_shared<AST::Dec::Var>(std::move(dec));
+    auto handle = std::make_shared<AST::Dec::Var>(std::move(dec));
+
+    this->env[var] = handle;
+
+    return handle;
   }
 
   AST::DecHandle pk_DecFn(AST::TypHandle r_typ, std::string var, AST::ParamVec params, AST::BlockHandle body) {

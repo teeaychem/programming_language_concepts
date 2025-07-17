@@ -8,6 +8,7 @@
 #include <memory>
 
 struct LLVMBundle {
+
   std::unique_ptr<llvm::LLVMContext> context;
   std::unique_ptr<llvm::Module> module;
   llvm::IRBuilder<> builder;
@@ -15,7 +16,7 @@ struct LLVMBundle {
   std::map<std::string, llvm::Function *> base_fns{
       {"printf", llvm::Function::Create(llvm::FunctionType::get(llvm::PointerType::getUnqual(llvm::Type::getInt8Ty(*this->context)), true), llvm::Function::ExternalLinkage, "printf", this->module.get())}};
 
-  std::map<std::string, llvm::AllocaInst *> named_values{};
+  std::map<std::string, llvm::Value *> named_values{};
   std::map<std::string, llvm::BasicBlock *> named_blocks{};
 
   std::map<const std::string, std::function<llvm::Value *(llvm::Value *)>> prim1_fns{
