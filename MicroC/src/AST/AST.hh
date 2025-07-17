@@ -31,13 +31,18 @@ struct TypPtr;
 } // namespace Typ
 
 struct TypT {
-  virtual llvm::Type *typegen(LLVMBundle &hdl) = 0;
-
+  // Generate the representation of this type.
+  [[nodiscard]] virtual llvm::Type *typegen(LLVMBundle &hdl) = 0;
+  // Generate the default value of this type.
+  [[nodiscard]] virtual llvm::Constant *defaultgen(LLVMBundle &hdl) const = 0;
+  // The kind of this type, corresponding to a struct
   [[nodiscard]] virtual Typ::Kind kind() const = 0;
+  // String representation, C-style
   [[nodiscard]] virtual std::string to_string(size_t indent) const = 0;
-  [[nodiscard]] virtual std::shared_ptr<TypT> deref() const = 0;
-
-  virtual void complete_data(AST::Typ::Data d_typ) = 0;
+  // Dereference this type, may panic if dereference is not possible.
+  [[nodiscard]] virtual std::shared_ptr<TypT> deref_unsafe() const = 0;
+  // Completes the type, may panic if already complete.
+  virtual void complete_data_unsafe(AST::Typ::Data d_typ) = 0;
 
   virtual ~TypT() = default;
 };
