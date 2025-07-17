@@ -39,6 +39,8 @@ struct Driver {
   int parse(const std::string &f); // Run the parser on file F.  Return 0 on success.
 
   void push_dec(AST::DecHandle dec) {
+    // TODO: Tidy
+    this->env[dec->name()] = dec;
     prg.push_back(dec);
   }
 
@@ -52,9 +54,7 @@ struct Driver {
   // pk Access
 
   AST::AccessHandle pk_AccessVar(AST::TypHandle typ, std::string var) {
-    auto details = this->env.find(var);
-
-    if (details == this->env.end()) {
+    if (this->env.find(var) == this->env.end()) {
       std::cerr << "Unknown variable: " << var << std::endl;
     }
 
@@ -84,11 +84,7 @@ struct Driver {
     }
 
     AST::Dec::Var dec(scope, std::move(typ), var);
-    auto handle = std::make_shared<AST::Dec::Var>(std::move(dec));
-
-    this->env[var] = handle;
-
-    return handle;
+    return std::make_shared<AST::Dec::Var>(std::move(dec));
   }
 
   AST::DecHandle pk_DecFn(AST::TypHandle r_typ, std::string var, AST::ParamVec params, AST::BlockHandle body) {
@@ -99,11 +95,7 @@ struct Driver {
     }
 
     AST::Dec::Fn dec(std::move(r_typ), var, std::move(params), std::move(body));
-
-    auto handle = std::make_shared<AST::Dec::Fn>(std::move(dec));
-    this->env[var] = handle;
-
-    return handle;
+    return std::make_shared<AST::Dec::Fn>(std::move(dec));
   }
 
   // pk Expr
