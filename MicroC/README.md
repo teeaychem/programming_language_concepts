@@ -59,6 +59,12 @@ Completion is recursively applied until the base data type is found.
 clang -S -O0 -emit-llvm -Xclang -disable-llvm-passes -fno-discard-value-names <c_file>
 ```
 
+``` shell
+lldb ./build/Release/mc -- ex/ex.c
+process launch
+bt
+```
+
 # Resources
 
 - Sestoft (2017) [Programming Language Concepts](studwww.itu.dk/~sestoft/plc/): MicroC spec, etc.
