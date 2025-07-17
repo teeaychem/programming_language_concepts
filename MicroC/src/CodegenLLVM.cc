@@ -166,11 +166,6 @@ Value *AST::Expr::Prim2::codegen(LLVMBundle &hdl) {
 
 Value *AST::Stmt::Block::codegen(LLVMBundle &hdl) {
 
-  // Function *TheFunction = hdl.Builder.GetInsertBlock()->getParent();
-  // BasicBlock *BlockBB = BasicBlock::Create(*hdl.Context, "block", TheFunction);
-
-  // hdl.Builder.SetInsertPoint(BlockBB);
-
   std::vector<std::pair<std::string, Value *>> shadowed_values{};
 
   bool stop = false;
@@ -191,21 +186,24 @@ Value *AST::Stmt::Block::codegen(LLVMBundle &hdl) {
     switch (stmt->kind()) {
 
     case AST::Stmt::Kind::Return: {
-      stmt->codegen(hdl);
       stop = true;
     } break;
 
-    case AST::Stmt::Kind::Expr: {
-      stmt->codegen(hdl);
-    } break;
-
     default:
-      stmt->codegen(hdl);
+      break;
     }
+
+    stmt->codegen(hdl);
   }
 
-  for (auto &p : shadowed_values) {
-    hdl.named_values[p.first] = p.second;
+  // Unshadow shadowed vars
+  for (auto &shadowed_var : shadowed_values) {
+    hdl.named_values[shadowed_var.first] = shadowed_var.second;
+  }
+
+  // Clear fresh vars from scope
+  for (auto &fresh_var : block.fresh_vars) {
+    hdl.named_values.erase(fresh_var->name());
   }
 
   return ConstantInt::get(Type::getInt64Ty(*hdl.context), 0);
@@ -256,16 +254,18 @@ Value *AST::Stmt::While::codegen(LLVMBundle &hdl) {
 Value *AST::Dec::Var::codegen(LLVMBundle &hdl) {
   // TODO: Generalise defaults to a node method.
 
+  auto typ = this->typ->typegen(hdl);
+
   switch (this->scope) {
 
   case Scope::Local: {
-    auto typ = this->typ->typegen(hdl);
+
     auto alloca = hdl.builder.CreateAlloca(typ, nullptr, this->name());
     hdl.named_values[this->name()] = alloca;
   } break;
   case Scope::Global: {
 
-    auto alloca = hdl.module->getOrInsertGlobal(this->name(), this->typ->typegen(hdl));
+    auto alloca = hdl.module->getOrInsertGlobal(this->name(), typ);
 
     GlobalVariable *globalVar = hdl.module->getNamedGlobal(this->name());
 
@@ -281,10 +281,10 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) {
       switch (as_data->d_typ) {
 
       case Typ::Data::Int: {
-        globalVar->setInitializer(ConstantInt::get(Type::getInt64Ty(*hdl.context), 1));
+        globalVar->setInitializer(ConstantInt::get(Type::getInt64Ty(*hdl.context), 0));
       } break;
       case Typ::Data::Char: {
-        std::cerr << "TODO: Global initialisation of char." << std::endl;
+        globalVar->setInitializer(ConstantInt::get(Type::getInt8Ty(*hdl.context), 0));
         exit(-1);
       } break;
       case Typ::Data::Void: {
@@ -295,8 +295,7 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) {
 
     } break;
     case Typ::Kind::Ptr: {
-
-      std::cerr << "TODO: Global initialisation of a pointer." << std::endl;
+      globalVar->setInitializer(ConstantPointerNull::get(PointerType::getUnqual(*hdl.context)));
       exit(-1);
     } break;
     }
