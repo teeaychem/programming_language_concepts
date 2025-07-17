@@ -171,6 +171,8 @@ Value *AST::Stmt::Block::codegen(LLVMBundle &hdl) {
 
   // hdl.Builder.SetInsertPoint(BlockBB);
 
+  std::vector<std::pair<std::string, Value *>> shadowed_values{};
+
   bool stop = false;
 
   for (auto &fresh_dec : block.fresh_vars) {
@@ -178,6 +180,9 @@ Value *AST::Stmt::Block::codegen(LLVMBundle &hdl) {
   }
 
   for (auto &shadow_dec : block.shadow_vars) {
+    auto x = std::make_pair(shadow_dec->name(), hdl.named_values[shadow_dec->name()]);
+    shadowed_values.push_back(x);
+
     shadow_dec->codegen(hdl);
   }
 
@@ -197,6 +202,10 @@ Value *AST::Stmt::Block::codegen(LLVMBundle &hdl) {
     default:
       stmt->codegen(hdl);
     }
+  }
+
+  for (auto &p : shadowed_values) {
+    hdl.named_values[p.first] = p.second;
   }
 
   return ConstantInt::get(Type::getInt64Ty(*hdl.context), 0);
@@ -241,18 +250,11 @@ Value *AST::Stmt::While::codegen(LLVMBundle &hdl) {
 
 // Dec
 
+// Code generation for a declaration.
+// Should always be called when a declaration is made.
+// The details of shadowing are handled at block nodes.
 Value *AST::Dec::Var::codegen(LLVMBundle &hdl) {
-  auto it = hdl.named_values.find(this->name());
-  if (it != hdl.named_values.end()) {
-    std::cout << "Found record for: " << this->name() << std::endl;
-    return it->second;
-  } else {
-    std::cout << "No record found for: " << this->name() << std::endl;
-    std::cout << "In scope:" << "\n";
-    for (auto &x : hdl.named_values) {
-      std::cout << "\t" << x.first << "\n";
-    }
-  }
+  // TODO: Generalise defaults to a node method.
 
   switch (this->scope) {
 
