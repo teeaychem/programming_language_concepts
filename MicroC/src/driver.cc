@@ -24,11 +24,9 @@ int Driver::parse(const std::string &f) {
 
 std::string Driver::prg_string() {
   std::stringstream prg_ss{};
+  prg_ss << "\n\n";
   for (auto &dec : prg) {
     prg_ss << dec->to_string(0);
-    if (dec->kind() == AST::Dec::Kind::Var) {
-      prg_ss << ";";
-    }
     prg_ss << "\n\n";
   }
 
