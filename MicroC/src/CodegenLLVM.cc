@@ -47,11 +47,19 @@ Value *AST::Access::Index::codegen(LLVMBundle &hdl) {
 
 Value *AST::Access::Var::codegen(LLVMBundle &hdl) {
 
+  std::cout << "Checking env for " << this->var << " ... ";
   auto it = hdl.named_values.find(this->var);
   if (it == hdl.named_values.end()) {
     std::cerr << "Missing variable: " << this->var << "\n";
+
+    std::cout << "In scope:" << "\n";
+    for (auto &x : hdl.named_values) {
+      std::cout << "\t" << x.first << "\n";
+    }
+
     exit(-1);
   }
+  std::cout << "OK" << std::endl;
 
   return it->second;
 }
@@ -62,17 +70,17 @@ Value *AST::Expr::Access::codegen(LLVMBundle &hdl) {
   switch (this->mode) {
 
   case Mode::Access: {
-    auto x = static_cast<AllocaInst *>(this->acc->codegen(hdl));
+    auto alloca_inst = static_cast<AllocaInst *>(this->acc->codegen(hdl));
 
-    auto *r_val = hdl.builder.CreateLoad(x->getAllocatedType(), x);
+    auto *r_val = hdl.builder.CreateLoad(alloca_inst->getAllocatedType(), alloca_inst);
 
     return r_val;
   } break;
   case Mode::Addr: {
 
-    auto x = static_cast<AllocaInst *>(this->acc->codegen(hdl));
+    auto alloca_inst = static_cast<AllocaInst *>(this->acc->codegen(hdl));
 
-    return x;
+    return alloca_inst;
   } break;
   }
 }
@@ -226,15 +234,63 @@ Value *AST::Stmt::While::codegen(LLVMBundle &hdl) {
 // Dec
 
 Value *AST::Dec::Var::codegen(LLVMBundle &hdl) {
+  auto it = hdl.named_values.find(this->name());
+  if (it != hdl.named_values.end()) {
+    std::cout << "Found record for: " << this->name() << std::endl;
+    return it->second;
+  }
+
   switch (this->scope) {
 
   case Scope::Local: {
     auto typ = this->typ->typegen(hdl);
-    auto alloca = hdl.builder.CreateAlloca(typ, nullptr, this->id);
-    hdl.named_values[this->id] = alloca;
+    auto alloca = hdl.builder.CreateAlloca(typ, nullptr, this->name());
+    hdl.named_values[this->name()] = alloca;
   } break;
   case Scope::Global: {
-    auto x = hdl.module->getOrInsertGlobal(this->id, this->typ->typegen(hdl));
+
+    auto alloca = hdl.module->getOrInsertGlobal(this->name(), this->typ->typegen(hdl));
+
+    GlobalVariable *globalVar = hdl.module->getNamedGlobal(this->name());
+
+    switch (this->typ->kind()) {
+
+    case Typ::Kind::Arr: {
+      std::cerr << "TODO: Global initialisation of an array." << std::endl;
+      exit(-1);
+    } break;
+
+    case Typ::Kind::Data: {
+      auto as_data = std::static_pointer_cast<Typ::TypData>(this->typ);
+      switch (as_data->d_typ) {
+
+      case Typ::Data::Int: {
+        globalVar->setInitializer(ConstantInt::get(Type::getInt64Ty(*hdl.context), 0));
+      } break;
+      case Typ::Data::Char: {
+        std::cerr << "TODO: Global initialisation of char." << std::endl;
+        exit(-1);
+      } break;
+      case Typ::Data::Void: {
+        std::cerr << "Declaration of void type" << std::endl;
+        exit(1);
+      } break;
+      }
+
+    } break;
+    case Typ::Kind::Ptr: {
+
+      std::cerr << "TODO: Global initialisation of a pointer." << std::endl;
+      exit(-1);
+    } break;
+    }
+
+    // auto v = new GlobalVariable(*hdl.module, this->typ->typegen(hdl), false, GlobalVariable::LinkageTypes::CommonLinkage, nullptr, this->name());
+    // hdl.module->insertGlobalVariable(v);
+    // hdl.named_values[this->name()] = v;
+
+    // hdl.named_values[this->name()] = alloca;
+    std::cout << "OK" << std::endl;
   } break;
   }
 
@@ -243,7 +299,7 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) {
 
 Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) {
 
-  hdl.named_values.clear(); // Functions are top level
+  // hdl.named_values.clear(); // Functions are top level
 
   llvm::Type *r_typ = this->r_typ->typegen(hdl);
   std::vector<llvm::Type *> param_typs{};
