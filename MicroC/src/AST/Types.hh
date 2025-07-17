@@ -24,7 +24,7 @@ struct TypData : TypT {
   Typ::Kind kind() const override { return Typ::Kind::Data; }
   std::string to_string(size_t indent) const override;
 
-  void complete_data(Data d_typ) override {
+  void complete_data_unsafe(Data d_typ) override {
     if (d_typ == Data::Void) {
       throw std::logic_error("Attempt to complete type with void.");
     }
@@ -36,7 +36,7 @@ struct TypData : TypT {
     }
   }
 
-  TypHandle deref() const override {
+  TypHandle deref_unsafe() const override {
     std::cerr << "deref() called on TypData" << std::endl;
     exit(-1);
   }
@@ -49,6 +49,18 @@ struct TypData : TypT {
       return llvm::Type::getInt8Ty(*hdl.context);
     case Data::Void:
       return llvm::Type::getVoidTy(*hdl.context);
+    }
+  }
+
+  llvm::Constant *defaultgen(LLVMBundle &hdl) const override {
+    switch (d_typ) {
+    case Data::Int:
+      return llvm::ConstantInt::get(llvm::Type::getInt64Ty(*hdl.context), 0);
+    case Data::Char:
+      return llvm::ConstantInt::get(llvm::Type::getInt8Ty(*hdl.context), 0);
+    case Data::Void:
+      std::cerr << "Declaration of void type" << std::endl;
+      exit(1);
     }
   }
 };
@@ -74,21 +86,20 @@ struct TypIndex : TypT {
 
   Typ::Kind kind() const override { return Typ::Kind::Arr; }
   std::string to_string(size_t indent) const override;
-  TypHandle expr_type() const {
-    return typ;
-  }
-  std::optional<std::size_t> type_size() const {
-    return size;
-  }
+  TypHandle expr_type() const { return typ; }
+  std::optional<std::size_t> type_size() const { return size; }
 
-  void complete_data(Data d_typ) override { typ->complete_data(d_typ); }
+  void complete_data_unsafe(Data d_typ) override { typ->complete_data_unsafe(d_typ); }
 
-  TypHandle deref() const override {
-    return typ;
-  }
+  TypHandle deref_unsafe() const override { return typ; }
 
   llvm::Type *typegen(LLVMBundle &hdl) override {
     return llvm::ArrayType::get(typ->typegen(hdl), size.value_or(0));
+  }
+
+  llvm::Constant *defaultgen(LLVMBundle &hdl) const override {
+    std::cerr << "TODO: Initialisation of an array." << std::endl;
+    exit(1);
   }
 };
 
@@ -112,14 +123,14 @@ struct TypPtr : TypT {
   Typ::Kind kind() const override { return Typ::Kind::Ptr; }
   std::string to_string(size_t indent) const override;
 
-  void complete_data(Data d_typ) override { dest->complete_data(d_typ); }
+  void complete_data_unsafe(Data d_typ) override { dest->complete_data_unsafe(d_typ); }
 
-  TypHandle deref() const override {
-    return dest;
-  }
+  TypHandle deref_unsafe() const override { return dest; }
 
-  llvm::Type *typegen(LLVMBundle &hdl) override {
-    return llvm::PointerType::getUnqual(*hdl.context);
+  llvm::Type *typegen(LLVMBundle &hdl) override { return llvm::PointerType::getUnqual(*hdl.context); }
+
+  llvm::Constant *defaultgen(LLVMBundle &hdl) const override {
+    return llvm::ConstantPointerNull::get(llvm::PointerType::getUnqual(*hdl.context));
   }
 };
 

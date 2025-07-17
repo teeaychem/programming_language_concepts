@@ -252,8 +252,6 @@ Value *AST::Stmt::While::codegen(LLVMBundle &hdl) {
 // Should always be called when a declaration is made.
 // The details of shadowing are handled at block nodes.
 Value *AST::Dec::Var::codegen(LLVMBundle &hdl) {
-  // TODO: Generalise defaults to a node method.
-
   auto typ = this->typ->typegen(hdl);
 
   switch (this->scope) {
@@ -268,38 +266,7 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) {
     auto alloca = hdl.module->getOrInsertGlobal(this->name(), typ);
 
     GlobalVariable *globalVar = hdl.module->getNamedGlobal(this->name());
-
-    switch (this->typ->kind()) {
-
-    case Typ::Kind::Arr: {
-      std::cerr << "TODO: Global initialisation of an array." << std::endl;
-      exit(-1);
-    } break;
-
-    case Typ::Kind::Data: {
-      auto as_data = std::static_pointer_cast<Typ::TypData>(this->typ);
-      switch (as_data->d_typ) {
-
-      case Typ::Data::Int: {
-        globalVar->setInitializer(ConstantInt::get(Type::getInt64Ty(*hdl.context), 0));
-      } break;
-      case Typ::Data::Char: {
-        globalVar->setInitializer(ConstantInt::get(Type::getInt8Ty(*hdl.context), 0));
-        exit(-1);
-      } break;
-      case Typ::Data::Void: {
-        std::cerr << "Declaration of void type" << std::endl;
-        exit(1);
-      } break;
-      }
-
-    } break;
-    case Typ::Kind::Ptr: {
-      globalVar->setInitializer(ConstantPointerNull::get(PointerType::getUnqual(*hdl.context)));
-      exit(-1);
-    } break;
-    }
-
+    globalVar->setInitializer(this->typ->defaultgen(hdl));
     hdl.named_values[this->name()] = globalVar;
   } break;
   }

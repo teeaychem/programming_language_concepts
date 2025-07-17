@@ -34,7 +34,7 @@ struct Deref : AccessT {
 
   Access::Kind kind() const override { return Access::Kind::Deref; }
   std::string to_string(size_t indent) const override;
-  TypHandle eval_type() const override { return expr->type()->deref(); }
+  TypHandle eval_type() const override { return expr->type()->deref_unsafe(); }
 
   llvm::Value *codegen(LLVMBundle &hdl) override;
 };
@@ -50,7 +50,7 @@ struct Index : AccessT {
 
   Access::Kind kind() const override { return Access::Kind::Index; }
   std::string to_string(size_t indent) const override;
-  TypHandle eval_type() const override { return access->eval_type()->deref(); }
+  TypHandle eval_type() const override { return access->eval_type()->deref_unsafe(); }
 
   llvm::Value *codegen(LLVMBundle &hdl) override;
 };
