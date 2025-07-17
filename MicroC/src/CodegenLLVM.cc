@@ -47,10 +47,11 @@ Value *AST::Access::Index::codegen(LLVMBundle &hdl) {
 
 Value *AST::Access::Var::codegen(LLVMBundle &hdl) {
 
-  std::cout << "Checking env for " << this->var << " ... ";
+  std::cout << "Var: Checking env for " << this->var << " ... ";
+  fflush(stdout);
   auto it = hdl.named_values.find(this->var);
   if (it == hdl.named_values.end()) {
-    std::cerr << "Missing variable: " << this->var << "\n";
+    std::cerr << "Missing variable: " << this->var << std::endl;
 
     std::cout << "In scope:" << "\n";
     for (auto &x : hdl.named_values) {
@@ -59,34 +60,40 @@ Value *AST::Access::Var::codegen(LLVMBundle &hdl) {
 
     exit(-1);
   }
-  std::cout << "OK" << std::endl;
 
-  return it->second;
+  auto val = it->second;
+
+  std::cout << "found ";
+  fflush(stdout);
+
+  return val;
 }
 
 // Expr
 
 Value *AST::Expr::Access::codegen(LLVMBundle &hdl) {
+  Value *r_val;
+
   switch (this->mode) {
 
   case Mode::Access: {
-    auto alloca_inst = static_cast<AllocaInst *>(this->acc->codegen(hdl));
+    auto value = this->acc->codegen(hdl);
+    auto typ = this->acc->eval_type()->typegen(hdl);
 
-    auto *r_val = hdl.builder.CreateLoad(alloca_inst->getAllocatedType(), alloca_inst);
+    r_val = hdl.builder.CreateLoad(typ, value);
 
-    return r_val;
   } break;
   case Mode::Addr: {
 
-    auto alloca_inst = static_cast<AllocaInst *>(this->acc->codegen(hdl));
+    r_val = static_cast<AllocaInst *>(this->acc->codegen(hdl));
 
-    return alloca_inst;
   } break;
   }
+
+  return r_val;
 }
 
 Value *AST::Expr::Assign::codegen(LLVMBundle &hdl) {
-
   Value *value = this->expr->codegen(hdl);
   hdl.builder.CreateStore(value, this->dest->codegen(hdl));
 
@@ -217,6 +224,7 @@ Value *AST::Stmt::Return::codegen(LLVMBundle &hdl) {
       printf("Return without destination");
       std::exit(-1);
     }
+
     Value *r_val = this->value.value()->codegen(hdl);
 
     hdl.builder.CreateStore(r_val, r_dest);
@@ -238,6 +246,12 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) {
   if (it != hdl.named_values.end()) {
     std::cout << "Found record for: " << this->name() << std::endl;
     return it->second;
+  } else {
+    std::cout << "No record found for: " << this->name() << std::endl;
+    std::cout << "In scope:" << "\n";
+    for (auto &x : hdl.named_values) {
+      std::cout << "\t" << x.first << "\n";
+    }
   }
 
   switch (this->scope) {
@@ -265,7 +279,7 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) {
       switch (as_data->d_typ) {
 
       case Typ::Data::Int: {
-        globalVar->setInitializer(ConstantInt::get(Type::getInt64Ty(*hdl.context), 0));
+        globalVar->setInitializer(ConstantInt::get(Type::getInt64Ty(*hdl.context), 1));
       } break;
       case Typ::Data::Char: {
         std::cerr << "TODO: Global initialisation of char." << std::endl;
@@ -285,12 +299,7 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) {
     } break;
     }
 
-    // auto v = new GlobalVariable(*hdl.module, this->typ->typegen(hdl), false, GlobalVariable::LinkageTypes::CommonLinkage, nullptr, this->name());
-    // hdl.module->insertGlobalVariable(v);
-    // hdl.named_values[this->name()] = v;
-
-    // hdl.named_values[this->name()] = alloca;
-    std::cout << "OK" << std::endl;
+    hdl.named_values[this->name()] = globalVar;
   } break;
   }
 
