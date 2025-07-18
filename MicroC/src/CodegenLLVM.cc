@@ -231,6 +231,8 @@ Value *AST::Stmt::If::codegen(LLVMBundle &hdl) {
   hdl.builder.SetInsertPoint(true_block);
   Value *true_eval = this->yes->codegen(hdl);
 
+
+
   hdl.builder.CreateBr(merge_block);
   // true_block = hdl.builder.GetInsertBlock(); // update for PHI
 
@@ -325,7 +327,7 @@ Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) {
   auto fn_type = FunctionType::get(return_type, parameter_types, false);
   Function *fn = Function::Create(fn_type, Function::ExternalLinkage, this->id, hdl.module.get());
 
-  BasicBlock *fn_body = BasicBlock::Create(*hdl.context, std::format("entry.{}", this->id), fn);
+  BasicBlock *fn_body = BasicBlock::Create(*hdl.context, "entry", fn);
   hdl.builder.SetInsertPoint(fn_body);
 
   { // Parameters

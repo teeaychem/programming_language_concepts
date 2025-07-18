@@ -38,9 +38,9 @@ struct Fn : DecT {
 
   ParamVec params;
 
-  BlockHandle body;
+  StmtBlockHandle body;
 
-  Fn(TypHandle r_typ, std::string name, ParamVec params, BlockHandle body)
+  Fn(TypHandle r_typ, std::string name, ParamVec params, StmtBlockHandle body)
       : r_typ(std::move(r_typ)),
         id(name),
         params(std::move(params)),
