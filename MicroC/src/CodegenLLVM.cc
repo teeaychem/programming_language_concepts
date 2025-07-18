@@ -181,17 +181,11 @@ Value *AST::Stmt::Block::codegen(LLVMBundle &hdl) {
 
   for (auto &stmt : block.statements) {
     stmt->codegen(hdl);
-    switch (stmt->kind()) {
 
-    case AST::Stmt::Kind::Return: {
-      goto restore_named_values;
-    } break;
-    default:
+    if (stmt->returns()) {
       break;
     }
   }
-
-restore_named_values:
 
   // Unshadow shadowed vars
   for (auto &shadowed_var : shadowed_values) {
@@ -224,7 +218,7 @@ Value *AST::Stmt::If::codegen(LLVMBundle &hdl) {
   BasicBlock *block_else{}; // Build only if required
   BasicBlock *block_end = BasicBlock::Create(*hdl.context, "if.end");
 
-  if (this->els->block.empty()) {
+  if (this->stmt_else->block.empty()) {
     hdl.builder.CreateCondBr(condition_eval, block_then, block_end);
   } else {
     block_else = BasicBlock::Create(*hdl.context, "if.else");
@@ -232,9 +226,9 @@ Value *AST::Stmt::If::codegen(LLVMBundle &hdl) {
   }
 
   hdl.builder.SetInsertPoint(block_then);
-  Value *true_eval = this->thn->codegen(hdl);
+  Value *true_eval = this->stmt_then->codegen(hdl);
 
-  if (this->thn->block.fall_throughs) { //
+  if (!this->stmt_then->returns()) { //
     hdl.builder.CreateBr(block_end);
   }
   // true_block = hdl.builder.GetInsertBlock(); // update for PHI
@@ -242,41 +236,39 @@ Value *AST::Stmt::If::codegen(LLVMBundle &hdl) {
   if (block_else) {
     parent->insert(parent->end(), block_else);
     hdl.builder.SetInsertPoint(block_else);
-    Value *false_eval = this->els->codegen(hdl);
+    Value *false_eval = this->stmt_else->codegen(hdl);
 
-    if (this->els->block.fall_throughs) {
+    if (!this->stmt_else->returns()) {
       hdl.builder.CreateBr(block_end);
     }
     // false_block = hdl.builder.GetInsertBlock();  // update for PHI
   }
 
-  parent->insert(parent->end(), block_end);
-  hdl.builder.SetInsertPoint(block_end);
+  if (block_else == nullptr || !this->stmt_then->returns() || !this->stmt_else->returns()) {
+    parent->insert(parent->end(), block_end);
+    hdl.builder.SetInsertPoint(block_end);
+  }
 
   return ConstantInt::get(Type::getInt64Ty(*hdl.context), 2020);
 }
 
 Value *AST::Stmt::Return::codegen(LLVMBundle &hdl) {
 
-  if (!hdl.return_block) {
-    printf("Missing return block");
-    std::exit(-1);
-  }
-
   if (this->value.has_value()) {
-    Value *r_dest = hdl.return_alloca;
 
-    if (!r_dest) {
-      printf("Return without destination");
-      std::exit(-1);
+    Value *return_value = this->value.value()->codegen(hdl);
+
+    if (hdl.return_alloca) {
+      hdl.builder.CreateStore(return_value, hdl.return_alloca);
+      hdl.builder.CreateBr(hdl.return_block);
+    } else {
+      hdl.builder.CreateRet(return_value);
     }
 
-    Value *r_val = this->value.value()->codegen(hdl);
-
-    hdl.builder.CreateStore(r_val, r_dest);
+  } else {
+    printf("Return void");
+    std::exit(-1);
   }
-
-  hdl.builder.CreateBr(hdl.return_block);
 
   return ConstantInt::get(Type::getInt64Ty(*hdl.context), 0);
 }
@@ -359,28 +351,31 @@ Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) {
     }
   }
 
-  // Return
-  if (!return_type->isVoidTy()) {
-    AllocaInst *r_alloca = create_fn_alloca(fn, "ret.val", return_type);
-    hdl.return_alloca = r_alloca;
-  }
+  // Return setup
+  if (this->body->block.scoped_return) {
+    if (!return_type->isVoidTy()) {
+      AllocaInst *r_alloca = create_fn_alloca(fn, "ret.val", return_type);
+      hdl.return_alloca = r_alloca;
+    }
 
-  auto rb = BasicBlock::Create(*hdl.context, "return");
-  hdl.return_block = rb;
+    auto return_block = BasicBlock::Create(*hdl.context, "return");
+    hdl.return_block = return_block;
+  }
 
   hdl.builder.SetInsertPoint(fn_body);
 
   this->body->codegen(hdl);
 
-  fn->insert(fn->end(), rb);
+  if (this->body->block.scoped_return) {
+    fn->insert(fn->end(), hdl.return_block);
+    hdl.builder.SetInsertPoint(hdl.return_block);
 
-  hdl.builder.SetInsertPoint(rb);
-
-  if (!return_type->isVoidTy()) {
-    auto *r_val = hdl.builder.CreateLoad(return_type, hdl.return_alloca);
-    auto r_inst = hdl.builder.CreateRet(r_val);
-  } else {
-    auto r_inst = hdl.builder.CreateRetVoid();
+    if (return_type->isVoidTy()) {
+      hdl.builder.CreateRetVoid();
+    } else {
+      auto *return_value = hdl.builder.CreateLoad(return_type, hdl.return_alloca);
+      hdl.builder.CreateRet(return_value);
+    }
   }
 
   hdl.return_block = outer_return_block;
