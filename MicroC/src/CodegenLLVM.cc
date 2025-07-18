@@ -168,8 +168,6 @@ Value *AST::Stmt::Block::codegen(LLVMBundle &hdl) {
 
   std::vector<std::pair<std::string, Value *>> shadowed_values{};
 
-  bool stop = false;
-
   for (auto &fresh_dec : block.fresh_vars) {
     fresh_dec->codegen(hdl);
   }
@@ -182,19 +180,18 @@ Value *AST::Stmt::Block::codegen(LLVMBundle &hdl) {
   }
 
   for (auto &stmt : block.statements) {
-
+    stmt->codegen(hdl);
     switch (stmt->kind()) {
 
     case AST::Stmt::Kind::Return: {
-      stop = true;
+      goto restore_named_values;
     } break;
-
     default:
       break;
     }
-
-    stmt->codegen(hdl);
   }
+
+restore_named_values:
 
   // Unshadow shadowed vars
   for (auto &shadowed_var : shadowed_values) {
@@ -217,34 +214,44 @@ Value *AST::Stmt::If::codegen(LLVMBundle &hdl) {
 
   Function *parent = hdl.builder.GetInsertBlock()->getParent();
 
-  BasicBlock *true_block = BasicBlock::Create(*hdl.context, "true", parent);
-  BasicBlock *false_block = BasicBlock::Create(*hdl.context, "false");
-  BasicBlock *merge_block = BasicBlock::Create(*hdl.context, "merge");
-
+  // Condition evaluation
   Value *condition = this->condition->codegen(hdl);
-
   Value *zero = ConstantInt::get(Type::getInt64Ty(*hdl.context), 0);
   auto condition_eval = hdl.builder.CreateCmp(ICmpInst::ICMP_NE, condition, zero);
 
-  hdl.builder.CreateCondBr(condition_eval, true_block, false_block);
+  // Flow block setup
+  BasicBlock *block_then = BasicBlock::Create(*hdl.context, "if.then", parent);
+  BasicBlock *block_else{}; // Build only if required
+  BasicBlock *block_end = BasicBlock::Create(*hdl.context, "if.end");
 
-  hdl.builder.SetInsertPoint(true_block);
-  Value *true_eval = this->yes->codegen(hdl);
+  if (this->els->block.empty()) {
+    hdl.builder.CreateCondBr(condition_eval, block_then, block_end);
+  } else {
+    block_else = BasicBlock::Create(*hdl.context, "if.else");
+    hdl.builder.CreateCondBr(condition_eval, block_then, block_else);
+  }
 
+  hdl.builder.SetInsertPoint(block_then);
+  Value *true_eval = this->thn->codegen(hdl);
 
-
-  hdl.builder.CreateBr(merge_block);
+  if (this->thn->block.fall_throughs) { //
+    hdl.builder.CreateBr(block_end);
+  }
   // true_block = hdl.builder.GetInsertBlock(); // update for PHI
 
-  parent->insert(parent->end(), false_block);
-  hdl.builder.SetInsertPoint(false_block);
-  Value *false_eval = this->no->codegen(hdl);
+  if (block_else) {
+    parent->insert(parent->end(), block_else);
+    hdl.builder.SetInsertPoint(block_else);
+    Value *false_eval = this->els->codegen(hdl);
 
-  hdl.builder.CreateBr(merge_block);
-  // false_block = hdl.builder.GetInsertBlock();  // update for PHI
+    if (this->els->block.fall_throughs) {
+      hdl.builder.CreateBr(block_end);
+    }
+    // false_block = hdl.builder.GetInsertBlock();  // update for PHI
+  }
 
-  parent->insert(parent->end(), merge_block);
-  hdl.builder.SetInsertPoint(merge_block);
+  parent->insert(parent->end(), block_end);
+  hdl.builder.SetInsertPoint(block_end);
 
   return ConstantInt::get(Type::getInt64Ty(*hdl.context), 2020);
 }
