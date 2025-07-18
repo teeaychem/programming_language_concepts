@@ -249,13 +249,13 @@ Value *AST::Stmt::If::codegen(LLVMBundle &hdl) {
 
 Value *AST::Stmt::Return::codegen(LLVMBundle &hdl) {
 
-  if (!hdl.named_blocks["return"]) {
+  if (!hdl.return_block) {
     printf("Missing return block");
     std::exit(-1);
   }
 
   if (this->value.has_value()) {
-    Value *r_dest = hdl.named_values["ret.val"];
+    Value *r_dest = hdl.return_alloca;
 
     if (!r_dest) {
       printf("Return without destination");
@@ -267,7 +267,7 @@ Value *AST::Stmt::Return::codegen(LLVMBundle &hdl) {
     hdl.builder.CreateStore(r_val, r_dest);
   }
 
-  hdl.builder.CreateBr(hdl.named_blocks["return"]);
+  hdl.builder.CreateBr(hdl.return_block);
 
   return ConstantInt::get(Type::getInt64Ty(*hdl.context), 0);
 }
@@ -305,23 +305,27 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) {
 }
 
 Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) {
-  // TODO: Shadowed return value storage
+  BasicBlock *outer_return_block = hdl.return_block; // stash any existing return block, to be restored on exit
+  Value *outer_return_alloca = hdl.return_alloca;    // likewise for return value allocation
 
-  llvm::Type *r_typ = this->r_typ->typegen(hdl);
-  std::vector<llvm::Type *> param_typs{};
+  std::vector<std::pair<std::string, Value *>> shadowed_parameters{};
+  std::vector<std::string> fresh_parameters{};
+
+  llvm::Type *return_type = this->r_typ->typegen(hdl);
+  std::vector<llvm::Type *> parameter_types{};
 
   { // Generate the parameter types
-    param_typs.reserve(this->params.size());
+    parameter_types.reserve(this->params.size());
 
     for (auto &p : this->params) {
-      param_typs.push_back(p.first->typegen(hdl));
+      parameter_types.push_back(p.first->typegen(hdl));
     }
   }
 
-  auto fn_typ = FunctionType::get(r_typ, param_typs, false);
-  Function *fn = Function::Create(fn_typ, Function::ExternalLinkage, this->id, hdl.module.get());
+  auto fn_type = FunctionType::get(return_type, parameter_types, false);
+  Function *fn = Function::Create(fn_type, Function::ExternalLinkage, this->id, hdl.module.get());
 
-  BasicBlock *fn_body = BasicBlock::Create(*hdl.context, std::format("entry", this->id), fn);
+  BasicBlock *fn_body = BasicBlock::Create(*hdl.context, std::format("entry.{}", this->id), fn);
   hdl.builder.SetInsertPoint(fn_body);
 
   { // Parameters
@@ -332,24 +336,28 @@ Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) {
 
       arg.setName(base_name);
 
-      std::string name = base_name;
-
-      AllocaInst *alloca = create_fn_alloca(fn, name, arg.getType());
+      AllocaInst *alloca = create_fn_alloca(fn, base_name, arg.getType());
       hdl.builder.CreateStore(&arg, alloca);
 
-      hdl.named_values[name] = alloca;
+      auto it = hdl.named_values.find(base_name);
+      if (it != hdl.named_values.end()) {
+        shadowed_parameters.push_back(std::make_pair(base_name, alloca));
+      } else {
+        fresh_parameters.push_back(base_name);
+      }
+
+      hdl.named_values[base_name] = alloca;
     }
   }
 
   // Return
-  if (!r_typ->isVoidTy()) {
-    std::string r_name = "ret.val";
-    AllocaInst *r_alloca = create_fn_alloca(fn, r_name, r_typ);
-    hdl.named_values[r_name] = r_alloca;
+  if (!return_type->isVoidTy()) {
+    AllocaInst *r_alloca = create_fn_alloca(fn, "ret.val", return_type);
+    hdl.return_alloca = r_alloca;
   }
 
   auto rb = BasicBlock::Create(*hdl.context, "return");
-  hdl.named_blocks["return"] = rb;
+  hdl.return_block = rb;
 
   hdl.builder.SetInsertPoint(fn_body);
 
@@ -359,12 +367,22 @@ Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) {
 
   hdl.builder.SetInsertPoint(rb);
 
-  if (!r_typ->isVoidTy()) {
-    auto r_alloca = hdl.named_values["ret.val"];
-    auto *r_val = hdl.builder.CreateLoad(r_typ, r_alloca);
+  if (!return_type->isVoidTy()) {
+    auto *r_val = hdl.builder.CreateLoad(return_type, hdl.return_alloca);
     auto r_inst = hdl.builder.CreateRet(r_val);
   } else {
     auto r_inst = hdl.builder.CreateRetVoid();
+  }
+
+  hdl.return_block = outer_return_block;
+  hdl.return_alloca = outer_return_alloca;
+
+  for (auto &shadowed : shadowed_parameters) {
+    hdl.named_values[shadowed.first] = shadowed.second;
+  }
+
+  for (auto &fresh : fresh_parameters) {
+    hdl.named_values.erase(fresh);
   }
 
   return ConstantInt::get(Type::getInt64Ty(*hdl.context), 2020);

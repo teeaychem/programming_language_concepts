@@ -13,11 +13,13 @@ struct LLVMBundle {
   std::unique_ptr<llvm::Module> module;
   llvm::IRBuilder<> builder;
 
+  std::map<std::string, llvm::Value *> named_values{};
+
+  llvm::BasicBlock *return_block{nullptr};
+  llvm::Value* return_alloca{nullptr};
+
   std::map<std::string, llvm::Function *> base_fns{
       {"printf", llvm::Function::Create(llvm::FunctionType::get(llvm::PointerType::getUnqual(llvm::Type::getInt8Ty(*this->context)), true), llvm::Function::ExternalLinkage, "printf", this->module.get())}};
-
-  std::map<std::string, llvm::Value *> named_values{};
-  std::map<std::string, llvm::BasicBlock *> named_blocks{};
 
   std::map<const std::string, std::function<llvm::Value *(llvm::Value *)>> prim1_fns{
       {"-", [this](llvm::Value *expr) { return this->builder.CreateMul(llvm::ConstantInt::get(expr->getType(), -1), expr, "sub"); }},
@@ -50,8 +52,7 @@ struct LLVMBundle {
         module(std::make_unique<llvm::Module>("microC", *context)),
         builder(llvm::IRBuilder<>(*context)),
 
-        named_values({}),
-        named_blocks({}) {};
+        named_values({}) {};
 };
 
 typedef std::unique_ptr<LLVMBundle> LLVMBundleHandle;
