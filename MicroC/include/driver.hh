@@ -87,7 +87,7 @@ struct Driver {
     return std::make_shared<AST::Dec::Var>(std::move(dec));
   }
 
-  AST::DecHandle pk_DecFn(AST::TypHandle r_typ, std::string var, AST::ParamVec params, AST::BlockHandle body) {
+  AST::DecHandle pk_DecFn(AST::TypHandle r_typ, std::string var, AST::ParamVec params, AST::StmtBlockHandle body) {
 
     if (this->env.find(var) != this->env.end()) {
       std::cerr << "Existing use of: '" << var << "' unable to declare function." << std::endl;
@@ -142,7 +142,7 @@ struct Driver {
 
   // pk Stmt
 
-  AST::BlockHandle pk_StmtBlock(AST::Block &&bv) {
+  AST::StmtBlockHandle pk_StmtBlock(AST::Block &&bv) {
     AST::Stmt::Block b(std::move(bv));
     return std::make_shared<AST::Stmt::Block>(std::move(b));
   }
@@ -158,7 +158,27 @@ struct Driver {
   }
 
   AST::StmtHandle pk_StmtIf(AST::ExprHandle condition, AST::StmtHandle yes, AST::StmtHandle no) {
-    AST::Stmt::If e(std::move(condition), std::move(yes), std::move(no));
+
+    AST::StmtBlockHandle yes_block;
+    AST::StmtBlockHandle no_block;
+
+    if (yes->kind() == AST::Stmt::Kind::Block) {
+      yes_block = std::static_pointer_cast<AST::Stmt::Block>(yes);
+    } else {
+      auto fresh_block = AST::Block();
+      fresh_block.push_Stmt(yes);
+      yes_block = pk_StmtBlock(std::move(fresh_block));
+    }
+
+    if (no->kind() == AST::Stmt::Kind::Block) {
+      no_block = std::static_pointer_cast<AST::Stmt::Block>(no);
+    } else {
+      auto fresh_block = AST::Block();
+      fresh_block.push_Stmt(no);
+      no_block = pk_StmtBlock(std::move(fresh_block));
+    }
+
+    AST::Stmt::If e(std::move(condition), std::move(yes_block), std::move(no_block));
     return std::make_shared<AST::Stmt::If>(std::move(e));
   }
 

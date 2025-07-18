@@ -40,10 +40,10 @@ struct Expr : StmtT {
 
 struct If : StmtT {
   ExprHandle condition;
-  StmtHandle yes;
-  StmtHandle no;
+  StmtBlockHandle yes;
+  StmtBlockHandle no;
 
-  If(ExprHandle condition, StmtHandle yes, StmtHandle no)
+  If(ExprHandle condition, StmtBlockHandle yes, StmtBlockHandle no)
       : condition(condition), yes(yes), no(no) {}
 
   std::string to_string(size_t indent) const override;

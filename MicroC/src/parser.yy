@@ -86,7 +86,7 @@ AST::ExprHandle AccessAssign(Driver &driver, std::string op, AST::AccessHandle d
 %nterm <AST::ParamVec> Paramdecs
 %nterm <AST::ParamVec> ParamdecsNE
 
-%nterm <AST::BlockHandle> Block
+%nterm <AST::StmtBlockHandle> Block
 %nterm <AST::Block> StmtOrDecSeq
 
 %nterm <AST::StmtHandle> Stmt
@@ -281,7 +281,7 @@ Topdec:
 
 
 Vardec:
-    DataType Vardesc  { $2.first->complete_data($1); $$ = $2; }
+    DataType Vardesc  { $2.first->complete_data_unsafe($1); $$ = $2; }
 ;
 
 

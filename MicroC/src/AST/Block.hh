@@ -29,7 +29,7 @@ struct Block {
 
   std::vector<AST::DecHandle> shadowed_vars{};
 
-  bool empty() { return this->statements.empty() && this->fresh_vars.empty() && this->shadowed_vars.empty(); };
+  bool empty() { return this->statements.empty() && this->fresh_vars.empty() && this->shadow_vars.empty(); };
 
   void push_DecVar(Driver &driver, AST::DecVarHandle &dec_var);
 
