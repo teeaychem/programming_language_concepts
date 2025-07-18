@@ -146,6 +146,7 @@ struct While;
 struct StmtT : NodeT {
   AST::Kind kind_abstract() const override { return AST::Kind::Stmt; }
   [[nodiscard]] virtual Stmt::Kind kind() const = 0;
+  [[nodiscard]] virtual bool returns() const = 0;
 };
 
 // Declarations

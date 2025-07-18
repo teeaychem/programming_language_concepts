@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <optional>
 #include <string>
 
@@ -20,6 +21,7 @@ struct Block : StmtT {
   std::string to_string(size_t indent) const override;
   Stmt::Kind kind() const override { return Stmt::Kind::Block; }
   llvm::Value *codegen(LLVMBundle &hdl) override;
+  [[nodiscard]] bool returns() const override { return this->block.returns; };
 };
 
 // Expr
@@ -34,21 +36,23 @@ struct Expr : StmtT {
   Stmt::Kind kind() const override { return Stmt::Kind::Expr; }
 
   llvm::Value *codegen(LLVMBundle &hdl) override;
+  [[nodiscard]] bool returns() const override { return false; };
 };
 
 // If
 
 struct If : StmtT {
   ExprHandle condition;
-  StmtBlockHandle thn;
-  StmtBlockHandle els;
+  StmtBlockHandle stmt_then;
+  StmtBlockHandle stmt_else;
 
-  If(ExprHandle condition, StmtBlockHandle yes, StmtBlockHandle no)
-      : condition(condition), thn(yes), els(no) {}
+  If(ExprHandle condition, StmtBlockHandle stmt_then, StmtBlockHandle stmt_else)
+      : condition(condition), stmt_then(stmt_then), stmt_else(stmt_else) {}
 
   std::string to_string(size_t indent) const override;
   Stmt::Kind kind() const override { return Stmt::Kind::If; }
   llvm::Value *codegen(LLVMBundle &hdl) override;
+  [[nodiscard]] bool returns() const override { return this->stmt_then->block.returns && this->stmt_else->block.returns; };
 };
 
 // Return
@@ -62,6 +66,7 @@ struct Return : StmtT {
   std::string to_string(size_t indent) const override;
   Stmt::Kind kind() const override { return Stmt::Kind::Return; }
   llvm::Value *codegen(LLVMBundle &hdl) override;
+  [[nodiscard]] bool returns() const override { return true; };
 };
 
 // While
@@ -76,6 +81,12 @@ struct While : StmtT {
   std::string to_string(size_t indent) const override;
   Stmt::Kind kind() const override { return Stmt::Kind::If; }
   llvm::Value *codegen(LLVMBundle &hdl) override;
+  [[nodiscard]] bool returns() const override {
+    std::cout << "TODO: While returns?" << std::endl;
+    exit(-1);
+
+    return false;
+  };
 };
 
 } // namespace Stmt
