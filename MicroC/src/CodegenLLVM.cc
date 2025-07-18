@@ -214,6 +214,36 @@ Value *AST::Stmt::Expr::codegen(LLVMBundle &hdl) {
 }
 
 Value *AST::Stmt::If::codegen(LLVMBundle &hdl) {
+
+  Function *parent = hdl.builder.GetInsertBlock()->getParent();
+
+  BasicBlock *true_block = BasicBlock::Create(*hdl.context, "true", parent);
+  BasicBlock *false_block = BasicBlock::Create(*hdl.context, "false");
+  BasicBlock *merge_block = BasicBlock::Create(*hdl.context, "merge");
+
+  Value *condition = this->condition->codegen(hdl);
+
+  Value *zero = ConstantInt::get(Type::getInt64Ty(*hdl.context), 0);
+  auto condition_eval = hdl.builder.CreateCmp(ICmpInst::ICMP_NE, condition, zero);
+
+  hdl.builder.CreateCondBr(condition_eval, true_block, false_block);
+
+  hdl.builder.SetInsertPoint(true_block);
+  Value *true_eval = this->yes->codegen(hdl);
+
+  hdl.builder.CreateBr(merge_block);
+  // true_block = hdl.builder.GetInsertBlock(); // update for PHI
+
+  parent->insert(parent->end(), false_block);
+  hdl.builder.SetInsertPoint(false_block);
+  Value *false_eval = this->no->codegen(hdl);
+
+  hdl.builder.CreateBr(merge_block);
+  // false_block = hdl.builder.GetInsertBlock();  // update for PHI
+
+  parent->insert(parent->end(), merge_block);
+  hdl.builder.SetInsertPoint(merge_block);
+
   return ConstantInt::get(Type::getInt64Ty(*hdl.context), 2020);
 }
 
@@ -275,8 +305,7 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) {
 }
 
 Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) {
-
-  // hdl.named_values.clear(); // Functions are top level
+  // TODO: Shadowed return value storage
 
   llvm::Type *r_typ = this->r_typ->typegen(hdl);
   std::vector<llvm::Type *> param_typs{};
@@ -312,29 +341,31 @@ Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) {
     }
   }
 
-  { // Return
-    if (!r_typ->isVoidTy()) {
-      std::string r_name = "ret.val";
-      AllocaInst *r_alloca = create_fn_alloca(fn, r_name, r_typ);
-      hdl.named_values[r_name] = r_alloca;
-    }
-
-    auto rb = BasicBlock::Create(*hdl.context, "return", fn);
-    hdl.named_blocks["return"] = rb;
-    hdl.builder.SetInsertPoint(rb);
-
-    if (!r_typ->isVoidTy()) {
-      auto r_alloca = hdl.named_values["ret.val"];
-      auto *r_val = hdl.builder.CreateLoad(r_typ, r_alloca);
-      auto r_inst = hdl.builder.CreateRet(r_val);
-    } else {
-      auto r_inst = hdl.builder.CreateRetVoid();
-    }
+  // Return
+  if (!r_typ->isVoidTy()) {
+    std::string r_name = "ret.val";
+    AllocaInst *r_alloca = create_fn_alloca(fn, r_name, r_typ);
+    hdl.named_values[r_name] = r_alloca;
   }
+
+  auto rb = BasicBlock::Create(*hdl.context, "return");
+  hdl.named_blocks["return"] = rb;
 
   hdl.builder.SetInsertPoint(fn_body);
 
   this->body->codegen(hdl);
+
+  fn->insert(fn->end(), rb);
+
+  hdl.builder.SetInsertPoint(rb);
+
+  if (!r_typ->isVoidTy()) {
+    auto r_alloca = hdl.named_values["ret.val"];
+    auto *r_val = hdl.builder.CreateLoad(r_typ, r_alloca);
+    auto r_inst = hdl.builder.CreateRet(r_val);
+  } else {
+    auto r_inst = hdl.builder.CreateRetVoid();
+  }
 
   return ConstantInt::get(Type::getInt64Ty(*hdl.context), 2020);
 }
