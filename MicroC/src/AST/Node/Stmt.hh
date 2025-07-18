@@ -40,11 +40,11 @@ struct Expr : StmtT {
 
 struct If : StmtT {
   ExprHandle condition;
-  StmtBlockHandle yes;
-  StmtBlockHandle no;
+  StmtBlockHandle thn;
+  StmtBlockHandle els;
 
   If(ExprHandle condition, StmtBlockHandle yes, StmtBlockHandle no)
-      : condition(condition), yes(yes), no(no) {}
+      : condition(condition), thn(yes), els(no) {}
 
   std::string to_string(size_t indent) const override;
   Stmt::Kind kind() const override { return Stmt::Kind::If; }

@@ -200,13 +200,13 @@ std::string AST::Stmt::If::to_string(size_t indent) const {
         << " "
         << this->condition->to_string(indent)
         << " "
-        << this->yes->to_string(indent);
+        << this->thn->to_string(indent);
 
-  if (this->no->kind() == AST::Stmt::Kind::Block) {
-    auto as_block = std::static_pointer_cast<AST::Stmt::Block>(this->no);
+  if (this->els->kind() == AST::Stmt::Kind::Block) {
+    auto as_block = std::static_pointer_cast<AST::Stmt::Block>(this->els);
     if (!as_block->block.empty()) {
       if_ss << " else "
-            << this->no->to_string(indent);
+            << this->els->to_string(indent);
     }
   }
 
