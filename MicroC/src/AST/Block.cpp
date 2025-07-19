@@ -43,6 +43,7 @@ void AST::Block::push_Stmt(AST::StmtHandle const &stmt) {
     this->returns = true;
 
   } break;
+
   case Stmt::Kind::If: {
     auto stmt_if = std::static_pointer_cast<AST::Stmt::If>(stmt);
     size_t passed_through = this->pass_throughs;
@@ -64,7 +65,7 @@ void AST::Block::push_Stmt(AST::StmtHandle const &stmt) {
     this->early_returns += stmt_while->stmt->early_returns();
     this->pass_throughs += stmt_while->stmt->pass_throughs();
 
-    this->returns = stmt_while->stmt->returns();
+    this->returns = stmt_while->returns();
   } break;
 
   default:
