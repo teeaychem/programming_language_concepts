@@ -5,17 +5,17 @@
 #include <string>
 #include <format>
 
-#include "AST/AST.hh"
+#include "AST/AST.hpp"
 
-#include "AST/Block.hh"
-#include "AST/Node/Access.hh"
-#include "AST/Node/Dec.hh"
-#include "AST/Node/Expr.hh"
-#include "AST/Node/Stmt.hh"
+#include "AST/Block.hpp"
+#include "AST/Node/Access.hpp"
+#include "AST/Node/Dec.hpp"
+#include "AST/Node/Expr.hpp"
+#include "AST/Node/Stmt.hpp"
 
-#include "AST/Types.hh"
+#include "AST/Types.hpp"
 
-#include "AST/Fmt.hh"
+#include "AST/Fmt.hpp"
 
 size_t const INDENT_SIZE = 2;
 

@@ -7,7 +7,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "AST/AST.hh"
+#include "AST/AST.hpp"
 
 namespace AST {
 

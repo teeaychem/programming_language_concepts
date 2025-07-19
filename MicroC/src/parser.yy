@@ -10,8 +10,8 @@
 
 %code requires {
   #include <string>
-  #include "AST/AST.hh"
-  #include "AST/Block.hh"  
+  #include "AST/AST.hpp"
+  #include "AST/Block.hpp"  
 
   struct Driver;
 }
@@ -25,16 +25,16 @@
 %define parse.lac full
 
 %code {
-#include "Driver.hh"
+#include "Driver.hpp"
 
-#include "AST/Block.hh"
+#include "AST/Block.hpp"
 
-#include "AST/Node/Access.hh"
-#include "AST/Node/Dec.hh"
-#include "AST/Node/Expr.hh"
-#include "AST/Node/Stmt.hh"
+#include "AST/Node/Access.hpp"
+#include "AST/Node/Dec.hpp"
+#include "AST/Node/Expr.hpp"
+#include "AST/Node/Stmt.hpp"
 
-#include "AST/Types.hh"
+#include "AST/Types.hpp"
 
 AST::ExprHandle AccessAssign(Driver &driver, std::string op, AST::AccessHandle dest, AST::ExprHandle expr);
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "AST.hh"
+#include "AST.hpp"
 
 /*
   Blocks contain variable declarations and statements.

@@ -12,6 +12,7 @@ find_package(FLEX REQUIRED)
 find_package(BISON REQUIRED)
 
 option(ALSO_BUILD_TESTS "Build tests" OFF)
+option(BUILD_COLLATZ "Build Collatz" OFF)
 
 # flex and bison
 
@@ -25,20 +26,20 @@ flex_target(
 bison_target(
     PARSER
     ${CMAKE_CURRENT_SOURCE_DIR}/src/parser.yy
-    ${CMAKE_CURRENT_BINARY_DIR}/parser.cc
-    DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/parser.hh
+    ${CMAKE_CURRENT_BINARY_DIR}/parser.cpp
+    DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/parser.hpp
     #  COMPILE_FLAGS "-v"
 )
 add_flex_bison_dependency(SCANNER PARSER)
 
 # AST files
 
-file(GLOB AST_H src/AST/*.hh)
-file(GLOB AST_I src/AST/*.cc)
+file(GLOB AST_H src/AST/*.hpp)
+file(GLOB AST_I src/AST/*.cpp)
 
 # Source files
 
-file(GLOB SRC_I src/*.cc)
+file(GLOB SRC_I src/*.cpp)
 
 # LLVM
 
@@ -78,8 +79,8 @@ target_sources(
         ${SRC_I}
     PUBLIC
         FILE_SET HEADERS
-            BASE_DIRS ${PROJECT_SOURCE_DIR}/include
-            FILES include/mcLLVM.hh include/driver.hh include/CodegenLLVM.hh
+            BASE_DIRS ${PROJECT_SOURCE_DIR}/src
+            FILES src/Driver.hpp src/CodegenLLVM.hpp
 )
 
 target_include_directories(
@@ -96,27 +97,20 @@ add_subdirectory(src)
 
 # mc
 
-add_executable(mc)
-target_sources(mc PRIVATE bin/main.cc)
-target_include_directories(
-    mc
-    PRIVATE
-        ${CMAKE_CURRENT_BINARY_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
-target_link_libraries(mc PRIVATE ${PROJECT_NAME} ${LLVM_LIBS})
+add_executable(microCJIT)
+target_sources(microCJIT PRIVATE bin/microCJIT.cpp)
+target_include_directories(microCJIT PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+target_link_libraries(microCJIT PRIVATE ${PROJECT_NAME} ${LLVM_LIBS})
 
 # collatz
 
-add_executable(collatz)
-target_sources(collatz PRIVATE bin/collatz.cc)
-target_link_libraries(collatz PRIVATE ${PROJECT_NAME} ${LLVM_LIBS})
+if(BUILD_COLLATZ)
+    add_executable(collatz)
+    target_sources(collatz PRIVATE bin/collatz.cpp)
+    target_link_libraries(collatz PRIVATE ${PROJECT_NAME} ${LLVM_LIBS})
+endif()
 
 # other things
-
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-include(installation)
 
 execute_process(
     COMMAND
