@@ -2,8 +2,6 @@
 
 #include "AST.hh"
 
-struct Driver; // Required forward dec
-
 /*
   Blocks contain variable declarations and statements.
   Block do not contain functions as functions can only be delcared in global scope.
@@ -21,27 +19,34 @@ struct Driver; // Required forward dec
  */
 namespace AST {
 struct Block {
-  bool returns{false};
-  bool scoped_return{false};
-  std::vector<AST::DecVarHandle> fresh_vars{};
-  std::vector<AST::DecVarHandle> shadow_vars{};
+
+  bool returns{false};                          // Whether all branches (including main) lead to a return statement
+  bool scoped_return{false};                    // Whether the main branch leads to a return statement
+  std::vector<AST::DecVarHandle> fresh_vars{};  // Variables whose name does *not* appear in any larger scope
+  std::vector<AST::DecVarHandle> shadow_vars{}; // Variables whose name *does* appear in some larger scope
 
   std::vector<AST::StmtHandle> statements{};
 
-  std::vector<AST::DecHandle> shadowed_vars{};
+  std::vector<AST::DecHandle> shadowed_vars{}; // (Temporary) storage of shadowed variables
 
-  size_t early_returns{0};
-  size_t pass_throughs{0};
+  size_t early_returns{0}; // How many paths originating in the block *lead* to a return statment
+  size_t pass_throughs{0}; // How many paths originating in the block *do not* lead to a return statment
 
   // Methods
 
-  bool empty() { return this->statements.empty() && this->fresh_vars.empty() && this->shadow_vars.empty(); };
+  // Whether the block is empty (no declarations or statements).
+  bool empty() const { return this->statements.empty() && this->fresh_vars.empty() && this->shadow_vars.empty(); };
 
-  void push_DecVar(Driver &driver, AST::DecVarHandle &dec_var);
+  // Add a declaration, using `env` to determine which variables are in scope.
+  // And, mutates `env` in accordance with the declaration.
+  void push_DecVar(AST::Env &env, AST::DecVarHandle const &dec_var);
 
-  void push_Stmt(AST::StmtHandle &stmt);
+  // Add a statement.
+  void push_Stmt(AST::StmtHandle const &stmt);
 
-  void finalize(Driver &driver);
+  // To be called after the final declaration / statement has been added to the block.
+  // Of note, restores `env` to its state prior to processing the block.
+  void finalize(AST::Env &env);
 };
 
 } // namespace AST

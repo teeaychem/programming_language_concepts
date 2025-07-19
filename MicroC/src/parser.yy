@@ -140,7 +140,7 @@ AtExprNotAccess:
 
 Block:
     LBRACE StmtOrDecSeq RBRACE
-      { $2.finalize(driver);
+      { $2.finalize(driver.env);
         $$ = driver.pk_StmtBlock(std::move($2));
       }
 ;
@@ -258,7 +258,7 @@ StmtOrDecSeq:
   | StmtOrDecSeq Stmt         { $1.push_Stmt($2); $$ = $1;                      }
   | StmtOrDecSeq Vardec SEMI  {
       auto dec = driver.pk_DecVar(AST::Dec::Scope::Local, $2.first, $2.second);
-      $1.push_DecVar(driver, dec);
+      $1.push_DecVar(driver.env, dec);
       $$ = $1;                                                                  }
 ;
 
