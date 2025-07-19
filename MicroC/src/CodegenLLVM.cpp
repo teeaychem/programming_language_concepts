@@ -247,9 +247,7 @@ Value *AST::Stmt::Return::codegen(LLVMBundle &hdl) {
     }
 
   } else {
-    // TOOD: Void returns
-    printf("Return void");
-    std::exit(-1);
+    hdl.builder.CreateRetVoid();
   }
 
   return ConstantInt::get(Type::getInt64Ty(*hdl.context), 0);
@@ -377,15 +375,15 @@ Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) {
   this->body->codegen(hdl);
 
   if (this->body->block.scoped_return) {
-    fn->insert(fn->end(), hdl.return_block);
-    hdl.builder.SetInsertPoint(hdl.return_block);
+    if (!return_type->isVoidTy()) {
+      fn->insert(fn->end(), hdl.return_block);
+      hdl.builder.SetInsertPoint(hdl.return_block);
 
-    if (return_type->isVoidTy()) {
-      hdl.builder.CreateRetVoid();
-    } else {
       auto *return_value = hdl.builder.CreateLoad(return_type, hdl.return_alloca);
       hdl.builder.CreateRet(return_value);
     }
+  } else if (return_type->isVoidTy()) {
+    hdl.builder.CreateRetVoid();
   }
 
   hdl.return_block = outer_return_block;
