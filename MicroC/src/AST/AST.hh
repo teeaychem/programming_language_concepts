@@ -194,4 +194,6 @@ typedef std::shared_ptr<AST::Stmt::Block> StmtBlockHandle;
 typedef std::vector<std::pair<TypHandle, std::string>> ParamVec;
 typedef std::vector<std::variant<StmtHandle, DecHandle>> BlockVec;
 
+typedef std::map<std::string, AST::DecHandle> Env;
+
 } // namespace AST
