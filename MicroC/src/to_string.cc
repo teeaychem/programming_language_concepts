@@ -121,8 +121,8 @@ std::string AST::Expr::Call::to_string(size_t indent) const {
   call_ss << this->name
           << "(";
 
-  if (!parameters.empty()) {
-    for (auto &param : parameters) {
+  if (!arguments.empty()) {
+    for (auto &param : arguments) {
       call_ss << param->to_string(indent)
               << ", ";
     }
@@ -133,7 +133,7 @@ std::string AST::Expr::Call::to_string(size_t indent) const {
 
   std::string call_str = call_ss.str();
 
-  if (!parameters.empty()) {
+  if (!arguments.empty()) {
     call_str.pop_back();
   }
 

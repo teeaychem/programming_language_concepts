@@ -33,46 +33,35 @@ static AllocaInst *create_fn_alloca(Function *fn, StringRef name, Type *typ) {
 // Access
 
 Value *AST::Access::Deref::codegen(LLVMBundle &hdl) {
+  // TODO: Access deref codegen
   return ConstantInt::get(Type::getInt64Ty(*hdl.context), 2020);
 }
 
 Value *AST::Access::Index::codegen(LLVMBundle &hdl) {
   Value *value = this->access->codegen(hdl);
+  Type *typ = this->access->eval_type()->typegen(hdl);
+
   Value *index = this->index->codegen(hdl);
 
-  auto ptr = hdl.builder.CreateGEP(Type::getInt64Ty(*hdl.context), value, ArrayRef<Value *>(index));
+  auto ptr = hdl.builder.CreateGEP(typ, value, ArrayRef<Value *>(index));
 
   return ptr;
 }
 
 Value *AST::Access::Var::codegen(LLVMBundle &hdl) {
-
-  std::cout << "Var: Checking env for " << this->var << " ... ";
-  fflush(stdout);
   auto it = hdl.named_values.find(this->var);
   if (it == hdl.named_values.end()) {
     std::cerr << "Missing variable: " << this->var << std::endl;
-
-    std::cout << "In scope:" << "\n";
-    for (auto &x : hdl.named_values) {
-      std::cout << "\t" << x.first << "\n";
-    }
-
     exit(-1);
   }
 
-  auto val = it->second;
-
-  std::cout << "found ";
-  fflush(stdout);
-
-  return val;
+  return it->second;
 }
 
 // Expr
 
 Value *AST::Expr::Access::codegen(LLVMBundle &hdl) {
-  Value *r_val;
+  Value *return_value;
 
   switch (this->mode) {
 
@@ -80,22 +69,21 @@ Value *AST::Expr::Access::codegen(LLVMBundle &hdl) {
     auto value = this->acc->codegen(hdl);
     auto typ = this->acc->eval_type()->typegen(hdl);
 
-    r_val = hdl.builder.CreateLoad(typ, value);
-
+    return_value = hdl.builder.CreateLoad(typ, value);
   } break;
+
   case Mode::Addr: {
-
-    r_val = static_cast<AllocaInst *>(this->acc->codegen(hdl));
-
+    return_value = static_cast<AllocaInst *>(this->acc->codegen(hdl));
   } break;
   }
 
-  return r_val;
+  return return_value;
 }
 
 Value *AST::Expr::Assign::codegen(LLVMBundle &hdl) {
   Value *value = this->expr->codegen(hdl);
-  hdl.builder.CreateStore(value, this->dest->codegen(hdl));
+  Value *destination = this->dest->codegen(hdl);
+  hdl.builder.CreateStore(value, destination);
 
   return value;
 }
@@ -103,38 +91,31 @@ Value *AST::Expr::Assign::codegen(LLVMBundle &hdl) {
 Value *AST::Expr::Call::codegen(LLVMBundle &hdl) {
   Function *callee_f = hdl.module->getFunction(this->name);
 
-  std::vector<Value *> arg_vs{};
+  std::vector<Value *> arg_values{};
 
-  if (callee_f != nullptr) {
-    if (callee_f->arg_size() != this->parameters.size()) {
-      std::cerr << "Argument size mismatch." << "\n";
-    }
-  } else {
-
-    if (this->name == "printi") {
-      callee_f = hdl.base_fns["printf"];
-      arg_vs.push_back(hdl.builder.CreateGlobalString("%d\n"));
-    } else {
-      std::cerr << "Call to unknown function: " << this->name << "\n";
-      exit(-1);
-    }
+  if (callee_f == nullptr) {
+    std::cerr << "Call to unknown function: " << this->name << "\n";
+    exit(-1);
+  } else if (callee_f->arg_size() != this->arguments.size()) {
+    std::cerr << "Argument size mismatch." << "\n";
+    exit(-1);
   }
 
-  for (auto &arg : this->parameters) {
-    auto arg_v = arg->codegen(hdl);
-    if (arg_v == nullptr) {
+  for (auto &arg : this->arguments) {
+    auto arg_value = arg->codegen(hdl);
+    if (arg_value == nullptr) {
       std::cerr << "Failed to process argument " << arg->to_string(0) << "\n";
       std::exit(-1);
     }
 
-    arg_vs.push_back(arg_v);
+    arg_values.push_back(arg_value);
   }
 
-  return hdl.builder.CreateCall(callee_f, arg_vs);
+  return hdl.builder.CreateCall(callee_f, arg_values);
 }
 
 Value *AST::Expr::CstI::codegen(LLVMBundle &hdl) {
-  return ConstantInt::get(llvm::Type::getInt64Ty(*hdl.context), this->i, true);
+  return ConstantInt::get(this->type()->typegen(hdl), this->i, true);
 }
 
 Value *AST::Expr::Prim1::codegen(LLVMBundle &hdl) {
@@ -249,7 +230,7 @@ Value *AST::Stmt::If::codegen(LLVMBundle &hdl) {
     hdl.builder.SetInsertPoint(block_end);
   }
 
-  return ConstantInt::get(Type::getInt64Ty(*hdl.context), 2020);
+  return ConstantInt::get(Type::getInt64Ty(*hdl.context), 0);
 }
 
 Value *AST::Stmt::Return::codegen(LLVMBundle &hdl) {
@@ -266,6 +247,7 @@ Value *AST::Stmt::Return::codegen(LLVMBundle &hdl) {
     }
 
   } else {
+    // TOOD: Void returns
     printf("Return void");
     std::exit(-1);
   }
@@ -274,6 +256,7 @@ Value *AST::Stmt::Return::codegen(LLVMBundle &hdl) {
 }
 
 Value *AST::Stmt::While::codegen(LLVMBundle &hdl) {
+  // TODO: While codegen
   return ConstantInt::get(Type::getInt64Ty(*hdl.context), 2020);
 }
 
@@ -284,25 +267,28 @@ Value *AST::Stmt::While::codegen(LLVMBundle &hdl) {
 // The details of shadowing are handled at block nodes.
 Value *AST::Dec::Var::codegen(LLVMBundle &hdl) {
   auto typ = this->typ->typegen(hdl);
+  auto value = this->typ->defaultgen(hdl);
 
   switch (this->scope) {
 
   case Scope::Local: {
-
     auto alloca = hdl.builder.CreateAlloca(typ, nullptr, this->name());
+    hdl.builder.CreateStore(value, alloca);
+
     hdl.named_values[this->name()] = alloca;
   } break;
-  case Scope::Global: {
 
+  case Scope::Global: {
     auto alloca = hdl.module->getOrInsertGlobal(this->name(), typ);
 
     GlobalVariable *globalVar = hdl.module->getNamedGlobal(this->name());
-    globalVar->setInitializer(this->typ->defaultgen(hdl));
+    globalVar->setInitializer(value);
+
     hdl.named_values[this->name()] = globalVar;
   } break;
   }
 
-  return ConstantInt::get(Type::getInt64Ty(*hdl.context), 0);
+  return value; // Return the default value for type, as it's initialised
 }
 
 Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) {

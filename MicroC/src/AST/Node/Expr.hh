@@ -65,7 +65,7 @@ struct Assign : ExprT {
 
 struct Call : ExprT {
   std::string name;
-  std::vector<ExprHandle> parameters;
+  std::vector<ExprHandle> arguments;
   TypHandle r_typ;
 
   Expr::Kind kind() const override { return Expr::Kind::Call; }
@@ -75,7 +75,7 @@ struct Call : ExprT {
   llvm::Value *codegen(LLVMBundle &hdl) override;
 
   Call(std::string name, TypHandle r_typ, std::vector<ExprHandle> params)
-      : name(name), r_typ(r_typ), parameters(std::move(params)) {
+      : name(name), r_typ(r_typ), arguments(std::move(params)) {
   }
 };
 
