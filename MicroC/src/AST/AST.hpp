@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-#include "CodegenLLVM.hpp"
+#include "codegen.hpp"
 
 // Types
 
@@ -199,5 +199,3 @@ typedef std::vector<std::variant<StmtHandle, DecHandle>> BlockVec;
 typedef std::map<std::string, AST::DecHandle> Env;
 
 } // namespace AST
-
-
