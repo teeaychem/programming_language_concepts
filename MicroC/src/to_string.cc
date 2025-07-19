@@ -3,8 +3,10 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <format>
 
 #include "AST/AST.hh"
+
 #include "AST/Block.hh"
 #include "AST/Node/Access.hh"
 #include "AST/Node/Dec.hh"
@@ -13,33 +15,13 @@
 
 #include "AST/Types.hh"
 
+#include "AST/Fmt.hh"
+
 size_t const INDENT_SIZE = 2;
 
 // Support
 
 // Types
-
-template <>
-struct std::formatter<AST::Typ::Data> : formatter<string_view> {
-  auto format(AST::Typ::Data c, format_context &ctx) const -> format_context::iterator;
-};
-
-auto std::formatter<AST::Typ::Data>::format(AST::Typ::Data c, std::format_context &ctx) const
-    -> std::format_context::iterator {
-  string_view name = "unknown";
-  switch (c) {
-  case AST::Typ::Data::Int: {
-    name = "int";
-  } break;
-  case AST::Typ::Data::Char: {
-    name = "char";
-  } break;
-  case AST::Typ::Data::Void: {
-    name = "void";
-  } break;
-  }
-  return std::formatter<string_view>::format(name, ctx);
-}
 
 std::string AST::Typ::TypData::to_string(size_t indent) const {
   return std::format("{}", d_typ);

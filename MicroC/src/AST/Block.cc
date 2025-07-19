@@ -2,6 +2,7 @@
 #include "AST/AST.hh"
 #include "AST/Node/Dec.hh"
 #include "AST/Node/Stmt.hh"
+#include <cstdio>
 
 void AST::Block::push_DecVar(AST::Env &env, AST::DecVarHandle const &dec_var) {
   std::string var{dec_var->id};
@@ -21,15 +22,16 @@ void AST::Block::push_DecVar(AST::Env &env, AST::DecVarHandle const &dec_var) {
 
 void AST::Block::push_Stmt(AST::StmtHandle const &stmt) {
   switch (stmt->kind()) {
+
   case Stmt::Kind::Block: {
-    auto &stmt_block = std::static_pointer_cast<AST::Stmt::Block>(stmt)->block;
-    this->early_returns += stmt_block.early_returns;
-    this->pass_throughs += stmt_block.pass_throughs;
+    this->early_returns += stmt->early_returns();
+    this->pass_throughs += stmt->pass_throughs();
 
     if (!this->returns) {
-      this->returns = stmt_block.returns;
+      this->returns = stmt->returns();
     }
   } break;
+
   case Stmt::Kind::Return: {
     this->early_returns += 1;
 
@@ -44,16 +46,24 @@ void AST::Block::push_Stmt(AST::StmtHandle const &stmt) {
     auto stmt_if = std::static_pointer_cast<AST::Stmt::If>(stmt);
     size_t passed_through = this->pass_throughs;
 
-    this->early_returns += stmt_if->stmt_then->block.early_returns;
-    this->pass_throughs += stmt_if->stmt_then->block.pass_throughs;
+    this->early_returns += stmt_if->stmt_then->early_returns();
+    this->pass_throughs += stmt_if->stmt_then->pass_throughs();
 
-    this->early_returns += stmt_if->stmt_else->block.early_returns;
-    this->pass_throughs += stmt_if->stmt_else->block.pass_throughs;
+    this->early_returns += stmt_if->stmt_else->early_returns();
+    this->pass_throughs += stmt_if->stmt_else->pass_throughs();
 
     if (!this->returns) {
-      this->returns = stmt_if->stmt_then->block.returns && stmt_if->stmt_else->block.returns;
+      this->returns = stmt_if->stmt_then->returns() && stmt_if->stmt_else->returns();
     }
 
+  } break;
+
+  case Stmt::Kind::While: {
+    auto stmt_while = std::static_pointer_cast<AST::Stmt::While>(stmt);
+    this->early_returns += stmt_while->stmt->early_returns();
+    this->pass_throughs += stmt_while->stmt->pass_throughs();
+
+    this->returns = stmt_while->stmt->returns();
   } break;
 
   default:
