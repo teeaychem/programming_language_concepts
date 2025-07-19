@@ -80,7 +80,7 @@ target_sources(
     PUBLIC
         FILE_SET HEADERS
             BASE_DIRS ${PROJECT_SOURCE_DIR}/src
-            FILES src/Driver.hpp src/CodegenLLVM.hpp
+            FILES src/Driver.hpp
 )
 
 target_include_directories(

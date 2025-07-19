@@ -5,7 +5,8 @@
 #include "AST/Node/Dec.hpp"
 #include "AST/Node/Expr.hpp"
 #include "AST/Node/Stmt.hpp"
-#include "CodegenLLVM.hpp"
+
+#include "codegen.hpp"
 #include "parser.hpp"
 
 #include <memory>

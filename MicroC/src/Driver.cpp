@@ -2,7 +2,7 @@
 #include <memory>
 #include <sstream>
 
-#include "CodegenLLVM.hpp"
+#include "codegen.hpp"
 #include "Driver.hpp"
 #include "parser.hpp"
 
