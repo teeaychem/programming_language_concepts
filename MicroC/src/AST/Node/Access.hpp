@@ -1,11 +1,10 @@
 #pragma once
 
-#include <iostream>
 #include <memory>
 #include <string>
 
-#include "AST/AST.hh"
-#include "AST/Types.hh"
+#include "AST/AST.hpp"
+#include "AST/Types.hpp"
 
 namespace AST {
 namespace Access {

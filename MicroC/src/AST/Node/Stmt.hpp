@@ -1,11 +1,10 @@
 #pragma once
 
-#include <iostream>
 #include <optional>
 #include <string>
 
-#include "AST/AST.hh"
-#include "AST/Block.hh"
+#include "AST/AST.hpp"
+#include "AST/Block.hpp"
 
 namespace AST {
 namespace Stmt {

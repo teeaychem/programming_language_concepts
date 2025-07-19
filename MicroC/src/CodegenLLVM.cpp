@@ -1,11 +1,11 @@
 
-#include "CodegenLLVM.hh"
-#include "AST/AST.hh"
+#include "CodegenLLVM.hpp"
+#include "AST/AST.hpp"
 
-#include "AST/Node/Access.hh"
-#include "AST/Node/Dec.hh"
-#include "AST/Node/Expr.hh"
-#include "AST/Node/Stmt.hh"
+#include "AST/Node/Access.hpp"
+#include "AST/Node/Dec.hpp"
+#include "AST/Node/Expr.hpp"
+#include "AST/Node/Stmt.hpp"
 
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DIBuilder.h"

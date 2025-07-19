@@ -2,11 +2,11 @@
 #include <memory>
 #include <sstream>
 
-#include "CodegenLLVM.hh"
-#include "Driver.hh"
-#include "parser.hh"
+#include "CodegenLLVM.hpp"
+#include "Driver.hpp"
+#include "parser.hpp"
 
-#include "AST/AST.hh"
+
 
 int Driver::parse(const std::string &f) {
   file = f;

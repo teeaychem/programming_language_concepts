@@ -1,7 +1,7 @@
 #pragma once
 
-#include "AST/AST.hh"
-#include "AST/Types.hh"
+#include "AST/AST.hpp"
+#include "AST/Types.hpp"
 #include <cstdint>
 #include <iostream>
 #include <string>

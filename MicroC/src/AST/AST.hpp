@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-#include "CodegenLLVM.hh"
+#include "CodegenLLVM.hpp"
 
 // Types
 

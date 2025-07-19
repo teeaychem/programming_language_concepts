@@ -1,8 +1,9 @@
-#include "Block.hh"
-#include "AST/AST.hh"
-#include "AST/Node/Dec.hh"
-#include "AST/Node/Stmt.hh"
-#include <cstdio>
+
+
+#include "Block.hpp"
+#include "AST/AST.hpp"
+#include "AST/Node/Dec.hpp"
+#include "AST/Node/Stmt.hpp"
 
 void AST::Block::push_DecVar(AST::Env &env, AST::DecVarHandle const &dec_var) {
   std::string var{dec_var->id};
