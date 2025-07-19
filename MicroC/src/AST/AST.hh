@@ -147,6 +147,8 @@ struct StmtT : NodeT {
   AST::Kind kind_abstract() const override { return AST::Kind::Stmt; }
   [[nodiscard]] virtual Stmt::Kind kind() const = 0;
   [[nodiscard]] virtual bool returns() const = 0;
+  [[nodiscard]] virtual size_t early_returns() const = 0;
+  [[nodiscard]] virtual size_t pass_throughs() const = 0;
 };
 
 // Declarations
@@ -197,3 +199,5 @@ typedef std::vector<std::variant<StmtHandle, DecHandle>> BlockVec;
 typedef std::map<std::string, AST::DecHandle> Env;
 
 } // namespace AST
+
+

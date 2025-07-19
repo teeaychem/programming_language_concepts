@@ -256,8 +256,32 @@ Value *AST::Stmt::Return::codegen(LLVMBundle &hdl) {
 }
 
 Value *AST::Stmt::While::codegen(LLVMBundle &hdl) {
+  Function *parent = hdl.builder.GetInsertBlock()->getParent();
+
+  BasicBlock *block_cond = BasicBlock::Create(*hdl.context, "while.cond", parent);
+  BasicBlock *block_loop = BasicBlock::Create(*hdl.context, "while.loop");
+  BasicBlock *block_end = BasicBlock::Create(*hdl.context, "while.end");
+
+  hdl.builder.CreateBr(block_cond);
+  hdl.builder.SetInsertPoint(block_cond);
+
+  Value *condition = this->condition->codegen(hdl);
+  Value *zero = ConstantInt::get(Type::getInt64Ty(*hdl.context), 0);
+  auto condition_eval = hdl.builder.CreateCmp(ICmpInst::ICMP_NE, condition, zero);
+  hdl.builder.CreateCondBr(condition_eval, block_loop, block_end);
+
+  parent->insert(parent->end(), block_loop);
+  hdl.builder.SetInsertPoint(block_loop);
+  this->stmt->codegen(hdl);
+  if (!this->stmt->returns()) { // If entered, the while body may return...
+    hdl.builder.CreateBr(block_cond);
+  }
+
+  parent->insert(parent->end(), block_end);
+  hdl.builder.SetInsertPoint(block_end);
+
   // TODO: While codegen
-  return ConstantInt::get(Type::getInt64Ty(*hdl.context), 2020);
+  return ConstantInt::get(Type::getInt64Ty(*hdl.context), 0);
 }
 
 // Dec
