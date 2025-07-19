@@ -36,10 +36,6 @@
 
 #include "AST/Types.hh"
 
-
-
-
-
 AST::ExprHandle AccessAssign(Driver &driver, std::string op, AST::AccessHandle dest, AST::ExprHandle expr);
 }
 
@@ -118,16 +114,13 @@ program:
 
 
 Access:
-    NAME                       {
-      auto typ = driver.env[$1]->type();
-      $$ = driver.pk_AccessVar(typ, $1);
-    }
-  | LPAR Access RPAR           { $$ = $2;                                   }
+    NAME                       { $$ = driver.pk_AccessVar(driver.env[$1]->type(), $1); }
+  | LPAR Access RPAR           { $$ = $2;                                              }
   | STAR Access                {
       auto acc = driver.pk_ExprAccess(AST::Expr::Access::Mode::Access, $2);
-      $$ = driver.pk_AccessDeref(std::move(acc));                           }
-  | STAR AtExprNotAccess       { $$ = driver.pk_AccessDeref($2);            }
-  | Access LBRACK Expr RBRACK  { $$ = driver.pk_AccessIndex($1, $3);        }
+      $$ = driver.pk_AccessDeref(std::move(acc));                                      }
+  | STAR AtExprNotAccess       { $$ = driver.pk_AccessDeref($2);                       }
+  | Access LBRACK Expr RBRACK  { $$ = driver.pk_AccessIndex($1, $3);                   }
 ;
 
 
@@ -139,10 +132,7 @@ AtExprNotAccess:
 
 
 Block:
-    LBRACE StmtOrDecSeq RBRACE
-      { $2.finalize(driver.env);
-        $$ = driver.pk_StmtBlock(std::move($2));
-      }
+    LBRACE StmtOrDecSeq RBRACE  { $2.finalize(driver.env); $$ = driver.pk_StmtBlock(std::move($2)); }
 ;
 
 
@@ -171,6 +161,7 @@ Exprs:
   | ExprsNE  { $$ = $1;                             }
 ;  
 
+
 ExprsNE:
     Expr                { std::vector<AST::ExprHandle> es{$1}; $$ = es; }
   | Expr COMMA ExprsNE  { $3.push_back(std::move($1));         $$ = $3; }
@@ -189,31 +180,25 @@ ExprNotAccess:
   | NOT Expr                  { $$ = driver.pk_ExprPrim1("!", $2);                          }
   | PRINT Expr                { $$ = driver.pk_ExprPrim1("printi", $2);                     }
   | PRINTLN                   { $$ = driver.pk_ExprPrim1("printc", driver.pk_ExprCstI(10)); }
-  | Expr PLUS  Expr           { $$ = driver.pk_ExprPrim2("+",  $1, $3);                      }
-  | Expr MINUS Expr           { $$ = driver.pk_ExprPrim2("-",  $1, $3);                      }
-  | Expr STAR  Expr           { $$ = driver.pk_ExprPrim2("*",  $1, $3);                      }
-  | Expr SLASH Expr           { $$ = driver.pk_ExprPrim2("/",  $1, $3);                      }
-  | Expr MOD   Expr           { $$ = driver.pk_ExprPrim2("%",  $1, $3);                      }
-  | Expr EQ    Expr           { $$ = driver.pk_ExprPrim2("==", $1, $3);                      }
-  | Expr NE    Expr           { $$ = driver.pk_ExprPrim2("!=", $1, $3);                      }
-  | Expr GT    Expr           { $$ = driver.pk_ExprPrim2(">",  $1, $3);                      }
-  | Expr LT    Expr           { $$ = driver.pk_ExprPrim2("<",  $1, $3);                      }
-  | Expr GE    Expr           { $$ = driver.pk_ExprPrim2(">=", $1, $3);                      }
-  | Expr LE    Expr           { $$ = driver.pk_ExprPrim2("<=", $1, $3);                      }
-  | Expr SEQAND Expr          { $$ = driver.pk_ExprPrim2("&&", $1, $3);                      }
-  | Expr SEQOR  Expr          { $$ = driver.pk_ExprPrim2("||", $1, $3);                      }
+  | Expr PLUS  Expr           { $$ = driver.pk_ExprPrim2("+",  $1, $3);                     }
+  | Expr MINUS Expr           { $$ = driver.pk_ExprPrim2("-",  $1, $3);                     }
+  | Expr STAR  Expr           { $$ = driver.pk_ExprPrim2("*",  $1, $3);                     }
+  | Expr SLASH Expr           { $$ = driver.pk_ExprPrim2("/",  $1, $3);                     }
+  | Expr MOD   Expr           { $$ = driver.pk_ExprPrim2("%",  $1, $3);                     }
+  | Expr EQ    Expr           { $$ = driver.pk_ExprPrim2("==", $1, $3);                     }
+  | Expr NE    Expr           { $$ = driver.pk_ExprPrim2("!=", $1, $3);                     }
+  | Expr GT    Expr           { $$ = driver.pk_ExprPrim2(">",  $1, $3);                     }
+  | Expr LT    Expr           { $$ = driver.pk_ExprPrim2("<",  $1, $3);                     }
+  | Expr GE    Expr           { $$ = driver.pk_ExprPrim2(">=", $1, $3);                     }
+  | Expr LE    Expr           { $$ = driver.pk_ExprPrim2("<=", $1, $3);                     }
+  | Expr SEQAND Expr          { $$ = driver.pk_ExprPrim2("&&", $1, $3);                     }
+  | Expr SEQOR  Expr          { $$ = driver.pk_ExprPrim2("||", $1, $3);                     }
 ;
 
 
 Fndec:
-    VOID NAME LPAR Paramdecs RPAR Block      {
-      auto r_typ = AST::Typ::pk_Void();
-      auto f = driver.pk_DecFn(r_typ, $2, $4, $6);
-      $$ = f;                                      }
-  | DataType NAME LPAR Paramdecs RPAR Block  {
-      auto r_typ = AST::Typ::pk_Data($1);
-      auto f = driver.pk_DecFn(r_typ, $2, $4, $6);
-      $$ = f;                                     }
+    VOID NAME LPAR Paramdecs RPAR Block      { $$ = driver.pk_DecFn(AST::Typ::pk_Void()  , $2, $4, $6); }
+  | DataType NAME LPAR Paramdecs RPAR Block  { $$ = driver.pk_DecFn(AST::Typ::pk_Data($1), $2, $4, $6); }
 ;
 
 
@@ -221,6 +206,7 @@ Paramdecs:
     %empty       { $$ = AST::ParamVec{}; }
   | ParamdecsNE  { $$ = $1;              }
 ;
+
 
 ParamdecsNE:
     Vardec                    { $$ = AST::ParamVec{$1};    }
@@ -263,9 +249,6 @@ StmtOrDecSeq:
 ;
 
 
-
-
-
 Topdecs:
     %empty          {  }
   | Topdec Topdecs  {  }
@@ -286,20 +269,12 @@ Vardec:
 
 
 Vardesc:
-    NAME                          {
-      std::string name = $1;
-      $$ = std::make_pair(AST::Typ::pk_Void(), name);                                           }
-  | STAR Vardesc                  { $$ = std::make_pair(AST::Typ::pk_Ptr($2.first), $2.second); }
-  | LPAR Vardesc RPAR             { $$ = $2;                                                    }
-  | Vardesc LBRACK RBRACK         {
-      auto typ = AST::Typ::pk_Arr($1.first, std::nullopt);
-      $$ = std::make_pair(typ, $1.second);                                                      }
-  | Vardesc LBRACK CSTINT RBRACK  {
-      auto typ = AST::Typ::pk_Arr($1.first, $3);
-      $$ = std::make_pair(typ, $1.second);                                                      }
+    NAME                          { $$ = std::make_pair(AST::Typ::pk_Void(), $1);                             }
+  | STAR Vardesc                  { $$ = std::make_pair(AST::Typ::pk_Ptr($2.first), $2.second);               }
+  | LPAR Vardesc RPAR             { $$ = $2;                                                                  }
+  | Vardesc LBRACK RBRACK         { $$ = std::make_pair(AST::Typ::pk_Arr($1.first, std::nullopt), $1.second); }
+  | Vardesc LBRACK CSTINT RBRACK  { $$ = std::make_pair(AST::Typ::pk_Arr($1.first, $3), $1.second);           }
 ;
-
-
 
 
 %%
