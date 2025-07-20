@@ -12,6 +12,13 @@ OpUnary builder_sub(LLVMBundle &bundle) {
   return builder;
 }
 
+OpUnary builder_not(LLVMBundle &bundle) {
+  OpUnary builder = [&bundle](llvm::Value *expr) {
+    return bundle.builder.CreateNot(expr);
+  };
+  return builder;
+}
+
 OpUnary builder_printi(LLVMBundle &bundle) {
   OpUnary builder = [&bundle](llvm::Value *expr) {
     std::vector<llvm::Value *> arg_vs{
@@ -42,6 +49,8 @@ OpUnary builder_printc(LLVMBundle &bundle) {
 void extend_ops_unary(LLVMBundle &bundle, OpsUnaryMap &op_map) {
 
   op_map["-"] = ops_unary::builder_sub(bundle);
+  op_map["!"] = ops_unary::builder_not(bundle);
+
   op_map["printi"] = ops_unary::builder_printi(bundle);
   op_map["printc"] = ops_unary::builder_printc(bundle);
 }
