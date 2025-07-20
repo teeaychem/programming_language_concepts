@@ -34,11 +34,19 @@ OpBinary builder_div(LLVMBundle &bundle) {
   return builder;
 }
 
+OpBinary builder_mod(LLVMBundle &bundle) {
+  OpBinary builder = [&bundle](llvm::Value *LHS, llvm::Value *RHS) {
+    return bundle.builder.CreateSRem(LHS, RHS, "op.mod");
+  };
+  return builder;
+}
+
 } // namespace ops_binary
 void extend_ops_binary(LLVMBundle &bundle, OpsBinaryMap &op_map) {
 
   op_map["+"] = ops_binary::builder_add(bundle);
   op_map["-"] = ops_binary::builder_sub(bundle);
   op_map["*"] = ops_binary::builder_mul(bundle);
-  op_map["/"] = ops_binary::builder_mul(bundle);
+  op_map["/"] = ops_binary::builder_div(bundle);
+  op_map["%"] = ops_binary::builder_mod(bundle);
 }
