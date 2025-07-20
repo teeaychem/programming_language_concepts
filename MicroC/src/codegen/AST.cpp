@@ -190,9 +190,7 @@ Value *AST::Stmt::If::codegen(LLVMBundle &hdl) const {
   Function *parent = hdl.builder.GetInsertBlock()->getParent();
 
   // Condition evaluation
-  Value *condition = this->condition->codegen(hdl);
-  Value *zero = ConstantInt::get(Type::getInt64Ty(*hdl.context), 0);
-  auto condition_eval = hdl.builder.CreateCmp(ICmpInst::ICMP_NE, condition, zero);
+  Value *condition = this->condition->codegen_eval_true(hdl);
 
   // Flow block setup
   BasicBlock *block_then = BasicBlock::Create(*hdl.context, "if.then", parent);
@@ -200,10 +198,10 @@ Value *AST::Stmt::If::codegen(LLVMBundle &hdl) const {
   BasicBlock *block_end = BasicBlock::Create(*hdl.context, "if.end");
 
   if (this->stmt_else->block.empty()) {
-    hdl.builder.CreateCondBr(condition_eval, block_then, block_end);
+    hdl.builder.CreateCondBr(condition, block_then, block_end);
   } else {
     block_else = BasicBlock::Create(*hdl.context, "if.else");
-    hdl.builder.CreateCondBr(condition_eval, block_then, block_else);
+    hdl.builder.CreateCondBr(condition, block_then, block_else);
   }
 
   hdl.builder.SetInsertPoint(block_then);
