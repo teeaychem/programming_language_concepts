@@ -38,7 +38,7 @@ struct Access : ExprT {
     }
   }
 
-  llvm::Value *codegen(LLVMBundle &hdl) override;
+  llvm::Value *codegen(LLVMBundle &hdl) const override;
 
   Access(Access::Mode mode, AccessHandle acc) : mode(mode), acc(std::move(acc)) {}
 };
@@ -56,7 +56,7 @@ struct Assign : ExprT {
     return this->dest->eval_type();
   }
 
-  llvm::Value *codegen(LLVMBundle &hdl) override;
+  llvm::Value *codegen(LLVMBundle &hdl) const override;
 
   Assign(AccessHandle dest, ExprHandle expr) : dest(dest), expr(expr) {}
 };
@@ -72,7 +72,7 @@ struct Call : ExprT {
   std::string to_string(size_t indent) const override;
   TypHandle type() const override { return r_typ; }
 
-  llvm::Value *codegen(LLVMBundle &hdl) override;
+  llvm::Value *codegen(LLVMBundle &hdl) const override;
 
   Call(std::string name, TypHandle r_typ, std::vector<ExprHandle> params)
       : name(name), r_typ(r_typ), arguments(std::move(params)) {
@@ -86,7 +86,7 @@ struct CstI : ExprT {
 
   Expr::Kind kind() const override { return Expr::Kind::CstI; }
   std::string to_string(size_t indent) const override;
-  llvm::Value *codegen(LLVMBundle &hdl) override;
+  llvm::Value *codegen(LLVMBundle &hdl) const override;
   TypHandle type() const override { return Typ::pk_Data(Typ::Data::Int); }
 
   CstI(int64_t i) : i(i) {}
@@ -103,7 +103,7 @@ struct Prim1 : ExprT {
 
   TypHandle type() const override { return this->expr->type(); }
 
-  llvm::Value *codegen(LLVMBundle &hdl) override;
+  llvm::Value *codegen(LLVMBundle &hdl) const override;
 
   Prim1(std::string op, ExprHandle expr)
       : op(op), expr(std::move(expr)) {}
@@ -121,7 +121,7 @@ struct Prim2 : ExprT {
 
   TypHandle type() const override { return this->a->type(); }
 
-  llvm::Value *codegen(LLVMBundle &hdl) override;
+  llvm::Value *codegen(LLVMBundle &hdl) const override;
 
   Prim2(std::string op, ExprHandle a, ExprHandle b)
       : op(op), a(std::move(a)), b(std::move(b)) {}

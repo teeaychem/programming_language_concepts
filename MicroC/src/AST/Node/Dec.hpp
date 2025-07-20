@@ -27,7 +27,7 @@ struct Var : DecT {
   TypHandle type() const override { return typ; };
   std::string name() const override { return this->id; };
 
-  llvm::Value *codegen(LLVMBundle &hdl) override;
+  llvm::Value *codegen(LLVMBundle &hdl) const override;
 };
 
 // Fn
@@ -51,7 +51,7 @@ struct Fn : DecT {
   TypHandle type() const override { return r_typ; };
   std::string name() const override { return this->id; };
 
-  llvm::Value *codegen(LLVMBundle &hdl) override;
+  llvm::Value *codegen(LLVMBundle &hdl) const override;
 };
 
 } // namespace Dec
