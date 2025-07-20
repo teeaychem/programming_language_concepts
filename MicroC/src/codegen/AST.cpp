@@ -1,5 +1,5 @@
 
-#include "codegen.hpp"
+#include "LLVMBundle.hpp"
 #include "AST/AST.hpp"
 
 #include "AST/Node/Access.hpp"
@@ -122,8 +122,8 @@ Value *AST::Expr::Prim1::codegen(LLVMBundle &hdl) {
 
   Value *expr_val = this->expr->codegen(hdl);
 
-  if (hdl.prim1_fns[this->op]) {
-    return hdl.prim1_fns[this->op](expr_val);
+  if (hdl.prim1_fn_map[this->op]) {
+    return hdl.prim1_fn_map[this->op](expr_val);
   } else {
     std::cerr << "Unexpected unary op: " << this->op << "\n";
     std::exit(-1);
@@ -135,8 +135,8 @@ Value *AST::Expr::Prim2::codegen(LLVMBundle &hdl) {
   Value *a_val = this->a->codegen(hdl);
   Value *b_val = this->b->codegen(hdl);
 
-  if (hdl.prim2_fns[this->op]) {
-    return hdl.prim2_fns[this->op](a_val, b_val);
+  if (hdl.prim2_fn_map[this->op]) {
+    return hdl.prim2_fn_map[this->op](a_val, b_val);
   } else {
     std::cerr << "Unexpected binary op: " << this->op << "\n";
     std::exit(-1);

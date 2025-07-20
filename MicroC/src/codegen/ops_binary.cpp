@@ -1,0 +1,44 @@
+#include "LLVMBundle.hpp"
+#include "llvm/IR/DIBuilder.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/LLVMContext.h"
+#include <map>
+
+namespace ops_binary {
+
+OpBinary builder_add(LLVMBundle &bundle) {
+  OpBinary builder = [&bundle](llvm::Value *LHS, llvm::Value *RHS) {
+    return bundle.builder.CreateAdd(LHS, RHS, "op.add");
+  };
+  return builder;
+}
+
+OpBinary builder_sub(LLVMBundle &bundle) {
+  OpBinary builder = [&bundle](llvm::Value *LHS, llvm::Value *RHS) {
+    return bundle.builder.CreateSub(LHS, RHS, "op.sub");
+  };
+  return builder;
+}
+
+OpBinary builder_mul(LLVMBundle &bundle) {
+  OpBinary builder = [&bundle](llvm::Value *LHS, llvm::Value *RHS) {
+    return bundle.builder.CreateMul(LHS, RHS, "op.mul");
+  };
+  return builder;
+}
+
+OpBinary builder_div(LLVMBundle &bundle) {
+  OpBinary builder = [&bundle](llvm::Value *LHS, llvm::Value *RHS) {
+    return bundle.builder.CreateSDiv(LHS, RHS, "op.div");
+  };
+  return builder;
+}
+
+} // namespace ops_binary
+void extend_ops_binary(LLVMBundle &bundle, OpsBinaryMap &op_map) {
+
+  op_map["+"] = ops_binary::builder_add(bundle);
+  op_map["-"] = ops_binary::builder_sub(bundle);
+  op_map["*"] = ops_binary::builder_mul(bundle);
+  op_map["/"] = ops_binary::builder_mul(bundle);
+}
