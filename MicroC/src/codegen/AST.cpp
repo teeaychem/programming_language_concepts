@@ -398,26 +398,23 @@ Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) const {
 }
 
 Value *AST::ExprT::codegen_eval_true(LLVMBundle &hdl) const {
-
-  switch (this->kind()) {
-
-  case Expr::Kind::Access:
-  case Expr::Kind::Assign:
-  case Expr::Kind::Call:
-  case Expr::Kind::CstI:
-  case Expr::Kind::Prim1:
-  case Expr::Kind::Prim2:
-    break;
-  }
-
   Value *evaluation = this->codegen(hdl);
 
-  Value *zero = ConstantInt::get(this->type()->typegen(hdl), 0);
-  return hdl.builder.CreateCmp(ICmpInst::ICMP_NE, evaluation, zero);
+  if (evaluation->getType()->isIntegerTy(1)) {
+    return evaluation;
+  } else {
+    Value *zero = ConstantInt::get(this->type()->typegen(hdl), 0);
+    return hdl.builder.CreateCmp(ICmpInst::ICMP_NE, evaluation, zero);
+  }
 }
 
 Value *AST::ExprT::codegen_eval_false(LLVMBundle &hdl) const {
   Value *evaluation = this->codegen(hdl);
-  Value *zero = ConstantInt::get(this->type()->typegen(hdl), 0);
-  return hdl.builder.CreateCmp(ICmpInst::ICMP_EQ, evaluation, zero);
+
+  if (evaluation->getType()->isIntegerTy(1)) {
+    return evaluation;
+  } else {
+    Value *zero = ConstantInt::get(this->type()->typegen(hdl), 0);
+    return hdl.builder.CreateCmp(ICmpInst::ICMP_EQ, evaluation, zero);
+  }
 }
