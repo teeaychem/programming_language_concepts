@@ -83,7 +83,19 @@ OpBinary builder_le(LLVMBundle &bundle) {
   return builder;
 }
 
+OpBinary builder_and(LLVMBundle &bundle) {
+  OpBinary builder = [&bundle](llvm::Value *LHS, llvm::Value *RHS) {
+    return bundle.builder.CreateAnd(LHS, RHS);
+  };
+  return builder;
+}
 
+OpBinary builder_or(LLVMBundle &bundle) {
+  OpBinary builder = [&bundle](llvm::Value *LHS, llvm::Value *RHS) {
+    return bundle.builder.CreateOr(LHS, RHS);
+  };
+  return builder;
+}
 
 } // namespace ops_binary
 void extend_ops_binary(LLVMBundle &bundle, OpsBinaryMap &op_map) {
@@ -102,4 +114,7 @@ void extend_ops_binary(LLVMBundle &bundle, OpsBinaryMap &op_map) {
 
   op_map[">="] = ops_binary::builder_ge(bundle);
   op_map["<="] = ops_binary::builder_le(bundle);
+
+  op_map["&&"] = ops_binary::builder_and(bundle);
+  op_map["||"] = ops_binary::builder_or(bundle);
 }
