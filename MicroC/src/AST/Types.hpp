@@ -41,7 +41,7 @@ struct TypData : TypT {
     exit(-1);
   }
 
-  llvm::Type *typegen(LLVMBundle &hdl) override {
+  llvm::Type *typegen(LLVMBundle &hdl) const override {
     switch (d_typ) {
     case Data::Int:
       return llvm::Type::getInt64Ty(*hdl.context);
@@ -93,7 +93,7 @@ struct TypIndex : TypT {
 
   TypHandle deref_unsafe() const override { return typ; }
 
-  llvm::Type *typegen(LLVMBundle &hdl) override {
+  llvm::Type *typegen(LLVMBundle &hdl) const override {
     return llvm::ArrayType::get(typ->typegen(hdl), size.value_or(0));
   }
 
@@ -127,7 +127,7 @@ struct TypPtr : TypT {
 
   TypHandle deref_unsafe() const override { return dest; }
 
-  llvm::Type *typegen(LLVMBundle &hdl) override { return llvm::PointerType::getUnqual(*hdl.context); }
+  llvm::Type *typegen(LLVMBundle &hdl) const override { return llvm::PointerType::getUnqual(*hdl.context); }
 
   llvm::Constant *defaultgen(LLVMBundle &hdl) const override {
     return llvm::ConstantPointerNull::get(llvm::PointerType::getUnqual(*hdl.context));

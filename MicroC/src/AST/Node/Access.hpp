@@ -21,7 +21,7 @@ struct Var : AccessT {
   Access::Kind kind() const override { return Access::Kind::Var; }
   TypHandle eval_type() const override { return typ; }
 
-  llvm::Value *codegen(LLVMBundle &hdl) override;
+  llvm::Value *codegen(LLVMBundle &hdl) const override;
 };
 
 // Deref
@@ -35,7 +35,7 @@ struct Deref : AccessT {
   std::string to_string(size_t indent) const override;
   TypHandle eval_type() const override { return expr->type()->deref_unsafe(); }
 
-  llvm::Value *codegen(LLVMBundle &hdl) override;
+  llvm::Value *codegen(LLVMBundle &hdl) const override;
 };
 
 // Index
@@ -51,7 +51,7 @@ struct Index : AccessT {
   std::string to_string(size_t indent) const override;
   TypHandle eval_type() const override { return access->eval_type()->deref_unsafe(); }
 
-  llvm::Value *codegen(LLVMBundle &hdl) override;
+  llvm::Value *codegen(LLVMBundle &hdl) const override;
 };
 
 } // namespace Access

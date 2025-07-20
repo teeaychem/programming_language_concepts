@@ -1,6 +1,6 @@
 
-#include "LLVMBundle.hpp"
 #include "AST/AST.hpp"
+#include "LLVMBundle.hpp"
 
 #include "AST/Node/Access.hpp"
 #include "AST/Node/Dec.hpp"
@@ -32,12 +32,12 @@ static AllocaInst *create_fn_alloca(Function *fn, StringRef name, Type *typ) {
 
 // Access
 
-Value *AST::Access::Deref::codegen(LLVMBundle &hdl) {
+Value *AST::Access::Deref::codegen(LLVMBundle &hdl) const {
   // TODO: Access deref codegen
   return ConstantInt::get(Type::getInt64Ty(*hdl.context), 2020);
 }
 
-Value *AST::Access::Index::codegen(LLVMBundle &hdl) {
+Value *AST::Access::Index::codegen(LLVMBundle &hdl) const {
   Value *value = this->access->codegen(hdl);
   Type *typ = this->access->eval_type()->typegen(hdl);
 
@@ -48,7 +48,7 @@ Value *AST::Access::Index::codegen(LLVMBundle &hdl) {
   return ptr;
 }
 
-Value *AST::Access::Var::codegen(LLVMBundle &hdl) {
+Value *AST::Access::Var::codegen(LLVMBundle &hdl) const {
   auto it = hdl.named_values.find(this->var);
   if (it == hdl.named_values.end()) {
     std::cerr << "Missing variable: " << this->var << std::endl;
@@ -60,7 +60,7 @@ Value *AST::Access::Var::codegen(LLVMBundle &hdl) {
 
 // Expr
 
-Value *AST::Expr::Access::codegen(LLVMBundle &hdl) {
+Value *AST::Expr::Access::codegen(LLVMBundle &hdl) const {
   Value *return_value;
 
   switch (this->mode) {
@@ -80,7 +80,7 @@ Value *AST::Expr::Access::codegen(LLVMBundle &hdl) {
   return return_value;
 }
 
-Value *AST::Expr::Assign::codegen(LLVMBundle &hdl) {
+Value *AST::Expr::Assign::codegen(LLVMBundle &hdl) const {
   Value *value = this->expr->codegen(hdl);
   Value *destination = this->dest->codegen(hdl);
   hdl.builder.CreateStore(value, destination);
@@ -88,7 +88,7 @@ Value *AST::Expr::Assign::codegen(LLVMBundle &hdl) {
   return value;
 }
 
-Value *AST::Expr::Call::codegen(LLVMBundle &hdl) {
+Value *AST::Expr::Call::codegen(LLVMBundle &hdl) const {
   Function *callee_f = hdl.module->getFunction(this->name);
 
   std::vector<Value *> arg_values{};
@@ -114,11 +114,11 @@ Value *AST::Expr::Call::codegen(LLVMBundle &hdl) {
   return hdl.builder.CreateCall(callee_f, arg_values);
 }
 
-Value *AST::Expr::CstI::codegen(LLVMBundle &hdl) {
+Value *AST::Expr::CstI::codegen(LLVMBundle &hdl) const {
   return ConstantInt::get(this->type()->typegen(hdl), this->i, true);
 }
 
-Value *AST::Expr::Prim1::codegen(LLVMBundle &hdl) {
+Value *AST::Expr::Prim1::codegen(LLVMBundle &hdl) const {
 
   Value *expr_val = this->expr->codegen(hdl);
 
@@ -130,7 +130,7 @@ Value *AST::Expr::Prim1::codegen(LLVMBundle &hdl) {
   }
 }
 
-Value *AST::Expr::Prim2::codegen(LLVMBundle &hdl) {
+Value *AST::Expr::Prim2::codegen(LLVMBundle &hdl) const {
 
   Value *a_val = this->a->codegen(hdl);
   Value *b_val = this->b->codegen(hdl);
@@ -145,7 +145,7 @@ Value *AST::Expr::Prim2::codegen(LLVMBundle &hdl) {
 
 // Stmt
 
-Value *AST::Stmt::Block::codegen(LLVMBundle &hdl) {
+Value *AST::Stmt::Block::codegen(LLVMBundle &hdl) const {
 
   std::vector<std::pair<std::string, Value *>> shadowed_values{};
 
@@ -181,11 +181,11 @@ Value *AST::Stmt::Block::codegen(LLVMBundle &hdl) {
   return ConstantInt::get(Type::getInt64Ty(*hdl.context), 0);
 }
 
-Value *AST::Stmt::Expr::codegen(LLVMBundle &hdl) {
+Value *AST::Stmt::Expr::codegen(LLVMBundle &hdl) const {
   return this->expr->codegen(hdl);
 }
 
-Value *AST::Stmt::If::codegen(LLVMBundle &hdl) {
+Value *AST::Stmt::If::codegen(LLVMBundle &hdl) const {
 
   Function *parent = hdl.builder.GetInsertBlock()->getParent();
 
@@ -233,7 +233,7 @@ Value *AST::Stmt::If::codegen(LLVMBundle &hdl) {
   return ConstantInt::get(Type::getInt64Ty(*hdl.context), 0);
 }
 
-Value *AST::Stmt::Return::codegen(LLVMBundle &hdl) {
+Value *AST::Stmt::Return::codegen(LLVMBundle &hdl) const {
 
   if (this->value.has_value()) {
 
@@ -253,7 +253,7 @@ Value *AST::Stmt::Return::codegen(LLVMBundle &hdl) {
   return ConstantInt::get(Type::getInt64Ty(*hdl.context), 0);
 }
 
-Value *AST::Stmt::While::codegen(LLVMBundle &hdl) {
+Value *AST::Stmt::While::codegen(LLVMBundle &hdl) const {
   Function *parent = hdl.builder.GetInsertBlock()->getParent();
 
   BasicBlock *block_cond = BasicBlock::Create(*hdl.context, "while.cond", parent);
@@ -263,10 +263,8 @@ Value *AST::Stmt::While::codegen(LLVMBundle &hdl) {
   hdl.builder.CreateBr(block_cond);
   hdl.builder.SetInsertPoint(block_cond);
 
-  Value *condition = this->condition->codegen(hdl);
-  Value *zero = ConstantInt::get(Type::getInt64Ty(*hdl.context), 0);
-  auto condition_eval = hdl.builder.CreateCmp(ICmpInst::ICMP_NE, condition, zero);
-  hdl.builder.CreateCondBr(condition_eval, block_loop, block_end);
+  Value *condition = this->condition->codegen_eval_true(hdl);
+  hdl.builder.CreateCondBr(condition, block_loop, block_end);
 
   parent->insert(parent->end(), block_loop);
   hdl.builder.SetInsertPoint(block_loop);
@@ -278,7 +276,6 @@ Value *AST::Stmt::While::codegen(LLVMBundle &hdl) {
   parent->insert(parent->end(), block_end);
   hdl.builder.SetInsertPoint(block_end);
 
-  // TODO: While codegen
   return ConstantInt::get(Type::getInt64Ty(*hdl.context), 0);
 }
 
@@ -287,7 +284,7 @@ Value *AST::Stmt::While::codegen(LLVMBundle &hdl) {
 // Code generation for a declaration.
 // Should always be called when a declaration is made.
 // The details of shadowing are handled at block nodes.
-Value *AST::Dec::Var::codegen(LLVMBundle &hdl) {
+Value *AST::Dec::Var::codegen(LLVMBundle &hdl) const {
   auto typ = this->typ->typegen(hdl);
   auto value = this->typ->defaultgen(hdl);
 
@@ -313,7 +310,7 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) {
   return value; // Return the default value for type, as it's initialised
 }
 
-Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) {
+Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) const {
   BasicBlock *outer_return_block = hdl.return_block; // stash any existing return block, to be restored on exit
   Value *outer_return_alloca = hdl.return_alloca;    // likewise for return value allocation
 
@@ -398,4 +395,29 @@ Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) {
   }
 
   return ConstantInt::get(Type::getInt64Ty(*hdl.context), 2020);
+}
+
+Value *AST::ExprT::codegen_eval_true(LLVMBundle &hdl) const {
+
+  switch (this->kind()) {
+
+  case Expr::Kind::Access:
+  case Expr::Kind::Assign:
+  case Expr::Kind::Call:
+  case Expr::Kind::CstI:
+  case Expr::Kind::Prim1:
+  case Expr::Kind::Prim2:
+    break;
+  }
+
+  Value *evaluation = this->codegen(hdl);
+
+  Value *zero = ConstantInt::get(this->type()->typegen(hdl), 0);
+  return hdl.builder.CreateCmp(ICmpInst::ICMP_NE, evaluation, zero);
+}
+
+Value *AST::ExprT::codegen_eval_false(LLVMBundle &hdl) const {
+  Value *evaluation = this->codegen(hdl);
+  Value *zero = ConstantInt::get(this->type()->typegen(hdl), 0);
+  return hdl.builder.CreateCmp(ICmpInst::ICMP_EQ, evaluation, zero);
 }

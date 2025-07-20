@@ -32,7 +32,7 @@ struct TypPtr;
 
 struct TypT {
   // Generate the representation of this type.
-  [[nodiscard]] virtual llvm::Type *typegen(LLVMBundle &hdl) = 0;
+  [[nodiscard]] virtual llvm::Type *typegen(LLVMBundle &hdl) const = 0;
   // Generate the default value of this type.
   [[nodiscard]] virtual llvm::Constant *defaultgen(LLVMBundle &hdl) const = 0;
   // The kind of this type, corresponding to a struct
@@ -63,7 +63,7 @@ enum class Kind {
 };
 
 struct NodeT {
-  virtual llvm::Value *codegen(LLVMBundle &hdl) = 0;
+  virtual llvm::Value *codegen(LLVMBundle &hdl) const = 0;
 
   [[nodiscard]] virtual AST::Kind kind_abstract() const = 0;
   [[nodiscard]] virtual std::string to_string(size_t indent) const = 0;
@@ -122,6 +122,8 @@ struct ExprT : NodeT {
   AST::Kind kind_abstract() const override { return AST::Kind::Expr; }
   [[nodiscard]] virtual Expr::Kind kind() const = 0;
   [[nodiscard]] virtual AST::TypHandle type() const = 0;
+  llvm::Value *codegen_eval_true(LLVMBundle &hdl) const;
+  llvm::Value *codegen_eval_false(LLVMBundle &hdl) const;
 };
 
 // Statements
