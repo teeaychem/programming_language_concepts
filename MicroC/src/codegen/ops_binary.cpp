@@ -55,6 +55,36 @@ OpBinary builder_ne(LLVMBundle &bundle) {
   return builder;
 }
 
+OpBinary builder_gt(LLVMBundle &bundle) {
+  OpBinary builder = [&bundle](llvm::Value *LHS, llvm::Value *RHS) {
+    return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SGT, LHS, RHS);
+  };
+  return builder;
+}
+
+OpBinary builder_lt(LLVMBundle &bundle) {
+  OpBinary builder = [&bundle](llvm::Value *LHS, llvm::Value *RHS) {
+    return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SLT, LHS, RHS);
+  };
+  return builder;
+}
+
+OpBinary builder_ge(LLVMBundle &bundle) {
+  OpBinary builder = [&bundle](llvm::Value *LHS, llvm::Value *RHS) {
+    return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SGE, LHS, RHS);
+  };
+  return builder;
+}
+
+OpBinary builder_le(LLVMBundle &bundle) {
+  OpBinary builder = [&bundle](llvm::Value *LHS, llvm::Value *RHS) {
+    return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SLE, LHS, RHS);
+  };
+  return builder;
+}
+
+
+
 } // namespace ops_binary
 void extend_ops_binary(LLVMBundle &bundle, OpsBinaryMap &op_map) {
 
@@ -66,4 +96,10 @@ void extend_ops_binary(LLVMBundle &bundle, OpsBinaryMap &op_map) {
 
   op_map["=="] = ops_binary::builder_eq(bundle);
   op_map["!="] = ops_binary::builder_ne(bundle);
+
+  op_map[">"] = ops_binary::builder_gt(bundle);
+  op_map["<"] = ops_binary::builder_lt(bundle);
+
+  op_map[">="] = ops_binary::builder_ge(bundle);
+  op_map["<="] = ops_binary::builder_le(bundle);
 }
