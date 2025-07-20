@@ -272,8 +272,8 @@ Vardesc:
     NAME                          { $$ = std::make_pair(AST::Typ::pk_Void(), $1);                             }
   | STAR Vardesc                  { $$ = std::make_pair(AST::Typ::pk_Ptr($2.first), $2.second);               }
   | LPAR Vardesc RPAR             { $$ = $2;                                                                  }
-  | Vardesc LBRACK RBRACK         { $$ = std::make_pair(AST::Typ::pk_Arr($1.first, std::nullopt), $1.second); }
-  | Vardesc LBRACK CSTINT RBRACK  { $$ = std::make_pair(AST::Typ::pk_Arr($1.first, $3), $1.second);           }
+  | Vardesc LBRACK RBRACK         { $$ = std::make_pair(AST::Typ::pk_Index($1.first, std::nullopt), $1.second); }
+  | Vardesc LBRACK CSTINT RBRACK  { $$ = std::make_pair(AST::Typ::pk_Index($1.first, $3), $1.second);           }
 ;
 
 

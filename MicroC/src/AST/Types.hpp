@@ -16,33 +16,31 @@ namespace Typ {
 // TypData
 
 struct TypData : TypT {
-  Data d_typ;
-
-  TypData(Data d_typ)
-      : d_typ(d_typ) {};
-
   Typ::Kind kind() const override { return Typ::Kind::Data; }
-  std::string to_string(size_t indent) const override;
 
-  void complete_data_unsafe(Data d_typ) override {
-    if (d_typ == Data::Void) {
+  Data data;
+
+  TypData(Data data)
+      : data(data) {};
+
+  std::string to_string(size_t indent) const override;
+  TypHandle deref_unsafe() const override { throw std::logic_error("deref() called on TypData"); }
+
+  // Base case of `complete_data_unsafe`, replaces void with `data` or throws a logic_error.
+  void complete_data_unsafe(Data data) override {
+    if (data == Data::Void) {
       throw std::logic_error("Attempt to complete type with void.");
     }
 
-    if (this->d_typ == Data::Void) {
-      this->d_typ = d_typ;
+    if (this->data == Data::Void) {
+      this->data = data;
     } else {
       throw std::logic_error("Attempt to complete a completed type.");
     }
   }
 
-  TypHandle deref_unsafe() const override {
-    std::cerr << "deref() called on TypData" << std::endl;
-    exit(-1);
-  }
-
   llvm::Type *typegen(LLVMBundle &hdl) const override {
-    switch (d_typ) {
+    switch (data) {
     case Data::Int:
       return llvm::Type::getInt64Ty(*hdl.context);
     case Data::Char:
@@ -52,45 +50,45 @@ struct TypData : TypT {
     }
   }
 
+  // The default value for a type, used during declarations, etc.
+  // Throws on void type.
   llvm::Constant *defaultgen(LLVMBundle &hdl) const override {
-    switch (d_typ) {
+    switch (data) {
     case Data::Int:
       return llvm::ConstantInt::get(llvm::Type::getInt64Ty(*hdl.context), 0);
     case Data::Char:
       return llvm::ConstantInt::get(llvm::Type::getInt8Ty(*hdl.context), 0);
     case Data::Void:
-      std::cerr << "Declaration of void type" << std::endl;
-      exit(1);
+      throw std::logic_error("Declaration of void type");
     }
   }
 };
 
-inline TypHandle pk_Data(Data d_typ) {
-  TypData d{d_typ};
-  return std::make_shared<TypData>(std::move(d));
+inline TypHandle pk_Data(Data data) {
+  TypData type_data{data};
+  return std::make_shared<TypData>(std::move(type_data));
 }
 
 inline TypHandle pk_Void() {
-  TypData d{Data::Void};
-  return std::make_shared<TypData>(std::move(d));
+  TypData type_data{Data::Void};
+  return std::make_shared<TypData>(std::move(type_data));
 }
 
 // TypArr
 
 struct TypIndex : TypT {
+  Typ::Kind kind() const override { return Typ::Kind::Array; }
+
   TypHandle typ;
   std::optional<std::size_t> size;
 
   TypIndex(TypHandle typ, std::optional<std::int64_t> size)
       : typ(std::move(typ)), size(size) {}
 
-  Typ::Kind kind() const override { return Typ::Kind::Arr; }
   std::string to_string(size_t indent) const override;
   TypHandle expr_type() const { return typ; }
   std::optional<std::size_t> type_size() const { return size; }
-
-  void complete_data_unsafe(Data d_typ) override { typ->complete_data_unsafe(d_typ); }
-
+  void complete_data_unsafe(Data data) override { typ->complete_data_unsafe(data); }
   TypHandle deref_unsafe() const override { return typ; }
 
   llvm::Type *typegen(LLVMBundle &hdl) const override {
@@ -103,46 +101,36 @@ struct TypIndex : TypT {
   }
 };
 
-inline TypHandle pk_Arr(TypHandle typ, std::optional<std::int64_t> size) {
-  TypIndex t(std::move(typ), std::move(size));
-  return std::make_shared<TypIndex>(std::move(t));
-}
-
-inline TypHandle pk_Arr() {
-  TypIndex t(std::move(pk_Void()), std::nullopt);
-  return std::make_shared<TypIndex>(std::move(t));
+inline TypHandle pk_Index(TypHandle typ, std::optional<std::int64_t> size) {
+  TypIndex type_index(std::move(typ), std::move(size));
+  return std::make_shared<TypIndex>(std::move(type_index));
 }
 
 // TypPtr
 
-struct TypPtr : TypT {
-  TypHandle dest;
+struct TypPointer : TypT {
+  Typ::Kind kind() const override { return Typ::Kind::Pointer; }
 
-  TypPtr(TypHandle of) : dest(std::move(of)) {}
+  TypHandle destination;
 
-  Typ::Kind kind() const override { return Typ::Kind::Ptr; }
+  TypPointer(TypHandle of) : destination(std::move(of)) {}
+
   std::string to_string(size_t indent) const override;
-
-  void complete_data_unsafe(Data d_typ) override { dest->complete_data_unsafe(d_typ); }
-
-  TypHandle deref_unsafe() const override { return dest; }
-
+  void complete_data_unsafe(Data data) override { destination->complete_data_unsafe(data); }
+  TypHandle deref_unsafe() const override { return destination; }
   llvm::Type *typegen(LLVMBundle &hdl) const override { return llvm::PointerType::getUnqual(*hdl.context); }
 
+  // An opaque pointer, given LLVMs preference for these.
   llvm::Constant *defaultgen(LLVMBundle &hdl) const override {
     return llvm::ConstantPointerNull::get(llvm::PointerType::getUnqual(*hdl.context));
   }
 };
 
 inline TypHandle pk_Ptr(TypHandle of) {
-  TypPtr t(std::move(of));
-  return std::make_shared<TypPtr>(std::move(t));
+  TypPointer type_pointer(std::move(of));
+  return std::make_shared<TypPointer>(std::move(type_pointer));
 }
 
-inline TypHandle pk_Ptr() {
-  TypPtr t{std::move(pk_Void())};
-  return std::make_shared<TypPtr>(std::move(t));
-}
 
 } // namespace Typ
 

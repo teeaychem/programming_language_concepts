@@ -5,6 +5,7 @@
 #include <map>
 
 namespace ops_unary {
+// Unary subtraction
 OpUnary builder_sub(LLVMBundle &bundle) {
   OpUnary builder = [&bundle](llvm::Value *expr) {
     return bundle.builder.CreateMul(llvm::ConstantInt::get(expr->getType(), -1), expr, "sub");
@@ -12,6 +13,7 @@ OpUnary builder_sub(LLVMBundle &bundle) {
   return builder;
 }
 
+// Logical negation
 OpUnary builder_not(LLVMBundle &bundle) {
   OpUnary builder = [&bundle](llvm::Value *expr) {
     return bundle.builder.CreateNot(expr);
@@ -19,6 +21,7 @@ OpUnary builder_not(LLVMBundle &bundle) {
   return builder;
 }
 
+// Print an integer
 OpUnary builder_printi(LLVMBundle &bundle) {
   OpUnary builder = [&bundle](llvm::Value *expr) {
     std::vector<llvm::Value *> arg_vs{
@@ -31,6 +34,7 @@ OpUnary builder_printi(LLVMBundle &bundle) {
   return builder;
 }
 
+// Print a character
 OpUnary builder_printc(LLVMBundle &bundle) {
   OpUnary builder = [&bundle](llvm::Value *expr) {
     std::vector<llvm::Value *> arg_vs{
@@ -43,8 +47,6 @@ OpUnary builder_printc(LLVMBundle &bundle) {
 }
 
 } // namespace ops_unary
-
-// namespace codegen
 
 void extend_ops_unary(LLVMBundle &bundle, OpsUnaryMap &op_map) {
 
