@@ -34,12 +34,13 @@ add_flex_bison_dependency(SCANNER PARSER)
 
 # AST files
 
-file(GLOB AST_H src/AST/*.hpp)
-file(GLOB AST_I src/AST/*.cpp)
+file(GLOB AST_HDR src/AST/*.hpp)
+file(GLOB AST_SRC src/AST/*.cpp)
 
 # Source files
 
-file(GLOB SRC_I src/*.cpp)
+file(GLOB SRC_TOP_SRC src/*.cpp)
+file(GLOB SRC_SUB_SRC src/**/*.cpp)
 
 # LLVM
 
@@ -74,26 +75,19 @@ target_sources(
         ${CMAKE_CURRENT_BINARY_DIR}
         ${BISON_PARSER_OUTPUTS}
         ${FLEX_SCANNER_OUTPUTS}
-        ${AST_H}
-        ${AST_I}
-        ${SRC_I}
+        ${AST_HDR}
+        ${AST_SRC}
+        ${SRC_TOP_SRC}
+        ${SRC_SUB_SRC}
     PUBLIC
         FILE_SET HEADERS
             BASE_DIRS ${PROJECT_SOURCE_DIR}/src
             FILES src/Driver.hpp
 )
 
-target_include_directories(
-    ${PROJECT_NAME}
-    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}
-    PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${LLVM_LIBS})
-
-add_subdirectory(src)
 
 # mc
 

@@ -6,7 +6,7 @@
 #include "AST/Node/Expr.hpp"
 #include "AST/Node/Stmt.hpp"
 
-#include "codegen.hpp"
+#include "codegen/LLVMBundle.hpp"
 #include "parser.hpp"
 
 #include <memory>
