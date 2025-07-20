@@ -13,20 +13,20 @@ namespace AST {
 namespace Typ {
 
 enum class Kind {
-  Arr,
-  Data,
-  Ptr,
+  Array,   // An array.
+  Data,    // Some instance of Data (further specified).
+  Pointer, // A pointer.
 };
 
 enum class Data {
-  Int,
-  Char,
-  Void,
+  Int,  // An integer.
+  Char, // A character.
+  Void, // Unspecified, and requires completion to be a usable type.
 };
 
 struct TypIndex;
 struct TypData;
-struct TypPtr;
+struct TypPointer;
 
 } // namespace Typ
 

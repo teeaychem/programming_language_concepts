@@ -24,7 +24,7 @@ size_t const INDENT_SIZE = 2;
 // Types
 
 std::string AST::Typ::TypData::to_string(size_t indent) const {
-  return std::format("{}", d_typ);
+  return std::format("{}", data);
 }
 
 std::string AST::Typ::TypIndex::to_string(size_t indent) const {
@@ -35,8 +35,8 @@ std::string AST::Typ::TypIndex::to_string(size_t indent) const {
   }
 }
 
-std::string AST::Typ::TypPtr::to_string(size_t indent) const {
-  return std::format("*{}", dest->to_string(indent));
+std::string AST::Typ::TypPointer::to_string(size_t indent) const {
+  return std::format("*{}", destination->to_string(indent));
 }
 
 // Nodes
