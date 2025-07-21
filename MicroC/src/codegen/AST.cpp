@@ -16,6 +16,7 @@
 #include <cstdio>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -33,8 +34,8 @@ static AllocaInst *create_fn_alloca(Function *fn, StringRef name, Type *typ) {
 // Access
 
 Value *AST::Access::Deref::codegen(LLVMBundle &hdl) const {
-  // TODO: Access deref codegen
-  return ConstantInt::get(Type::getInt64Ty(*hdl.context), 2020);
+  // TODO Extend to offsets
+  return this->expr->codegen(hdl);
 }
 
 Value *AST::Access::Index::codegen(LLVMBundle &hdl) const {
@@ -51,8 +52,7 @@ Value *AST::Access::Index::codegen(LLVMBundle &hdl) const {
 Value *AST::Access::Var::codegen(LLVMBundle &hdl) const {
   auto it = hdl.named_values.find(this->var);
   if (it == hdl.named_values.end()) {
-    std::cerr << "Missing variable: " << this->var << std::endl;
-    exit(-1);
+    throw std::logic_error(std::format("Missing variable: {}", this->var));
   }
 
   return it->second;
@@ -94,18 +94,15 @@ Value *AST::Expr::Call::codegen(LLVMBundle &hdl) const {
   std::vector<Value *> arg_values{};
 
   if (callee_f == nullptr) {
-    std::cerr << "Call to unknown function: " << this->name << "\n";
-    exit(-1);
+    throw std::logic_error(std::format("Call to unknown function: {}", this->name));
   } else if (callee_f->arg_size() != this->arguments.size()) {
-    std::cerr << "Argument size mismatch." << "\n";
-    exit(-1);
+    throw std::logic_error(std::format("Argument size mismatch."));
   }
 
   for (auto &arg : this->arguments) {
     auto arg_value = arg->codegen(hdl);
     if (arg_value == nullptr) {
-      std::cerr << "Failed to process argument " << arg->to_string(0) << "\n";
-      std::exit(-1);
+      throw std::logic_error(std::format("Failed to process argument: {}", arg->to_string(0)));
     }
 
     arg_values.push_back(arg_value);
@@ -284,6 +281,25 @@ Value *AST::Stmt::While::codegen(LLVMBundle &hdl) const {
 // The details of shadowing are handled at block nodes.
 Value *AST::Dec::Var::codegen(LLVMBundle &hdl) const {
   auto typ = this->typ->typegen(hdl);
+
+  if (this->typ->kind() == Typ::Kind::Array) {
+    if (this->scope != Scope::Local) {
+      throw std::logic_error("Global declaration of an array");
+    }
+
+    auto typ_array = std::static_pointer_cast<Typ::TypIndex>(this->typ);
+
+    ArrayType *array_type = ArrayType::get(typ_array->expr_type()->typegen(hdl), typ_array->size.value_or(0));
+
+    auto size_value = llvm::ConstantInt::get(llvm::Type::getInt64Ty(*hdl.context), typ_array->size.value_or(0));
+
+    auto alloca = hdl.builder.CreateAlloca(typ, size_value, this->name());
+    hdl.named_values[this->name()] = alloca;
+    return alloca;
+  }
+
+  // Non-array variables ...
+
   auto value = this->typ->defaultgen(hdl);
 
   switch (this->scope) {

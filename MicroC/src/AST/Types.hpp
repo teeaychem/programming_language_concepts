@@ -96,8 +96,7 @@ struct TypIndex : TypT {
   }
 
   llvm::Constant *defaultgen(LLVMBundle &hdl) const override {
-    std::cerr << "TODO: Initialisation of an array." << std::endl;
-    exit(1);
+    throw std::logic_error("Default initialisation of an array.");
   }
 };
 
@@ -130,7 +129,6 @@ inline TypHandle pk_Ptr(TypHandle of) {
   TypPointer type_pointer(std::move(of));
   return std::make_shared<TypPointer>(std::move(type_pointer));
 }
-
 
 } // namespace Typ
 
