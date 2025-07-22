@@ -1,5 +1,9 @@
 #pragma once
 
+#include <memory>
+#include <optional>
+#include <string>
+
 #include "AST/AST.hpp"
 #include "AST/Node/Access.hpp"
 #include "AST/Node/Dec.hpp"
@@ -8,10 +12,6 @@
 
 #include "codegen/LLVMBundle.hpp"
 #include "parser.hpp"
-
-#include <memory>
-#include <optional>
-#include <string>
 
 // Give flex the prototype of yylex
 #define YY_DECL yy::parser::symbol_type yylex(Driver &drv)

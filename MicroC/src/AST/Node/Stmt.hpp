@@ -5,6 +5,7 @@
 
 #include "AST/AST.hpp"
 #include "AST/Block.hpp"
+#include "codegen/LLVMBundle.hpp"
 
 namespace AST {
 namespace Stmt {

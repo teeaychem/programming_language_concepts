@@ -4,7 +4,7 @@
 #include <string>
 
 #include "AST/AST.hpp"
-#include "AST/Types.hpp"
+#include "codegen/LLVMBundle.hpp"
 
 namespace AST {
 namespace Access {
