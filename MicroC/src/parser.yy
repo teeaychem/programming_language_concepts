@@ -93,7 +93,6 @@ AST::ExprHandle AccessAssign(Driver &driver, std::string op, AST::AccessHandle d
 %nterm <AST::ExprHandle> Const
 %nterm <AST::ExprHandle> Expr
 %nterm <AST::ExprHandle> ExprNotAccess
-%nterm <AST::ExprHandle> AtExprNotAccess
 
 %nterm <std::vector<AST::ExprHandle>> Exprs
 %nterm <std::vector<AST::ExprHandle>> ExprsNE
@@ -117,16 +116,11 @@ Access:
   | STAR Access                {
       auto acc = driver.pk_ExprAccess(AST::Expr::Access::Mode::Access, $2);
       $$ = driver.pk_AccessDeref(std::move(acc));                                      }
-  | STAR AtExprNotAccess       { $$ = driver.pk_AccessDeref($2);                       }
+  | STAR LPAR ExprNotAccess RPAR { $$ = driver.pk_AccessDeref($3);                     }
+  | STAR AMP Access            { $$ = $3;                                              }
   | Access LBRACK Expr RBRACK  { $$ = driver.pk_AccessIndex($1, $3);                   }
 ;
 
-
-AtExprNotAccess:
-    Const                    { $$ = $1;                                                      }
-  | LPAR ExprNotAccess RPAR  { $$ = $2;                                                      }
-  | AMP Access               { $$ = driver.pk_ExprAccess(AST::Expr::Access::Mode::Addr, $2); }
-;
 
 
 Block:
@@ -167,7 +161,9 @@ ExprsNE:
 
 
 ExprNotAccess:
-    AtExprNotAccess           { $$ = $1;                                                    }
+    LPAR ExprNotAccess RPAR   { $$ = $2;                                                    }
+  | Const                     { $$ = $1;                                                    }
+  | AMP Access                { $$ = driver.pk_ExprAccess(AST::Expr::Access::Mode::Addr, $2); }
   | Access ASSIGN Expr        { $$ = driver.pk_ExprAssign($1, $3);                          }
   | Access PLUS_ASSIGN Expr   { $$ = AccessAssign(driver, "+", $1, $3);                     }
   | Access MINUS_ASSIGN Expr  { $$ = AccessAssign(driver, "-", $1, $3);                     }
