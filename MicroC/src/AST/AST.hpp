@@ -1,10 +1,12 @@
 #pragma once
 
 #include <cstdio>
+#include <map>
 #include <memory>
 #include <string>
 
-#include "codegen/LLVMBundle.hpp"
+#include "llvm/IR/DIBuilder.h"
+struct LLVMBundle;
 
 // Types
 
