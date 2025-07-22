@@ -1,4 +1,5 @@
 #include "Fmt.hpp"
+#include "AST/Node/Expr.hpp"
 
 auto std::formatter<AST::Typ::Data>::format(AST::Typ::Data c, std::format_context &ctx) const
     -> std::format_context::iterator {
@@ -35,6 +36,21 @@ auto std::formatter<AST::Stmt::Kind>::format(AST::Stmt::Kind c, std::format_cont
   } break;
   case AST::Stmt::Kind::While: {
     name = "While";
+  } break;
+  }
+  return std::formatter<string_view>::format(name, ctx);
+}
+
+auto std::formatter<AST::Expr::Access::Mode>::format(AST::Expr::Access::Mode mode, std::format_context &ctx) const
+    -> std::format_context::iterator {
+  string_view name = "unknown";
+  switch (mode) {
+  case AST::Expr::Access::Mode::Access: {
+    name = "Access";
+  } break;
+
+  case AST::Expr::Access::Mode::Addr: {
+    name = "Addr";
   } break;
   }
   return std::formatter<string_view>::format(name, ctx);
