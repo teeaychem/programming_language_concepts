@@ -1,5 +1,6 @@
 #pragma once
 
+#include "AST/AST.hpp"
 #include "llvm/IR/DIBuilder.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
@@ -10,10 +11,10 @@
 typedef llvm::Function *OpFoundation;
 typedef std::map<const std::string, OpFoundation> OpsFoundationMap;
 
-typedef std::function<llvm::Value *(llvm::Value *)> OpUnary;
+typedef std::function<llvm::Value *(AST::ExprHandle)> OpUnary;
 typedef std::map<const std::string, OpUnary> OpsUnaryMap;
 
-typedef std::function<llvm::Value *(llvm::Value *, llvm::Value *)> OpBinary;
+typedef std::function<llvm::Value *(AST::ExprHandle, AST::ExprHandle)> OpBinary;
 typedef std::map<const std::string, OpBinary> OpsBinaryMap;
 
 struct LLVMBundle;

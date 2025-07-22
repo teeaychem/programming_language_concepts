@@ -117,10 +117,8 @@ Value *AST::Expr::CstI::codegen(LLVMBundle &hdl) const {
 
 Value *AST::Expr::Prim1::codegen(LLVMBundle &hdl) const {
 
-  Value *expr_val = this->expr->codegen(hdl);
-
   if (hdl.prim1_fn_map[this->op]) {
-    return hdl.prim1_fn_map[this->op](expr_val);
+    return hdl.prim1_fn_map[this->op](expr);
   } else {
     std::cerr << "Unexpected unary op: " << this->op << "\n";
     std::exit(-1);
@@ -129,11 +127,8 @@ Value *AST::Expr::Prim1::codegen(LLVMBundle &hdl) const {
 
 Value *AST::Expr::Prim2::codegen(LLVMBundle &hdl) const {
 
-  Value *a_val = this->a->codegen(hdl);
-  Value *b_val = this->b->codegen(hdl);
-
   if (hdl.prim2_fn_map[this->op]) {
-    return hdl.prim2_fn_map[this->op](a_val, b_val);
+    return hdl.prim2_fn_map[this->op](a, b);
   } else {
     std::cerr << "Unexpected binary op: " << this->op << "\n";
     std::exit(-1);
