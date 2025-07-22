@@ -8,6 +8,7 @@
 #include <string>
 
 #include "AST/AST.hpp"
+#include "codegen/LLVMBundle.hpp"
 
 namespace AST {
 
