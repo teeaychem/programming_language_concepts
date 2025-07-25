@@ -160,6 +160,13 @@ std::string AST::Stmt::Block::to_string(size_t indent) const {
   return block_ss.str();
 }
 
+std::string AST::Stmt::Declaration::to_string(size_t indent) const {
+  std::string expr_str = this->declaration->to_string(indent);
+  expr_str.push_back(';');
+
+  return expr_str;
+}
+
 std::string AST::Stmt::Expr::to_string(size_t indent) const {
   std::string expr_str = expr->to_string(indent);
   expr_str.push_back(';');

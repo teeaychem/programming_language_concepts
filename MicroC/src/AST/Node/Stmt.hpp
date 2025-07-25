@@ -26,6 +26,23 @@ struct Block : StmtT {
   [[nodiscard]] size_t pass_throughs() const override { return this->block.pass_throughs; };
 };
 
+// Declaration
+
+struct Declaration : StmtT {
+  DecHandle declaration;
+
+  Declaration(DecHandle expr)
+      : declaration(std::move(expr)) {}
+
+  std::string to_string(size_t indent) const override;
+  Stmt::Kind kind() const override { return Stmt::Kind::Declaration; }
+
+  llvm::Value *codegen(LLVMBundle &hdl) const override;
+  [[nodiscard]] bool returns() const override { return false; };
+  [[nodiscard]] size_t early_returns() const override { return 0; };
+  [[nodiscard]] size_t pass_throughs() const override { return 0; };
+};
+
 // Expr
 
 struct Expr : StmtT {
