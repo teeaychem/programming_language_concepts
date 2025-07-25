@@ -275,6 +275,11 @@ Value *AST::Stmt::While::codegen(LLVMBundle &hdl) const {
 // Should always be called when a declaration is made.
 // The details of shadowing are handled at block nodes.
 Value *AST::Dec::Var::codegen(LLVMBundle &hdl) const {
+  auto existing = hdl.named_values.find(this->name());
+  if (existing != hdl.named_values.end()) {
+    return existing->second;
+  }
+
   auto typ = this->typ->typegen(hdl);
 
   if (this->typ->kind() == Typ::Kind::Array) {
@@ -320,6 +325,10 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) const {
 }
 
 Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) const {
+  if (hdl.named_values.count(this->name()) != 0) {
+    throw std::logic_error(std::format("Redeclaration of function: {}", this->name()));
+  }
+
   BasicBlock *outer_return_block = hdl.return_block; // stash any existing return block, to be restored on exit
   Value *outer_return_alloca = hdl.return_alloca;    // likewise for return value allocation
 
