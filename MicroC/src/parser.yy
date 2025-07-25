@@ -238,7 +238,8 @@ StmtOrDecSeq:
   | StmtOrDecSeq Stmt         { $1.push_Stmt($2); $$ = $1;                      }
   | StmtOrDecSeq Vardec SEMI  {
       auto dec = driver.pk_DecVar(AST::Dec::Scope::Local, $2.first, $2.second);
-      $1.push_DecVar(driver.env, dec);
+      auto s = driver.pk_StmtDeclaration(dec);
+      $1.push_DecVar(driver.env, s);
       $$ = $1;                                                                  }
 ;
 
@@ -252,8 +253,12 @@ Topdecs:
 Topdec:
    Vardec SEMI  {
      auto dec = driver.pk_DecVar(AST::Dec::Scope::Global, $1.first, $1.second);
-     driver.push_dec(dec);                                                      }
-  | Fndec       { driver.push_dec($1);                                          }
+     auto s = driver.pk_StmtDeclaration(dec);
+     driver.push_dec(s);                                                        }
+  | Fndec       {
+    auto dec = $1;
+    auto s = driver.pk_StmtDeclaration(std::move(dec));
+    driver.push_dec(s);                                                         }
 ;
 
 

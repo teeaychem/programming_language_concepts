@@ -146,7 +146,7 @@ Value *AST::Stmt::Block::codegen(LLVMBundle &hdl) const {
   }
 
   for (auto &shadow_dec : block.shadow_vars) {
-    auto x = std::make_pair(shadow_dec->name(), hdl.named_values[shadow_dec->name()]);
+    auto x = std::make_pair(shadow_dec->declaration->name(), hdl.named_values[shadow_dec->declaration->name()]);
     shadowed_values.push_back(x);
 
     shadow_dec->codegen(hdl);
@@ -167,10 +167,14 @@ Value *AST::Stmt::Block::codegen(LLVMBundle &hdl) const {
 
   // Clear fresh vars from scope
   for (auto &fresh_var : block.fresh_vars) {
-    hdl.named_values.erase(fresh_var->name());
+    hdl.named_values.erase(fresh_var->declaration->name());
   }
 
   return ConstantInt::get(Type::getInt64Ty(*hdl.context), 0);
+}
+
+Value *AST::Stmt::Declaration::codegen(LLVMBundle &hdl) const {
+  return this->declaration->codegen(hdl);
 }
 
 Value *AST::Stmt::Expr::codegen(LLVMBundle &hdl) const {

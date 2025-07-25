@@ -20,10 +20,10 @@
 namespace AST {
 struct Block {
 
-  bool returns{false};                          // Whether all branches (including main) lead to a return statement
-  bool scoped_return{false};                    // Whether the main branch leads to a return statement
-  std::vector<AST::DecVarHandle> fresh_vars{};  // Variables whose name does *not* appear in any larger scope
-  std::vector<AST::DecVarHandle> shadow_vars{}; // Variables whose name *does* appear in some larger scope
+  bool returns{false};                                   // Whether all branches (including main) lead to a return statement
+  bool scoped_return{false};                             // Whether the main branch leads to a return statement
+  std::vector<AST::StmtDeclarationHandle> fresh_vars{};  // Variables whose name does *not* appear in any larger scope
+  std::vector<AST::StmtDeclarationHandle> shadow_vars{}; // Variables whose name *does* appear in some larger scope
 
   std::vector<AST::StmtHandle> statements{};
 
@@ -39,7 +39,7 @@ struct Block {
 
   // Add a declaration, using `env` to determine which variables are in scope.
   // And, mutates `env` in accordance with the declaration.
-  void push_DecVar(AST::Env &env, AST::DecVarHandle const &dec_var);
+  void push_DecVar(AST::Env &env, AST::StmtDeclarationHandle const &dec_var);
 
   // Add a statement.
   void push_Stmt(AST::StmtHandle const &stmt);

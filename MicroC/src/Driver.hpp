@@ -18,7 +18,7 @@
 YY_DECL; // Declare the prototype for bison
 
 struct Driver {
-  std::vector<AST::DecHandle> prg{};
+  std::vector<AST::StmtDeclarationHandle> prg{};
 
   std::map<std::string, AST::DecHandle> env{};
 
@@ -39,9 +39,9 @@ struct Driver {
 
   int parse(const std::string &f); // Run the parser on file F.  Return 0 on success.
 
-  void push_dec(AST::DecHandle dec) {
+  void push_dec(AST::StmtDeclarationHandle dec) {
     // TODO: Tidy
-    this->env[dec->name()] = dec;
+    this->env[dec->declaration->name()] = dec->declaration;
     prg.push_back(dec);
   }
 
@@ -151,6 +151,11 @@ struct Driver {
   AST::StmtHandle pk_StmtBlockStmt(AST::Block &&bv) {
     AST::Stmt::Block b(std::move(bv));
     return std::make_shared<AST::Stmt::Block>(std::move(b));
+  }
+
+  AST::StmtDeclarationHandle pk_StmtDeclaration(AST::DecHandle &&dec) {
+    AST::Stmt::Declaration declaration(std::move(dec));
+    return std::make_shared<AST::Stmt::Declaration>(std::move(declaration));
   }
 
   AST::StmtHandle pk_StmtExpr(AST::ExprHandle expr) {

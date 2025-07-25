@@ -194,8 +194,10 @@ typedef std::shared_ptr<Dec::Var> DecVarHandle;
 typedef std::shared_ptr<Dec::Fn> DecFnHandle;
 
 typedef std::shared_ptr<ExprT> ExprHandle;
+
 typedef std::shared_ptr<StmtT> StmtHandle;
 typedef std::shared_ptr<AST::Stmt::Block> StmtBlockHandle;
+  typedef std::shared_ptr<AST::Stmt::Declaration> StmtDeclarationHandle;
 
 // Etc
 
