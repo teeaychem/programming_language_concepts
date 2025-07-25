@@ -134,6 +134,7 @@ namespace Stmt {
 
 enum class Kind {
   Block,
+  Declaration,
   Expr,
   If,
   Return,
@@ -141,6 +142,7 @@ enum class Kind {
 };
 
 struct Block;
+struct Declaration;
 struct Expr;
 struct If;
 struct Return;
