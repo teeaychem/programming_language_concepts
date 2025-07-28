@@ -35,22 +35,6 @@ static AllocaInst *create_fn_alloca(Function *fn, StringRef name, Type *typ) {
 
 // Access
 
-Value *AST::Access::Deref::codegen(LLVMBundle &hdl) const {
-  // TODO Extend to offsets
-  return this->expr->codegen(hdl);
-}
-
-Value *AST::Access::Index::codegen(LLVMBundle &hdl) const {
-  Value *value = this->access->codegen(hdl);
-  Type *typ = this->access->eval_type()->typegen(hdl);
-
-  Value *index = this->index->codegen(hdl);
-
-  auto ptr = hdl.builder.CreateGEP(typ, value, ArrayRef<Value *>(index));
-
-  return ptr;
-}
-
 Value *AST::Access::Var::codegen(LLVMBundle &hdl) const {
   auto it = hdl.named_values.find(this->var);
   if (it == hdl.named_values.end()) {
@@ -111,6 +95,17 @@ Value *AST::Expr::Call::codegen(LLVMBundle &hdl) const {
 
 Value *AST::Expr::CstI::codegen(LLVMBundle &hdl) const {
   return ConstantInt::get(this->type()->typegen(hdl), this->i, true);
+}
+
+Value *AST::Expr::Index::codegen(LLVMBundle &hdl) const {
+  Value *value = this->access->codegen(hdl);
+  Type *typ = this->access->eval_type()->typegen(hdl);
+
+  Value *index = this->index->codegen(hdl);
+
+  auto ptr = hdl.builder.CreateGEP(typ, value, ArrayRef<Value *>(index));
+
+  return ptr;
 }
 
 Value *AST::Expr::Prim1::codegen(LLVMBundle &hdl) const {

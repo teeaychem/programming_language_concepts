@@ -43,14 +43,6 @@ std::string AST::Typ::TypPointer::to_string(size_t indent) const {
 
 // Access
 
-std::string AST::Access::Deref::to_string(size_t indent) const {
-  return std::format("*{}", this->expr->to_string(indent));
-}
-
-std::string AST::Access::Index::to_string(size_t indent) const {
-  return std::format("{}[{}]", this->access->to_string(indent), this->index->to_string(indent));
-}
-
 std::string AST::Access::Var::to_string(size_t indent) const {
   return this->var;
 }
@@ -112,6 +104,11 @@ std::string AST::Expr::Call::to_string(size_t indent) const {
 std::string AST::Expr::CstI::to_string(size_t indent) const {
   return std::format("{}", i);
 }
+
+std::string AST::Expr::Index::to_string(size_t indent) const {
+  return std::format("{}[{}]", this->access->to_string(indent), this->index->to_string(indent));
+}
+
 std::string AST::Expr::Prim1::to_string(size_t indent) const {
   if (1 < this->op.size()) {
     return std::format("{} {}", op, expr->to_string(indent));

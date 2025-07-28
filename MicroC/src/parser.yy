@@ -96,7 +96,7 @@
 %nterm <std::vector<AST::ExprHandle>> Exprs
 %nterm <std::vector<AST::ExprHandle>> ExprsNE
 
-%nterm <AST::AccessHandle> Access
+%nterm <AST::ExprHandle> Access
 
 %nterm <AST::Typ::Data> DataType
 
@@ -110,9 +110,11 @@ program:
 
 
 Access:
-    NAME                       { $$ = driver.pk_AccessVar(driver.env[$1]->type(), $1); }
+    NAME                       {
+    auto x = driver.pk_AccessVar(driver.env[$1]->type(), $1);
+    $$ = driver.pk_ExprAccess(x); }
   | LPAR Access RPAR           { $$ = $2;                                              }
-  | Access LBRACK Expr RBRACK  { $$ = driver.pk_AccessIndex($1, $3);                   }
+  | Access LBRACK Expr RBRACK  { $$ = driver.pk_ExprIndex($1, $3);                   }
 ;
 
 
@@ -137,7 +139,7 @@ DataType:
 
 
 Expr:
-    Access         { $$ = driver.pk_ExprAccess($1); }
+    Access         { $$ = $1; }
   | ExprNotAccess  { $$ = $1;                                                        }
 ;
 
