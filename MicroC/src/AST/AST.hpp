@@ -76,45 +76,27 @@ struct NodeT {
 
 // Nodes
 
-namespace AST {
-
-// Access
-
-namespace Access {
-
-enum class Kind {
-  Var,
-};
-
-struct Var;
-
-} // namespace Access
-
-struct AccessT : NodeT {
-  AST::Kind kind_abstract() const override { return AST::Kind::Access; }
-  [[nodiscard]] virtual Access::Kind kind() const = 0;
-  [[nodiscard]] virtual AST::TypHandle eval_type() const = 0;
-};
-
 // Expressions
 
+namespace AST {
+
 namespace Expr {
-struct Access;
 struct Assign;
 struct Call;
 struct CstI;
 struct Index;
 struct Prim1;
 struct Prim2;
+struct Var;
 
 enum class Kind {
-  Access, // Access, Addr
   Assign,
   Call,
   CstI,
   Index,
   Prim1,
-  Prim2
+  Prim2,
+  Var,
 };
 } // namespace Expr
 
@@ -182,8 +164,6 @@ namespace AST {
 struct Block;
 
 // Handles
-
-typedef std::shared_ptr<AccessT> AccessHandle;
 
 typedef std::shared_ptr<DecT> DecHandle;
 

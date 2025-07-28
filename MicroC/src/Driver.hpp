@@ -5,7 +5,7 @@
 #include <string>
 
 #include "AST/AST.hpp"
-#include "AST/Node/Access.hpp"
+// #include "AST/Node/Access.hpp"
 #include "AST/Node/Dec.hpp"
 #include "AST/Node/Expr.hpp"
 #include "AST/Node/Stmt.hpp"
@@ -52,17 +52,6 @@ struct Driver {
 
   // pk start
 
-  // pk Access
-
-  AST::AccessHandle pk_AccessVar(AST::TypHandle typ, std::string var) {
-    if (this->env.find(var) == this->env.end()) {
-      std::cerr << "Unknown variable: " << var << std::endl;
-    }
-
-    AST::Access::Var access(std::move(typ), std::move(var));
-    return std::make_shared<AST::Access::Var>(std::move(access));
-  }
-
   // pk Dec
 
   AST::DecVarHandle pk_DecVar(AST::Dec::Scope scope, AST::TypHandle typ, std::string var) {
@@ -91,12 +80,7 @@ struct Driver {
 
   // pk Expr
 
-  AST::ExprHandle pk_ExprAccess(AST::AccessHandle acc) {
-    AST::Expr::Access e(std::move(acc));
-    return std::make_shared<AST::Expr::Access>(std::move(e));
-  }
-
-  AST::ExprHandle pk_ExprAssign(AST::AccessHandle dest, AST::ExprHandle expr) {
+  AST::ExprHandle pk_ExprAssign(AST::ExprHandle dest, AST::ExprHandle expr) {
     AST::Expr::Assign e(dest, expr);
     return std::make_shared<AST::Expr::Assign>(std::move(e));
   }
@@ -135,6 +119,15 @@ struct Driver {
   AST::ExprHandle pk_ExprPrim2(std::string op, AST::ExprHandle a, AST::ExprHandle b) {
     AST::Expr::Prim2 e(op, std::move(a), std::move(b));
     return std::make_shared<AST::Expr::Prim2>(std::move(e));
+  }
+
+  AST::ExprHandle pk_ExprVar(AST::TypHandle typ, std::string var) {
+    if (this->env.find(var) == this->env.end()) {
+      std::cerr << "Unknown variable: " << var << std::endl;
+    }
+
+    AST::Expr::Var access(std::move(typ), std::move(var));
+    return std::make_shared<AST::Expr::Var>(std::move(access));
   }
 
   // pk Stmt

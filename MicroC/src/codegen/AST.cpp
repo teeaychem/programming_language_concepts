@@ -2,7 +2,6 @@
 #include "AST/AST.hpp"
 #include "LLVMBundle.hpp"
 
-#include "AST/Node/Access.hpp"
 #include "AST/Node/Dec.hpp"
 #include "AST/Node/Expr.hpp"
 #include "AST/Node/Stmt.hpp"
@@ -35,7 +34,7 @@ static AllocaInst *create_fn_alloca(Function *fn, StringRef name, Type *typ) {
 
 // Access
 
-Value *AST::Access::Var::codegen(LLVMBundle &hdl) const {
+Value *AST::Expr::Var::codegen(LLVMBundle &hdl) const {
   auto it = hdl.named_values.find(this->var);
   if (it == hdl.named_values.end()) {
     throw std::logic_error(std::format("Missing variable: {}", this->var));
@@ -46,6 +45,7 @@ Value *AST::Access::Var::codegen(LLVMBundle &hdl) const {
 
 // Expr
 
+/*
 Value *AST::Expr::Access::codegen(LLVMBundle &hdl) const {
   std::cout << "Access codegen "
             << "\ttype: " << this->type()->to_string(0) << "\n"
@@ -61,6 +61,7 @@ Value *AST::Expr::Access::codegen(LLVMBundle &hdl) const {
 
   return return_value;
 }
+*/
 
 Value *AST::Expr::Assign::codegen(LLVMBundle &hdl) const {
   Value *value = this->expr->codegen(hdl);

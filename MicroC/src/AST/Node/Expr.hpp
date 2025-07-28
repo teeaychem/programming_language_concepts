@@ -13,36 +13,23 @@ namespace AST {
 
 namespace Expr {
 
-// Access
-
-struct Access : ExprT {
-  AccessHandle acc;
-
-  Expr::Kind kind() const override { return Expr::Kind::Access; }
-  std::string to_string(size_t indent) const override;
-  TypHandle type() const override { return acc->eval_type(); }
-
-  llvm::Value *codegen(LLVMBundle &hdl) const override;
-
-  Access(AccessHandle acc) : acc(std::move(acc)) {}
-};
-
 // Assign
 
 struct Assign : ExprT {
-  AccessHandle dest;
+  // TODO: Checks on destination
+  ExprHandle dest;
   ExprHandle expr;
 
-  Expr::Kind kind() const override { return Expr::Kind::Access; }
+  Expr::Kind kind() const override { return Expr::Kind::Assign; }
   std::string to_string(size_t indent) const override;
   TypHandle type() const override {
-    std::cout << "Asssign::type() - " << dest->eval_type()->to_string(0) << std::endl;
-    return this->dest->eval_type();
+    std::cout << "Asssign::type() - " << dest->type()->to_string(0) << std::endl;
+    return this->dest->type();
   }
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
 
-  Assign(AccessHandle dest, ExprHandle expr) : dest(dest), expr(expr) {}
+  Assign(ExprHandle dest, ExprHandle expr) : dest(dest), expr(expr) {}
 };
 
 // Call
@@ -125,6 +112,19 @@ struct Prim2 : ExprT {
 
   Prim2(std::string op, ExprHandle a, ExprHandle b)
       : op(op), a(std::move(a)), b(std::move(b)) {}
+};
+
+struct Var : ExprT {
+  std::string var;
+  TypHandle typ;
+
+  Var(TypHandle typ, std::string &&v) : typ(typ), var(std::move(v)) {}
+
+  std::string to_string(size_t indent) const override;
+  Expr::Kind kind() const override { return Expr::Kind::Var; }
+  TypHandle type() const override { return this->typ; }
+
+  llvm::Value *codegen(LLVMBundle &hdl) const override;
 };
 
 } // namespace Expr
