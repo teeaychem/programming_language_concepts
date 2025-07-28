@@ -88,7 +88,7 @@
 %nterm <std::pair<AST::TypHandle, std::string>> Vardec
 %nterm <std::pair<AST::TypHandle, std::string>> Vardesc
 
-%nterm <AST::ExprHandle> Const
+%nterm <AST::ExprHandle> AtomicConst
 %nterm <AST::ExprHandle> Expr
 
 %nterm <std::vector<AST::ExprHandle>> Exprs
@@ -111,10 +111,9 @@ Block:
 ;
 
 
-Const:
+AtomicConst:
     CSTINT        { $$ = driver.pk_ExprCstI($1);                           }
   | CSTBOOL       { $$ = std::move(driver.pk_ExprCstI($1));                }
-  | MINUS CSTINT  { $$ = driver.pk_ExprPrim1("-", driver.pk_ExprCstI($2)); }
   | NULL          { $$ = driver.pk_ExprPrim1("-", driver.pk_ExprCstI(1));  }
 ;
 
@@ -139,15 +138,14 @@ ExprsNE:
 
 
 Expr:
-    NAME                      { $$ = driver.pk_ExprVar(driver.env[$1]->type(), $1); }
-  | LPAR Expr RPAR   { $$ = $2;                                                    }
-  | Const                     { $$ = $1;                                                    }
+    NAME                      { $$ = driver.pk_ExprVar(driver.env[$1]->type(), $1);         }
+  | AtomicConst               { $$ = $1;                                                    }
   | Expr ASSIGN Expr          { $$ = driver.pk_ExprPrim2("=", $1, $3);                      }
-  | Expr PLUS_ASSIGN Expr     { $$ = driver.pk_ExprPrim2("+=", $1, $3);              }
-  | Expr MINUS_ASSIGN Expr    { $$ = driver.pk_ExprPrim2("-=", $1, $3);              }
-  | Expr STAR_ASSIGN Expr     { $$ = driver.pk_ExprPrim2("*=", $1, $3);              }
-  | Expr SLASH_ASSIGN Expr    { $$ = driver.pk_ExprPrim2("/=", $1, $3);              }
-  | Expr MOD_ASSIGN Expr      { $$ = driver.pk_ExprPrim2("%=", $1, $3);              }
+  | Expr PLUS_ASSIGN Expr     { $$ = driver.pk_ExprPrim2("+=", $1, $3);                     }
+  | Expr MINUS_ASSIGN Expr    { $$ = driver.pk_ExprPrim2("-=", $1, $3);                     }
+  | Expr STAR_ASSIGN Expr     { $$ = driver.pk_ExprPrim2("*=", $1, $3);                     }
+  | Expr SLASH_ASSIGN Expr    { $$ = driver.pk_ExprPrim2("/=", $1, $3);                     }
+  | Expr MOD_ASSIGN Expr      { $$ = driver.pk_ExprPrim2("%=", $1, $3);                     }
   | NAME LPAR Exprs RPAR      { $$ = driver.pk_ExprCall($1, $3);                            }
   | MINUS Expr                { $$ = driver.pk_ExprPrim1("-", $2);                          }
   | AMP Expr                  { $$ = driver.pk_ExprPrim1("&", $2);                          }
@@ -168,7 +166,8 @@ Expr:
   | Expr LE    Expr           { $$ = driver.pk_ExprPrim2("<=", $1, $3);                     }
   | Expr SEQAND Expr          { $$ = driver.pk_ExprPrim2("&&", $1, $3);                     }
   | Expr SEQOR  Expr          { $$ = driver.pk_ExprPrim2("||", $1, $3);                     }
-  | Expr LBRACK Expr RBRACK  { $$ = driver.pk_ExprIndex($1, $3);                   }
+  | Expr LBRACK Expr RBRACK   { $$ = driver.pk_ExprIndex($1, $3);                           }
+  | LPAR Expr RPAR            { $$ = $2;                                                    }  
 ;
 
 
