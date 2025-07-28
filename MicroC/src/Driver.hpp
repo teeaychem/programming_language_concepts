@@ -63,8 +63,6 @@ struct Driver {
     return std::make_shared<AST::Access::Var>(std::move(access));
   }
 
-
-
   // pk Dec
 
   AST::DecVarHandle pk_DecVar(AST::Dec::Scope scope, AST::TypHandle typ, std::string var) {
@@ -123,15 +121,10 @@ struct Driver {
     return std::make_shared<AST::Expr::CstI>(std::move(e));
   }
 
-  AST::ExprHandle pk_ExprIndex(AST::ExprHandle arr, AST::ExprHandle idx) {
+  AST::ExprHandle pk_ExprIndex(AST::ExprHandle access, AST::ExprHandle index) {
 
-    // assert(arr->kind() == Expr::Kind::Index);
-
-    auto as_expr_access = std::static_pointer_cast<AST::Expr::Access>(arr);
-    auto x = as_expr_access->acc;
-
-    AST::Expr::Index index(std::move(as_expr_access->acc), std::move(idx));
-    return std::make_shared<AST::Expr::Index>(std::move(index));
+    AST::Expr::Index instance(std::move(access), std::move(index));
+    return std::make_shared<AST::Expr::Index>(std::move(instance));
   }
 
   AST::ExprHandle pk_ExprPrim1(std::string op, AST::ExprHandle expr) {

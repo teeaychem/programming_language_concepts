@@ -114,7 +114,7 @@ Access:
     auto x = driver.pk_AccessVar(driver.env[$1]->type(), $1);
     $$ = driver.pk_ExprAccess(x); }
   | LPAR Access RPAR           { $$ = $2;                                              }
-  | Access LBRACK Expr RBRACK  { $$ = driver.pk_ExprIndex($1, $3);                   }
+  
 ;
 
 
@@ -185,6 +185,7 @@ ExprNotAccess:
   | Expr LE    Expr           { $$ = driver.pk_ExprPrim2("<=", $1, $3);                     }
   | Expr SEQAND Expr          { $$ = driver.pk_ExprPrim2("&&", $1, $3);                     }
   | Expr SEQOR  Expr          { $$ = driver.pk_ExprPrim2("||", $1, $3);                     }
+  | Expr LBRACK Expr RBRACK  { $$ = driver.pk_ExprIndex($1, $3);                   }
 ;
 
 
