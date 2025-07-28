@@ -83,13 +83,9 @@ namespace AST {
 namespace Access {
 
 enum class Kind {
-  Deref,
-  Index,
   Var,
 };
 
-struct Deref;
-struct Index;
 struct Var;
 
 } // namespace Access
@@ -107,6 +103,7 @@ struct Access;
 struct Assign;
 struct Call;
 struct CstI;
+struct Index;
 struct Prim1;
 struct Prim2;
 
@@ -115,6 +112,7 @@ enum class Kind {
   Assign,
   Call,
   CstI,
+  Index,
   Prim1,
   Prim2
 };
@@ -186,7 +184,6 @@ struct Block;
 // Handles
 
 typedef std::shared_ptr<AccessT> AccessHandle;
-typedef std::shared_ptr<Access::Index> AccessIndexHandle;
 
 typedef std::shared_ptr<DecT> DecHandle;
 
