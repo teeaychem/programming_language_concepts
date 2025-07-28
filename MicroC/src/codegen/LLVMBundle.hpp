@@ -39,7 +39,8 @@ struct LLVMBundle {
   OpsUnaryMap prim1_fn_map{};
   OpsBinaryMap prim2_fn_map{};
 
-  void setup_ops_binary();
+  // Utils
+  llvm::Value *ensure_loaded(AST::TypHandle typ, llvm::Value *value);
 
   LLVMBundle()
       : context(std::make_unique<llvm::LLVMContext>()),

@@ -16,33 +16,15 @@ namespace Expr {
 // Access
 
 struct Access : ExprT {
-  enum class Mode {
-    Access,
-    Addr,
-  };
-
-  Mode mode;
   AccessHandle acc;
 
   Expr::Kind kind() const override { return Expr::Kind::Access; }
   std::string to_string(size_t indent) const override;
-  TypHandle type() const override {
-    switch (mode) {
-
-    case Mode::Access: {
-      return acc->eval_type();
-    } break;
-
-    case Mode::Addr: {
-      std::cout << "TOOD: Expr::Access::type() - Addr" << "\n";
-      return Typ::pk_Void();
-    } break;
-    }
-  }
+  TypHandle type() const override { return acc->eval_type(); }
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
 
-  Access(Access::Mode mode, AccessHandle acc) : mode(mode), acc(std::move(acc)) {}
+  Access(AccessHandle acc) : acc(std::move(acc)) {}
 };
 
 // Assign

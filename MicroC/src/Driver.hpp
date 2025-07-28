@@ -101,8 +101,8 @@ struct Driver {
 
   // pk Expr
 
-  AST::ExprHandle pk_ExprAccess(AST::Expr::Access::Mode mode, AST::AccessHandle acc) {
-    AST::Expr::Access e(mode, std::move(acc));
+  AST::ExprHandle pk_ExprAccess(AST::AccessHandle acc) {
+    AST::Expr::Access e(std::move(acc));
     return std::make_shared<AST::Expr::Access>(std::move(e));
   }
 

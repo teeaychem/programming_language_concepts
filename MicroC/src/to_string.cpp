@@ -81,13 +81,7 @@ std::string AST::Dec::Var::to_string(size_t indent) const {
 // Expr
 
 std::string AST::Expr::Access::to_string(size_t indent) const {
-  switch (this->mode) {
-
-  case Mode::Access:
-    return std::format("{}", this->acc->to_string(indent));
-  case Mode::Addr:
-    return std::format("&{}", this->acc->to_string(indent));
-  }
+  return std::format("{}", this->acc->to_string(indent));
 }
 std::string AST::Expr::Assign::to_string(size_t indent) const {
   return std::format("{} = {}", this->dest->to_string(indent), this->expr->to_string(indent));

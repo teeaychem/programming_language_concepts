@@ -20,6 +20,8 @@
 #include <utility>
 #include <vector>
 
+#include "AST/Fmt.hpp"
+
 using namespace llvm;
 
 // Support
@@ -61,21 +63,17 @@ Value *AST::Access::Var::codegen(LLVMBundle &hdl) const {
 // Expr
 
 Value *AST::Expr::Access::codegen(LLVMBundle &hdl) const {
+  std::cout << "Access codegen "
+            << "\ttype: " << this->type()->to_string(0) << "\n"
+            << "\tstring: " << this->to_string(0) << "\n"
+            << "\n";
+
   Value *return_value;
 
-  switch (this->mode) {
+  auto value = this->acc->codegen(hdl);
+  auto typ = this->acc->eval_type()->typegen(hdl);
 
-  case Mode::Access: {
-    auto value = this->acc->codegen(hdl);
-    auto typ = this->acc->eval_type()->typegen(hdl);
-
-    return_value = hdl.builder.CreateLoad(typ, value);
-  } break;
-
-  case Mode::Addr: {
-    return_value = static_cast<AllocaInst *>(this->acc->codegen(hdl));
-  } break;
-  }
+  return_value = value;
 
   return return_value;
 }
