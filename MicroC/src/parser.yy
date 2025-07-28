@@ -34,7 +34,6 @@
 
 #include "AST/Types.hpp"
 
-AST::ExprHandle AccessAssign(Driver &driver, std::string op, AST::AccessHandle dest, AST::ExprHandle expr);
 }
 
 %define api.token.prefix {TOK_}
@@ -113,11 +112,6 @@ program:
 Access:
     NAME                       { $$ = driver.pk_AccessVar(driver.env[$1]->type(), $1); }
   | LPAR Access RPAR           { $$ = $2;                                              }
-  | STAR Access                {
-      auto acc = driver.pk_ExprAccess(AST::Expr::Access::Mode::Access, $2);
-      $$ = driver.pk_AccessDeref(std::move(acc));                                      }
-  | STAR LPAR ExprNotAccess RPAR { $$ = driver.pk_AccessDeref($3);                     }
-  | STAR AMP Access            { $$ = $3;                                              }
   | Access LBRACK Expr RBRACK  { $$ = driver.pk_AccessIndex($1, $3);                   }
 ;
 
@@ -143,7 +137,7 @@ DataType:
 
 
 Expr:
-    Access         { $$ = driver.pk_ExprAccess(AST::Expr::Access::Mode::Access, $1); }
+    Access         { $$ = driver.pk_ExprAccess($1); }
   | ExprNotAccess  { $$ = $1;                                                        }
 ;
 
@@ -163,14 +157,16 @@ ExprsNE:
 ExprNotAccess:
     LPAR ExprNotAccess RPAR   { $$ = $2;                                                    }
   | Const                     { $$ = $1;                                                    }
-  | AMP Access                { $$ = driver.pk_ExprAccess(AST::Expr::Access::Mode::Addr, $2); }
-  | Access ASSIGN Expr        { $$ = driver.pk_ExprAssign($1, $3);                          }
-  | Access PLUS_ASSIGN Expr   { $$ = AccessAssign(driver, "+", $1, $3);                     }
-  | Access MINUS_ASSIGN Expr  { $$ = AccessAssign(driver, "-", $1, $3);                     }
-  | Access STAR_ASSIGN Expr   { $$ = AccessAssign(driver, "*", $1, $3);                     }
-  | Access SLASH_ASSIGN Expr  { $$ = AccessAssign(driver, "/", $1, $3);                     }
-  | Access MOD_ASSIGN Expr    { $$ = AccessAssign(driver, "%", $1, $3);                     }
+  | Expr ASSIGN Expr          { $$ = driver.pk_ExprPrim2("=", $1, $3);                      }
+  | Expr PLUS_ASSIGN Expr     { $$ = driver.pk_ExprPrim2("+=", $1, $3);              }
+  | Expr MINUS_ASSIGN Expr    { $$ = driver.pk_ExprPrim2("-=", $1, $3);              }
+  | Expr STAR_ASSIGN Expr     { $$ = driver.pk_ExprPrim2("*=", $1, $3);              }
+  | Expr SLASH_ASSIGN Expr    { $$ = driver.pk_ExprPrim2("/=", $1, $3);              }
+  | Expr MOD_ASSIGN Expr      { $$ = driver.pk_ExprPrim2("%=", $1, $3);              }
   | NAME LPAR Exprs RPAR      { $$ = driver.pk_ExprCall($1, $3);                            }
+  | MINUS Expr                { $$ = driver.pk_ExprPrim1("-", $2);                          }
+  | AMP Expr                  { $$ = driver.pk_ExprPrim1("&", $2);                          }
+  | STAR Expr                 { $$ = driver.pk_ExprPrim1("*", $2);                          }
   | NOT Expr                  { $$ = driver.pk_ExprPrim1("!", $2);                          }
   | PRINT Expr                { $$ = driver.pk_ExprPrim1("printi", $2);                     }
   | PRINTLN                   { $$ = driver.pk_ExprPrim1("printc", driver.pk_ExprCstI(10)); }
@@ -278,12 +274,6 @@ Vardesc:
 
 %%
 
-AST::ExprHandle AccessAssign(Driver &driver,  std::string op, AST::AccessHandle dest, AST::ExprHandle expr) {
-  auto mode = AST::Expr::Access::Mode::Access;
-  auto acc = driver.pk_ExprAccess(mode, dest);
-  auto r_expr = driver.pk_ExprPrim2(op, acc, expr);
-  return r_expr;
-}
 
 void yy::parser::error (const location_type& l, const std::string& m) {
   std::cerr << l << ": " << m << '\n';

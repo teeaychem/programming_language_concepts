@@ -2,14 +2,30 @@
 #include "llvm/IR/DIBuilder.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
+#include <iostream>
 #include <map>
 
 namespace ops_binary {
+
+OpBinary builder_assign(LLVMBundle &bundle) {
+  OpBinary builder = [&bundle](AST::ExprHandle destination, AST::ExprHandle value) {
+    std::cout << destination->to_string(0) << " = " << value->to_string(0) << "\n";
+
+    llvm::Value *destination_val = destination->codegen(bundle);
+    llvm::Value *value_val = value->codegen(bundle);
+
+    return bundle.builder.CreateStore(value_val, destination_val, "op.assign");
+  };
+  return builder;
+}
 
 OpBinary builder_add(LLVMBundle &bundle) {
   OpBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
     llvm::Value *a_val = a->codegen(bundle);
     llvm::Value *b_val = b->codegen(bundle);
+
+    a_val = bundle.ensure_loaded(a->type(), a_val);
+    b_val = bundle.ensure_loaded(b->type(), b_val);
 
     return bundle.builder.CreateAdd(a_val, b_val, "op.add");
   };
@@ -21,6 +37,9 @@ OpBinary builder_sub(LLVMBundle &bundle) {
     llvm::Value *a_val = a->codegen(bundle);
     llvm::Value *b_val = b->codegen(bundle);
 
+    a_val = bundle.ensure_loaded(a->type(), a_val);
+    b_val = bundle.ensure_loaded(b->type(), b_val);
+
     return bundle.builder.CreateSub(a_val, b_val, "op.sub");
   };
   return builder;
@@ -30,6 +49,9 @@ OpBinary builder_mul(LLVMBundle &bundle) {
   OpBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
     llvm::Value *a_val = a->codegen(bundle);
     llvm::Value *b_val = b->codegen(bundle);
+
+    a_val = bundle.ensure_loaded(a->type(), a_val);
+    b_val = bundle.ensure_loaded(b->type(), b_val);
 
     return bundle.builder.CreateMul(a_val, b_val, "op.mul");
   };
@@ -41,6 +63,9 @@ OpBinary builder_div(LLVMBundle &bundle) {
     llvm::Value *a_val = a->codegen(bundle);
     llvm::Value *b_val = b->codegen(bundle);
 
+    a_val = bundle.ensure_loaded(a->type(), a_val);
+    b_val = bundle.ensure_loaded(b->type(), b_val);
+
     return bundle.builder.CreateSDiv(a_val, b_val, "op.div");
   };
   return builder;
@@ -50,6 +75,9 @@ OpBinary builder_mod(LLVMBundle &bundle) {
   OpBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
     llvm::Value *a_val = a->codegen(bundle);
     llvm::Value *b_val = b->codegen(bundle);
+
+    a_val = bundle.ensure_loaded(a->type(), a_val);
+    b_val = bundle.ensure_loaded(b->type(), b_val);
 
     return bundle.builder.CreateSRem(a_val, b_val, "op.mod");
   };
@@ -61,6 +89,9 @@ OpBinary builder_eq(LLVMBundle &bundle) {
     llvm::Value *a_val = a->codegen(bundle);
     llvm::Value *b_val = b->codegen(bundle);
 
+    a_val = bundle.ensure_loaded(a->type(), a_val);
+    b_val = bundle.ensure_loaded(b->type(), b_val);
+
     return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_EQ, a_val, b_val);
   };
   return builder;
@@ -70,6 +101,9 @@ OpBinary builder_ne(LLVMBundle &bundle) {
   OpBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
     llvm::Value *a_val = a->codegen(bundle);
     llvm::Value *b_val = b->codegen(bundle);
+
+    a_val = bundle.ensure_loaded(a->type(), a_val);
+    b_val = bundle.ensure_loaded(b->type(), b_val);
 
     return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_NE, a_val, b_val);
   };
@@ -81,6 +115,9 @@ OpBinary builder_gt(LLVMBundle &bundle) {
     llvm::Value *a_val = a->codegen(bundle);
     llvm::Value *b_val = b->codegen(bundle);
 
+    a_val = bundle.ensure_loaded(a->type(), a_val);
+    b_val = bundle.ensure_loaded(b->type(), b_val);
+
     return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SGT, a_val, b_val);
   };
   return builder;
@@ -90,6 +127,9 @@ OpBinary builder_lt(LLVMBundle &bundle) {
   OpBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
     llvm::Value *a_val = a->codegen(bundle);
     llvm::Value *b_val = b->codegen(bundle);
+
+    a_val = bundle.ensure_loaded(a->type(), a_val);
+    b_val = bundle.ensure_loaded(b->type(), b_val);
 
     return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SLT, a_val, b_val);
   };
@@ -101,6 +141,9 @@ OpBinary builder_ge(LLVMBundle &bundle) {
     llvm::Value *a_val = a->codegen(bundle);
     llvm::Value *b_val = b->codegen(bundle);
 
+    a_val = bundle.ensure_loaded(a->type(), a_val);
+    b_val = bundle.ensure_loaded(b->type(), b_val);
+
     return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SGE, a_val, b_val);
   };
   return builder;
@@ -110,6 +153,9 @@ OpBinary builder_le(LLVMBundle &bundle) {
   OpBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
     llvm::Value *a_val = a->codegen(bundle);
     llvm::Value *b_val = b->codegen(bundle);
+
+    a_val = bundle.ensure_loaded(a->type(), a_val);
+    b_val = bundle.ensure_loaded(b->type(), b_val);
 
     return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SLE, a_val, b_val);
   };
@@ -121,6 +167,9 @@ OpBinary builder_and(LLVMBundle &bundle) {
     llvm::Value *a_val = a->codegen(bundle);
     llvm::Value *b_val = b->codegen(bundle);
 
+    a_val = bundle.ensure_loaded(a->type(), a_val);
+    b_val = bundle.ensure_loaded(b->type(), b_val);
+
     return bundle.builder.CreateAnd(a_val, b_val);
   };
   return builder;
@@ -131,6 +180,9 @@ OpBinary builder_or(LLVMBundle &bundle) {
     llvm::Value *a_val = a->codegen(bundle);
     llvm::Value *b_val = b->codegen(bundle);
 
+    a_val = bundle.ensure_loaded(a->type(), a_val);
+    b_val = bundle.ensure_loaded(b->type(), b_val);
+
     return bundle.builder.CreateOr(a_val, b_val);
   };
   return builder;
@@ -138,6 +190,7 @@ OpBinary builder_or(LLVMBundle &bundle) {
 
 } // namespace ops_binary
 void extend_ops_binary(LLVMBundle &bundle, OpsBinaryMap &op_map) {
+  op_map["="] = ops_binary::builder_assign(bundle);
 
   op_map["+"] = ops_binary::builder_add(bundle);
   op_map["-"] = ops_binary::builder_sub(bundle);
