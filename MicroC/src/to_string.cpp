@@ -8,7 +8,6 @@
 #include "AST/AST.hpp"
 
 #include "AST/Block.hpp"
-#include "AST/Node/Access.hpp"
 #include "AST/Node/Dec.hpp"
 #include "AST/Node/Expr.hpp"
 #include "AST/Node/Stmt.hpp"
@@ -41,12 +40,6 @@ std::string AST::Typ::TypPointer::to_string(size_t indent) const {
 
 // Nodes
 
-// Access
-
-std::string AST::Access::Var::to_string(size_t indent) const {
-  return this->var;
-}
-
 // Dec
 
 std::string AST::Dec::Fn::to_string(size_t indent) const {
@@ -72,9 +65,7 @@ std::string AST::Dec::Var::to_string(size_t indent) const {
 
 // Expr
 
-std::string AST::Expr::Access::to_string(size_t indent) const {
-  return std::format("{}", this->acc->to_string(indent));
-}
+
 std::string AST::Expr::Assign::to_string(size_t indent) const {
   return std::format("{} = {}", this->dest->to_string(indent), this->expr->to_string(indent));
 }
@@ -118,6 +109,10 @@ std::string AST::Expr::Prim1::to_string(size_t indent) const {
 }
 std::string AST::Expr::Prim2::to_string(size_t indent) const {
   return std::format("({} {} {})", this->a->to_string(indent), this->op, this->b->to_string(indent));
+}
+
+std::string AST::Expr::Var::to_string(size_t indent) const {
+  return this->var;
 }
 
 // Stmt

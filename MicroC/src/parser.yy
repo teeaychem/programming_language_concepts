@@ -27,7 +27,6 @@
 %code {
 #include "Driver.hpp"
 
-#include "AST/Node/Access.hpp"
 #include "AST/Node/Dec.hpp"
 #include "AST/Node/Expr.hpp"
 #include "AST/Node/Stmt.hpp"
@@ -91,12 +90,9 @@
 
 %nterm <AST::ExprHandle> Const
 %nterm <AST::ExprHandle> Expr
-%nterm <AST::ExprHandle> ExprNotAccess
 
 %nterm <std::vector<AST::ExprHandle>> Exprs
 %nterm <std::vector<AST::ExprHandle>> ExprsNE
-
-%nterm <AST::ExprHandle> Access
 
 %nterm <AST::Typ::Data> DataType
 
@@ -106,15 +102,6 @@
 %start program;
 program:
     Topdecs YYEOF  {   }
-;
-
-
-Access:
-    NAME                       {
-    auto x = driver.pk_AccessVar(driver.env[$1]->type(), $1);
-    $$ = driver.pk_ExprAccess(x); }
-  | LPAR Access RPAR           { $$ = $2;                                              }
-  
 ;
 
 
@@ -138,11 +125,6 @@ DataType:
 ;
 
 
-Expr:
-    Access         { $$ = $1; }
-  | ExprNotAccess  { $$ = $1;                                                        }
-;
-
 
 Exprs:
     %empty   { $$ = std::vector<AST::ExprHandle>(); }
@@ -156,8 +138,9 @@ ExprsNE:
 ;  
 
 
-ExprNotAccess:
-    LPAR ExprNotAccess RPAR   { $$ = $2;                                                    }
+Expr:
+    NAME                      { $$ = driver.pk_ExprVar(driver.env[$1]->type(), $1); }
+  | LPAR Expr RPAR   { $$ = $2;                                                    }
   | Const                     { $$ = $1;                                                    }
   | Expr ASSIGN Expr          { $$ = driver.pk_ExprPrim2("=", $1, $3);                      }
   | Expr PLUS_ASSIGN Expr     { $$ = driver.pk_ExprPrim2("+=", $1, $3);              }
