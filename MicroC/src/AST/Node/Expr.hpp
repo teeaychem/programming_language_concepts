@@ -79,16 +79,17 @@ struct CstI : ExprT {
 // Index
 
 struct Index : ExprT {
-  AccessHandle access;
+  ExprHandle access;
   ExprHandle index;
 
   Expr::Kind kind() const override { return Expr::Kind::Index; }
   std::string to_string(size_t indent) const override;
   llvm::Value *codegen(LLVMBundle &hdl) const override;
 
-  TypHandle type() const override { return this->access->eval_type()->deref_unsafe(); }
+  // TODO: Verify correct type
+  TypHandle type() const override { return this->access->type()->deref_unsafe(); }
 
-  Index(AccessHandle expr, ExprHandle index) : access(expr), index(index) {}
+  Index(ExprHandle expr, ExprHandle index) : access(expr), index(index) {}
 };
 
 // Prim1

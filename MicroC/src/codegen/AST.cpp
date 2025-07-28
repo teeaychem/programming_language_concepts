@@ -99,7 +99,11 @@ Value *AST::Expr::CstI::codegen(LLVMBundle &hdl) const {
 
 Value *AST::Expr::Index::codegen(LLVMBundle &hdl) const {
   Value *value = this->access->codegen(hdl);
-  Type *typ = this->access->eval_type()->typegen(hdl);
+
+  // TODO: Improve
+  assert(value->getType()->isPointerTy());
+
+  Type *typ = this->access->type()->typegen(hdl);
 
   Value *index = this->index->codegen(hdl);
 
