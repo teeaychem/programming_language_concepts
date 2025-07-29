@@ -10,14 +10,6 @@ struct LLVMBundle;
 
 // X
 
-namespace AST {
-struct DecT;
-typedef std::shared_ptr<DecT> DecHandle;
-
-} // namespace AST
-
-typedef std::map<std::string, AST::DecHandle> Env;
-
 // Types
 
 namespace AST {
@@ -47,13 +39,13 @@ struct TypT {
   virtual llvm::Type *typegen(LLVMBundle &hdl) const = 0;
   // Generate the default value of this type.
   virtual llvm::Constant *defaultgen(LLVMBundle &hdl) const = 0;
-  // The kind of this type, corresponding to a struct
+  // The kind of this type, corresponding to a struct.
   virtual Typ::Kind kind() const = 0;
-  // String representation, C-style
+  // String representation.
   virtual std::string to_string(size_t indent) const = 0;
   // Dereference this type, may panic if dereference is not possible.
   virtual std::shared_ptr<TypT> deref_unsafe() const = 0;
-  // Completes the type, may panic if already complete.
+  // Completes the type, may throw if already complete.
   virtual void complete_data_unsafe(AST::Typ::Data d_typ) = 0;
 
   virtual ~TypT() = default;
@@ -61,7 +53,10 @@ struct TypT {
 
 typedef std::shared_ptr<TypT> TypHandle;
 typedef std::shared_ptr<Typ::TypIndex> TypIndexHandle;
+
 } // namespace AST
+
+typedef std::map<std::string, AST::TypHandle> Env; // Vars have declared type, fns have return type.
 
 // Nodes
 
@@ -192,7 +187,7 @@ typedef std::shared_ptr<AST::Stmt::Declaration> StmtDeclarationHandle;
 
 // Etc
 
-typedef std::vector<std::pair<TypHandle, std::string>> ParamVec;
+  typedef std::vector<std::pair<std::string, TypHandle>> ParamVec;
 typedef std::vector<std::variant<StmtHandle, DecHandle>> BlockVec;
 
 } // namespace AST

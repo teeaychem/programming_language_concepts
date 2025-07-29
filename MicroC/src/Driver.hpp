@@ -1,8 +1,10 @@
 #pragma once
 
 #include <cstdio>
+#include <format>
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <string>
 
 #include "AST/AST.hpp"
@@ -41,16 +43,42 @@ struct Driver {
 
   int parse(const std::string &f); // Run the parser on file F.  Return 0 on success.
 
-  void push_dec(AST::StmtDeclarationHandle dec) {
-    // TODO: Tidy
-    this->env[dec->declaration->name()] = dec->declaration;
-    prg.push_back(dec);
+  void push_dec(AST::StmtDeclarationHandle stmt) {
+
+    switch (stmt->declaration->kind()) {
+
+    case AST::Dec::Kind::Var: {
+      this->env[stmt->declaration->name()] = stmt->declaration->type();
+    } break;
+
+    case AST::Dec::Kind::Fn: {
+      auto as_fn = std::static_pointer_cast<AST::Dec::Fn>(stmt->declaration);
+      this->env[as_fn->name()] = as_fn->return_type();
+    } break;
+    }
+
+    prg.push_back(stmt);
   }
 
   void scan_begin(); // Handling the scanner.
   void scan_end();
 
   std::string prg_string();
+
+  // etc
+
+  void add_to_env(AST::ParamVec &params) {
+    for (auto &param : params) {
+      this->env[param.first] = param.second;
+    }
+  }
+
+  void fn_finalise(AST::DecFnHandle fn) {
+    // TODO: Shadowing of global variables...
+    for (auto &param : fn->params) {
+      this->env.erase(param.first);
+    }
+  }
 
   // pk start
 
@@ -60,8 +88,7 @@ struct Driver {
 
     if (scope == AST::Dec::Scope::Global) {
       if (this->env.find(var) != this->env.end()) {
-        std::cerr << "Redeclaration of global: " << var << "\n";
-        exit(-1);
+        throw std::logic_error(std::format("Redeclaration of global: {}", var));
       }
     }
 
@@ -71,9 +98,8 @@ struct Driver {
 
   AST::DecHandle pk_DecFn(AST::TypHandle r_typ, std::string var, AST::ParamVec params, AST::StmtBlockHandle body) {
 
-    if (this->env .find(var) != this->env.end()) {
-      std::cerr << "Existing use of: '" << var << "' unable to declare function." << std::endl;
-      exit(-1);
+    if (this->env.find(var) != this->env.end()) {
+      throw std::logic_error(std::format("Existing use of: '{}' unable to declare function.", var));
     }
 
     AST::Dec::Fn dec(std::move(r_typ), var, std::move(params), std::move(body));
@@ -89,15 +115,7 @@ struct Driver {
 
   AST::ExprHandle pk_ExprCall(std::string name, std::vector<AST::ExprHandle> params) {
 
-    auto dec = this->env.find(name);
-    if (dec == this->env.end() || dec->second->kind() != AST::Dec::Kind::Fn) {
-      std::cerr << "Failed to find fn: " << name << std::endl;
-      exit(-1);
-    }
-
-    auto as_FnDec = std::static_pointer_cast<AST::Dec::Fn>(dec->second);
-
-    AST::Expr::Call e(std::move(name), as_FnDec->r_typ, std::move(params));
+    AST::Expr::Call e(std::move(name), std::move(params));
 
     return std::make_shared<AST::Expr::Call>(std::move(e));
   }
@@ -124,9 +142,9 @@ struct Driver {
   }
 
   AST::ExprHandle pk_ExprVar(std::string var) {
-    // if (this->env.find(var) == this->env.end()) {
-    //   std::cerr << "Unknown variable: " << var << std::endl;
-    // }
+    if (this->env.find(var) == this->env.end()) {
+      throw std::logic_error(std::format("Unknown variable: {}", var));
+    }
     auto tmp = AST::Typ::pk_Data(AST::Typ::Data::Int);
 
     AST::Expr::Var access(std::move(tmp), std::move(var));
@@ -136,23 +154,23 @@ struct Driver {
   // pk Stmt
 
   AST::StmtBlockHandle pk_StmtBlock(AST::Block &&bv) {
-    AST::Stmt::Block b(std::move(bv));
-    return std::make_shared<AST::Stmt::Block>(std::move(b));
+    AST::Stmt::Block stmt(std::move(bv));
+    return std::make_shared<AST::Stmt::Block>(std::move(stmt));
   }
 
   AST::StmtHandle pk_StmtBlockStmt(AST::Block &&bv) {
-    AST::Stmt::Block b(std::move(bv));
-    return std::make_shared<AST::Stmt::Block>(std::move(b));
+    AST::Stmt::Block stmt(std::move(bv));
+    return std::make_shared<AST::Stmt::Block>(std::move(stmt));
   }
 
-  AST::StmtDeclarationHandle pk_StmtDeclaration(AST::DecHandle &&dec) {
-    AST::Stmt::Declaration declaration(std::move(dec));
-    return std::make_shared<AST::Stmt::Declaration>(std::move(declaration));
+  AST::StmtDeclarationHandle pk_StmtDeclaration(AST::DecHandle &&declaration) {
+    AST::Stmt::Declaration stmt(std::move(declaration));
+    return std::make_shared<AST::Stmt::Declaration>(std::move(stmt));
   }
 
   AST::StmtHandle pk_StmtExpr(AST::ExprHandle expr) {
-    AST::Stmt::Expr e(std::move(expr));
-    return std::make_shared<AST::Stmt::Expr>(std::move(e));
+    AST::Stmt::Expr stmt(std::move(expr));
+    return std::make_shared<AST::Stmt::Expr>(std::move(stmt));
   }
 
   AST::StmtHandle pk_StmtIf(AST::ExprHandle condition, AST::StmtHandle yes, AST::StmtHandle no) {

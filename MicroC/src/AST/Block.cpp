@@ -13,12 +13,12 @@ void AST::Block::push_DecVar(Env &env, AST::StmtDeclarationHandle const &dec_var
   if (shadowed != env.end()) {
     this->shadow_vars.push_back(dec_var);
 
-    this->shadowed_vars.push_back(std::static_pointer_cast<Dec::Var>(shadowed->second));
+    this->shadowed_vars.insert(*shadowed);
   } else {
     this->fresh_vars.push_back(dec_var);
   }
 
-  env[var] = dec_var->declaration;
+  env[var] = dec_var->declaration->type();
 }
 
 void AST::Block::push_Stmt(AST::StmtHandle const &stmt) {
@@ -78,7 +78,7 @@ void AST::Block::push_Stmt(AST::StmtHandle const &stmt) {
 void AST::Block::finalize(Env &env) {
   // Restore shadowed variables to `env`
   for (auto &shadowed : this->shadowed_vars) {
-    env[shadowed->name()] = shadowed;
+    env[shadowed.first] = shadowed.second;
   }
 
   // Remove fresh variables from `env`
