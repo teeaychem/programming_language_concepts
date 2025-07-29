@@ -5,7 +5,7 @@
 #include "AST/Node/Dec.hpp"
 #include "AST/Node/Stmt.hpp"
 
-void AST::Block::push_DecVar(AST::Env &env, AST::StmtDeclarationHandle const &dec_var) {
+void AST::Block::push_DecVar(Env &env, AST::StmtDeclarationHandle const &dec_var) {
   std::string var{dec_var->declaration->name()};
 
   auto shadowed = env.find(var);
@@ -62,8 +62,8 @@ void AST::Block::push_Stmt(AST::StmtHandle const &stmt) {
 
   case Stmt::Kind::While: {
     auto stmt_while = std::static_pointer_cast<AST::Stmt::While>(stmt);
-    this->early_returns += stmt_while->stmt->early_returns();
-    this->pass_throughs += stmt_while->stmt->pass_throughs();
+    this->early_returns += stmt_while->body->early_returns();
+    this->pass_throughs += stmt_while->body->pass_throughs();
 
     this->returns = stmt_while->returns();
   } break;
@@ -75,7 +75,7 @@ void AST::Block::push_Stmt(AST::StmtHandle const &stmt) {
   this->statements.push_back(stmt);
 }
 
-void AST::Block::finalize(AST::Env &env) {
+void AST::Block::finalize(Env &env) {
   // Restore shadowed variables to `env`
   for (auto &shadowed : this->shadowed_vars) {
     env[shadowed->name()] = shadowed;

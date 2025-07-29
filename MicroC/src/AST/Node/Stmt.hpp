@@ -18,12 +18,14 @@ struct Block : StmtT {
   Block(AST::Block &&bv)
       : block(std::move(bv)) {}
 
-  std::string to_string(size_t indent) const override;
   Stmt::Kind kind() const override { return Stmt::Kind::Block; }
+  bool returns() const override { return this->block.returns; };
+  size_t early_returns() const override { return this->block.early_returns; };
+  size_t pass_throughs() const override { return this->block.pass_throughs; };
+
+  std::string to_string(size_t indent) const override;
   llvm::Value *codegen(LLVMBundle &hdl) const override;
-  [[nodiscard]] bool returns() const override { return this->block.returns; };
-  [[nodiscard]] size_t early_returns() const override { return this->block.early_returns; };
-  [[nodiscard]] size_t pass_throughs() const override { return this->block.pass_throughs; };
+  void type_resolution(Env &env) override;
 };
 
 // Declaration
@@ -34,13 +36,14 @@ struct Declaration : StmtT {
   Declaration(DecHandle expr)
       : declaration(std::move(expr)) {}
 
-  std::string to_string(size_t indent) const override;
   Stmt::Kind kind() const override { return Stmt::Kind::Declaration; }
+  bool returns() const override { return false; };
+  size_t early_returns() const override { return 0; };
+  size_t pass_throughs() const override { return 0; };
 
+  std::string to_string(size_t indent) const override;
   llvm::Value *codegen(LLVMBundle &hdl) const override;
-  [[nodiscard]] bool returns() const override { return false; };
-  [[nodiscard]] size_t early_returns() const override { return 0; };
-  [[nodiscard]] size_t pass_throughs() const override { return 0; };
+  void type_resolution(Env &env) override;
 };
 
 // Expr
@@ -51,13 +54,14 @@ struct Expr : StmtT {
   Expr(ExprHandle expr)
       : expr(std::move(expr)) {}
 
-  std::string to_string(size_t indent) const override;
   Stmt::Kind kind() const override { return Stmt::Kind::Expr; }
+  bool returns() const override { return false; };
+  size_t early_returns() const override { return 0; };
+  size_t pass_throughs() const override { return 0; };
 
+  std::string to_string(size_t indent) const override;
   llvm::Value *codegen(LLVMBundle &hdl) const override;
-  [[nodiscard]] bool returns() const override { return false; };
-  [[nodiscard]] size_t early_returns() const override { return 0; };
-  [[nodiscard]] size_t pass_throughs() const override { return 0; };
+  void type_resolution(Env &env) override;
 };
 
 // If
@@ -68,14 +72,18 @@ struct If : StmtT {
   StmtBlockHandle stmt_else;
 
   If(ExprHandle condition, StmtBlockHandle stmt_then, StmtBlockHandle stmt_else)
-      : condition(condition), stmt_then(stmt_then), stmt_else(stmt_else) {}
+      : condition(condition),
+        stmt_then(stmt_then),
+        stmt_else(stmt_else) {}
+
+  Stmt::Kind kind() const override { return Stmt::Kind::If; }
+  bool returns() const override { return this->stmt_then->block.returns && this->stmt_else->block.returns; };
+  size_t early_returns() const override { return this->stmt_then->early_returns() + this->stmt_else->early_returns(); };
+  size_t pass_throughs() const override { return this->stmt_then->pass_throughs() + this->stmt_else->pass_throughs(); };
 
   std::string to_string(size_t indent) const override;
-  Stmt::Kind kind() const override { return Stmt::Kind::If; }
   llvm::Value *codegen(LLVMBundle &hdl) const override;
-  [[nodiscard]] bool returns() const override { return this->stmt_then->block.returns && this->stmt_else->block.returns; };
-  [[nodiscard]] size_t early_returns() const override { return this->stmt_then->early_returns() + this->stmt_else->early_returns(); };
-  [[nodiscard]] size_t pass_throughs() const override { return this->stmt_then->pass_throughs() + this->stmt_else->pass_throughs(); };
+  void type_resolution(Env &env) override;
 };
 
 // Return
@@ -86,29 +94,34 @@ struct Return : StmtT {
   Return(std::optional<ExprHandle> value)
       : value(std::move(value)) {}
 
-  std::string to_string(size_t indent) const override;
   Stmt::Kind kind() const override { return Stmt::Kind::Return; }
+  bool returns() const override { return true; };
+  size_t early_returns() const override { return 0; };
+  size_t pass_throughs() const override { return 0; };
+
+  std::string to_string(size_t indent) const override;
   llvm::Value *codegen(LLVMBundle &hdl) const override;
-  [[nodiscard]] bool returns() const override { return true; };
-  [[nodiscard]] size_t early_returns() const override { return 0; };
-  [[nodiscard]] size_t pass_throughs() const override { return 0; };
+  void type_resolution(Env &env) override;
 };
 
 // While
 
 struct While : StmtT {
   ExprHandle condition;
-  StmtHandle stmt;
+  StmtHandle body;
 
-  While(ExprHandle condition, StmtHandle bv)
-      : condition(condition), stmt(bv) {}
+  While(ExprHandle condition, StmtHandle body)
+      : condition(condition),
+        body(body) {}
+
+  Stmt::Kind kind() const override { return Stmt::Kind::While; }
+  bool returns() const override { return false; };
+  size_t early_returns() const override { return this->body->early_returns(); };
+  size_t pass_throughs() const override { return this->body->pass_throughs(); };
 
   std::string to_string(size_t indent) const override;
-  Stmt::Kind kind() const override { return Stmt::Kind::While; }
   llvm::Value *codegen(LLVMBundle &hdl) const override;
-  [[nodiscard]] bool returns() const override { return false; };
-  [[nodiscard]] size_t early_returns() const override { return this->stmt->early_returns(); };
-  [[nodiscard]] size_t pass_throughs() const override { return this->stmt->pass_throughs(); };
+  void type_resolution(Env &env) override;
 };
 
 } // namespace Stmt

@@ -39,14 +39,14 @@ struct Block {
 
   // Add a declaration, using `env` to determine which variables are in scope.
   // And, mutates `env` in accordance with the declaration.
-  void push_DecVar(AST::Env &env, AST::StmtDeclarationHandle const &dec_var);
+  void push_DecVar(Env &env, AST::StmtDeclarationHandle const &dec_var);
 
   // Add a statement.
   void push_Stmt(AST::StmtHandle const &stmt);
 
   // To be called after the final declaration / statement has been added to the block.
   // Of note, restores `env` to its state prior to processing the block.
-  void finalize(AST::Env &env);
+  void finalize(Env &env);
 };
 
 } // namespace AST

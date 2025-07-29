@@ -138,7 +138,13 @@ ExprsNE:
 
 
 Expr:
-    NAME                      { $$ = driver.pk_ExprVar(driver.env[$1]->type(), $1);         }
+    NAME                      {
+// std::cout << $1 << "\n";
+// auto typ = driver.env[$1]->type();
+auto x = driver.pk_ExprVar($1);
+$$ = x;
+
+}
   | AtomicConst               { $$ = $1;                                                    }
   | Expr ASSIGN Expr          { $$ = driver.pk_ExprPrim2("=", $1, $3);                      }
   | Expr PLUS_ASSIGN Expr     { $$ = driver.pk_ExprPrim2("+=", $1, $3);                     }
