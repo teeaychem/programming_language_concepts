@@ -195,7 +195,7 @@ std::string AST::Stmt::While::to_string(size_t indent) const {
   std::stringstream while_ss{};
   while_ss << "while" << " "
            << this->condition->to_string(indent) << " "
-           << this->stmt->to_string(indent);
+           << this->body->to_string(indent);
 
   return while_ss.str();
 }

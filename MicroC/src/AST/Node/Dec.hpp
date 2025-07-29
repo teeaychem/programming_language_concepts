@@ -22,14 +22,16 @@ struct Var : DecT {
   std::string id;
 
   Var(Scope scope, TypHandle typ, std::string name)
-      : scope(scope), typ(std::move(typ)), id(name) {}
+      : scope(scope),
+        typ(std::move(typ)), id(name) {}
 
-  std::string to_string(size_t indent) const override;
   Dec::Kind kind() const override { return Dec::Kind::Var; }
   TypHandle type() const override { return typ; };
   std::string name() const override { return this->id; };
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
+  std::string to_string(size_t indent) const override;
+  void type_resolution(Env &env) override;
 };
 
 // Fn
@@ -48,12 +50,13 @@ struct Fn : DecT {
         params(std::move(params)),
         body(std::move(body)) {}
 
-  std::string to_string(size_t indent) const override;
   Dec::Kind kind() const override { return Dec::Kind::Fn; }
   TypHandle type() const override { return r_typ; };
   std::string name() const override { return this->id; };
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
+  std::string to_string(size_t indent) const override;
+  void type_resolution(Env &env) override;
 };
 
 } // namespace Dec

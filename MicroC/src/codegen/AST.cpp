@@ -260,8 +260,8 @@ Value *AST::Stmt::While::codegen(LLVMBundle &hdl) const {
 
   parent->insert(parent->end(), block_loop);
   hdl.builder.SetInsertPoint(block_loop);
-  this->stmt->codegen(hdl);
-  if (!this->stmt->returns()) { // If entered, the while body may return...
+  this->body->codegen(hdl);
+  if (!this->body->returns()) { // If entered, the while body may return...
     hdl.builder.CreateBr(block_cond);
   }
 

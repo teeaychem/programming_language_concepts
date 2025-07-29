@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdio>
 #include <memory>
 #include <optional>
 #include <string>
@@ -10,6 +11,7 @@
 #include "AST/Node/Expr.hpp"
 #include "AST/Node/Stmt.hpp"
 
+#include "AST/Types.hpp"
 #include "codegen/LLVMBundle.hpp"
 #include "parser.hpp"
 
@@ -20,7 +22,7 @@ YY_DECL; // Declare the prototype for bison
 struct Driver {
   std::vector<AST::StmtDeclarationHandle> prg{};
 
-  std::map<std::string, AST::DecHandle> env{};
+  Env env{};
 
   LLVMBundle llvm;
 
@@ -69,7 +71,7 @@ struct Driver {
 
   AST::DecHandle pk_DecFn(AST::TypHandle r_typ, std::string var, AST::ParamVec params, AST::StmtBlockHandle body) {
 
-    if (this->env.find(var) != this->env.end()) {
+    if (this->env .find(var) != this->env.end()) {
       std::cerr << "Existing use of: '" << var << "' unable to declare function." << std::endl;
       exit(-1);
     }
@@ -121,12 +123,13 @@ struct Driver {
     return std::make_shared<AST::Expr::Prim2>(std::move(e));
   }
 
-  AST::ExprHandle pk_ExprVar(AST::TypHandle typ, std::string var) {
-    if (this->env.find(var) == this->env.end()) {
-      std::cerr << "Unknown variable: " << var << std::endl;
-    }
+  AST::ExprHandle pk_ExprVar(std::string var) {
+    // if (this->env.find(var) == this->env.end()) {
+    //   std::cerr << "Unknown variable: " << var << std::endl;
+    // }
+    auto tmp = AST::Typ::pk_Data(AST::Typ::Data::Int);
 
-    AST::Expr::Var access(std::move(typ), std::move(var));
+    AST::Expr::Var access(std::move(tmp), std::move(var));
     return std::make_shared<AST::Expr::Var>(std::move(access));
   }
 

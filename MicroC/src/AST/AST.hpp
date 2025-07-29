@@ -8,6 +8,16 @@
 #include "llvm/IR/DIBuilder.h"
 struct LLVMBundle;
 
+// X
+
+namespace AST {
+struct DecT;
+typedef std::shared_ptr<DecT> DecHandle;
+
+} // namespace AST
+
+typedef std::map<std::string, AST::DecHandle> Env;
+
 // Types
 
 namespace AST {
@@ -34,15 +44,15 @@ struct TypPointer;
 
 struct TypT {
   // Generate the representation of this type.
-  [[nodiscard]] virtual llvm::Type *typegen(LLVMBundle &hdl) const = 0;
+  virtual llvm::Type *typegen(LLVMBundle &hdl) const = 0;
   // Generate the default value of this type.
-  [[nodiscard]] virtual llvm::Constant *defaultgen(LLVMBundle &hdl) const = 0;
+  virtual llvm::Constant *defaultgen(LLVMBundle &hdl) const = 0;
   // The kind of this type, corresponding to a struct
-  [[nodiscard]] virtual Typ::Kind kind() const = 0;
+  virtual Typ::Kind kind() const = 0;
   // String representation, C-style
-  [[nodiscard]] virtual std::string to_string(size_t indent) const = 0;
+  virtual std::string to_string(size_t indent) const = 0;
   // Dereference this type, may panic if dereference is not possible.
-  [[nodiscard]] virtual std::shared_ptr<TypT> deref_unsafe() const = 0;
+  virtual std::shared_ptr<TypT> deref_unsafe() const = 0;
   // Completes the type, may panic if already complete.
   virtual void complete_data_unsafe(AST::Typ::Data d_typ) = 0;
 
@@ -67,8 +77,10 @@ enum class Kind {
 struct NodeT {
   virtual llvm::Value *codegen(LLVMBundle &hdl) const = 0;
 
-  [[nodiscard]] virtual AST::Kind kind_abstract() const = 0;
-  [[nodiscard]] virtual std::string to_string(size_t indent) const = 0;
+  virtual AST::Kind kind_abstract() const = 0;
+  virtual std::string to_string(size_t indent) const = 0;
+  //
+  virtual void type_resolution(Env &env) = 0;
 
   virtual ~NodeT() = default;
 };
@@ -101,9 +113,11 @@ enum class Kind {
 } // namespace Expr
 
 struct ExprT : NodeT {
+  TypHandle typ{nullptr};
+
   AST::Kind kind_abstract() const override { return AST::Kind::Expr; }
-  [[nodiscard]] virtual Expr::Kind kind() const = 0;
-  [[nodiscard]] virtual AST::TypHandle type() const = 0;
+  virtual Expr::Kind kind() const = 0;
+  virtual AST::TypHandle type() const = 0;
   llvm::Value *codegen_eval_true(LLVMBundle &hdl) const;
   llvm::Value *codegen_eval_false(LLVMBundle &hdl) const;
 };
@@ -131,10 +145,10 @@ struct While;
 
 struct StmtT : NodeT {
   AST::Kind kind_abstract() const override { return AST::Kind::Stmt; }
-  [[nodiscard]] virtual Stmt::Kind kind() const = 0;
-  [[nodiscard]] virtual bool returns() const = 0;
-  [[nodiscard]] virtual size_t early_returns() const = 0;
-  [[nodiscard]] virtual size_t pass_throughs() const = 0;
+  virtual Stmt::Kind kind() const = 0;
+  virtual bool returns() const = 0;
+  virtual size_t early_returns() const = 0;
+  virtual size_t pass_throughs() const = 0;
 };
 
 // Declarations
@@ -151,9 +165,9 @@ struct Fn;
 
 struct DecT : NodeT {
   AST::Kind kind_abstract() const override { return AST::Kind::Dec; }
-  [[nodiscard]] virtual Dec::Kind kind() const = 0;
-  [[nodiscard]] virtual AST::TypHandle type() const = 0;
-  [[nodiscard]] virtual std::string name() const = 0;
+  virtual Dec::Kind kind() const = 0;
+  virtual AST::TypHandle type() const = 0;
+  virtual std::string name() const = 0;
 };
 } // namespace AST
 
@@ -180,7 +194,5 @@ typedef std::shared_ptr<AST::Stmt::Declaration> StmtDeclarationHandle;
 
 typedef std::vector<std::pair<TypHandle, std::string>> ParamVec;
 typedef std::vector<std::variant<StmtHandle, DecHandle>> BlockVec;
-
-typedef std::map<std::string, AST::DecHandle> Env;
 
 } // namespace AST
