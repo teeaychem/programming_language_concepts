@@ -49,7 +49,7 @@ std::string AST::Dec::Fn::to_string(size_t indent) const {
 
   if (!params.empty()) {
     for (auto &p : params) {
-      fn_ss << std::format("{} {}, ", p.first->to_string(indent), p.second);
+      fn_ss << std::format("{} {}, ", p.second->to_string(indent), p.first);
     }
     fn_ss.seekp(-2, std::ios_base::end);
   }

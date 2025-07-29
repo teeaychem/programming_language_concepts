@@ -10,6 +10,8 @@
 
 %code requires {
   #include <string>
+  #include <tuple>
+
   #include "AST/AST.hpp"
   #include "AST/Block.hpp"  
 
@@ -25,6 +27,9 @@
 %define parse.lac full
 
 %code {
+
+#include <tuple>
+
 #include "Driver.hpp"
 
 #include "AST/Node/Dec.hpp"
@@ -85,8 +90,8 @@
 %nterm <AST::StmtHandle> StmtA
 %nterm <AST::StmtHandle> StmtB
 
-%nterm <std::pair<AST::TypHandle, std::string>> Vardec
-%nterm <std::pair<AST::TypHandle, std::string>> Vardesc
+%nterm <std::pair<std::string, AST::TypHandle>> Vardec
+%nterm <std::pair<std::string, AST::TypHandle>> Vardesc
 
 %nterm <AST::ExprHandle> AtomicConst
 %nterm <AST::ExprHandle> Expr
@@ -95,6 +100,8 @@
 %nterm <std::vector<AST::ExprHandle>> ExprsNE
 
 %nterm <AST::Typ::Data> DataType
+
+%nterm <std::tuple<AST::TypHandle, std::string, AST::ParamVec>> FnPrototype
 
 %printer {  } <*>; // yyo << $$;
 
@@ -177,9 +184,23 @@ $$ = x;
 ;
 
 
+FnPrototype:
+    VOID NAME LPAR Paramdecs RPAR      {
+      driver.add_to_env($4);
+      $$ = std::make_tuple(AST::Typ::pk_Void(), $2, $4);
+    }
+  | DataType NAME LPAR Paramdecs RPAR  {
+      driver.add_to_env($4);
+      $$ = std::make_tuple(AST::Typ::pk_Data($1), $2, $4);
+    }
+;
+
 Fndec:
-    VOID NAME LPAR Paramdecs RPAR Block      { $$ = driver.pk_DecFn(AST::Typ::pk_Void()  , $2, $4, $6); }
-  | DataType NAME LPAR Paramdecs RPAR Block  { $$ = driver.pk_DecFn(AST::Typ::pk_Data($1), $2, $4, $6); }
+    FnPrototype Block      {
+      auto r = driver.pk_DecFn(std::get<0>($1), std::get<1>($1), std::get<2>($1), $2);
+      driver.fn_finalise(r);
+      $$ = r;
+    }
 ;
 
 
@@ -224,7 +245,7 @@ StmtOrDecSeq:
     %empty                    { $$ = AST::Block{};                              }
   | StmtOrDecSeq Stmt         { $1.push_Stmt($2); $$ = $1;                      }
   | StmtOrDecSeq Vardec SEMI  {
-      auto dec = driver.pk_DecVar(AST::Dec::Scope::Local, $2.first, $2.second);
+      auto dec = driver.pk_DecVar(AST::Dec::Scope::Local, $2.second, $2.first);
       auto s = driver.pk_StmtDeclaration(dec);
       $1.push_DecVar(driver.env, s);
       $$ = $1;                                                                  }
@@ -239,7 +260,7 @@ Topdecs:
 
 Topdec:
    Vardec SEMI  {
-     auto dec = driver.pk_DecVar(AST::Dec::Scope::Global, $1.first, $1.second);
+     auto dec = driver.pk_DecVar(AST::Dec::Scope::Global, $1.second, $1.first);
      auto s = driver.pk_StmtDeclaration(dec);
      driver.push_dec(s);                                                        }
   | Fndec       {
@@ -250,16 +271,16 @@ Topdec:
 
 
 Vardec:
-    DataType Vardesc  { $2.first->complete_data_unsafe($1); $$ = $2; }
+    DataType Vardesc  { $2.second->complete_data_unsafe($1); $$ = $2; }
 ;
 
 
 Vardesc:
-    NAME                          { $$ = std::make_pair(AST::Typ::pk_Void(), $1);                               }
-  | STAR Vardesc                  { $$ = std::make_pair(AST::Typ::pk_Ptr($2.first), $2.second);                 }
+    NAME                          { $$ = std::make_pair($1, AST::Typ::pk_Void());                               }
+  | STAR Vardesc                  { $$ = std::make_pair($2.first, AST::Typ::pk_Ptr($2.second));                 }
   | LPAR Vardesc RPAR             { $$ = $2;                                                                    }
-  | Vardesc LBRACK RBRACK         { $$ = std::make_pair(AST::Typ::pk_Index($1.first, std::nullopt), $1.second); }
-  | Vardesc LBRACK CSTINT RBRACK  { $$ = std::make_pair(AST::Typ::pk_Index($1.first, $3), $1.second);           }
+  | Vardesc LBRACK RBRACK         { $$ = std::make_pair($1.first, AST::Typ::pk_Index($1.second, std::nullopt)); }
+  | Vardesc LBRACK CSTINT RBRACK  { $$ = std::make_pair($1.first, AST::Typ::pk_Index($1.second, $3));           }
 ;
 
 

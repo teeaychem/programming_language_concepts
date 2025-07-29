@@ -53,6 +53,7 @@ struct Fn : DecT {
   Dec::Kind kind() const override { return Dec::Kind::Fn; }
   TypHandle type() const override { return r_typ; };
   std::string name() const override { return this->id; };
+  TypHandle return_type() const { return r_typ; };
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
   std::string to_string(size_t indent) const override;

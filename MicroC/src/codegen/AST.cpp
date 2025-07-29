@@ -344,7 +344,7 @@ Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) const {
     parameter_types.reserve(this->params.size());
 
     for (auto &p : this->params) {
-      parameter_types.push_back(p.first->typegen(hdl));
+      parameter_types.push_back(p.second->typegen(hdl));
     }
   }
 
@@ -358,7 +358,7 @@ Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) const {
     size_t name_idx{0};
     for (auto &arg : fn->args()) {
 
-      auto &base_name = this->params[name_idx++].second;
+      auto &base_name = this->params[name_idx++].first;
 
       arg.setName(base_name);
 

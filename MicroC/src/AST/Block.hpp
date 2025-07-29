@@ -27,7 +27,7 @@ struct Block {
 
   std::vector<AST::StmtHandle> statements{};
 
-  std::vector<AST::DecHandle> shadowed_vars{}; // (Temporary) storage of shadowed variables
+  Env shadowed_vars{}; // (Temporary) storage of shadowed variables
 
   size_t early_returns{0}; // How many paths originating in the block *lead* to a return statment
   size_t pass_throughs{0}; // How many paths originating in the block *do not* lead to a return statment
