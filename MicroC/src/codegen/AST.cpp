@@ -25,13 +25,6 @@ using namespace llvm;
 
 // Support
 
-/// CreateEntryBlockAlloca - Create an alloca instruction in the entry block of
-/// the function.  This is used for mutable variables etc.
-static AllocaInst *create_fn_alloca(Function *fn, StringRef name, Type *typ) {
-  IRBuilder<> TmpB(&fn->getEntryBlock(), fn->getEntryBlock().begin());
-  return TmpB.CreateAlloca(typ, nullptr, name);
-}
-
 // Access
 
 Value *AST::Expr::Var::codegen(LLVMBundle &hdl) const {
@@ -362,7 +355,8 @@ Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) const {
 
       arg.setName(base_name);
 
-      AllocaInst *alloca = create_fn_alloca(fn, base_name, arg.getType());
+      AllocaInst *alloca = hdl.builder.CreateAlloca(arg.getType(), nullptr, base_name);
+
       hdl.builder.CreateStore(&arg, alloca);
 
       auto it = hdl.named_values.find(base_name);
@@ -379,7 +373,7 @@ Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) const {
   // Return setup
   if (this->body->block.scoped_return) {
     if (!return_type->isVoidTy()) {
-      AllocaInst *r_alloca = create_fn_alloca(fn, "ret.val", return_type);
+      AllocaInst *r_alloca = hdl.builder.CreateAlloca(return_type, nullptr, "ret.val");
       hdl.return_alloca = r_alloca;
     }
 

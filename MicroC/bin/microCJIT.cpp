@@ -1,14 +1,16 @@
 // #include "mCLLVM.hh"
+#include <cstdint>
 #include <cstdio>
+#include <cstdlib>
+#include <stdexcept>
 #include <stdlib.h>
 #include <string>
 
 #include "Driver.hpp"
 
-#include "llvm/ExecutionEngine/Interpreter.h" // forces a static initialisation of the JIT
-
 #include "llvm/ADT/APInt.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
+#include "llvm/ExecutionEngine/MCJIT.h" // For JIT to be linked in
 #include "llvm/IR/Argument.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Constants.h"
@@ -23,9 +25,19 @@
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
 #include <llvm/ExecutionEngine/GenericValue.h>
+#include <llvm/Linker/Linker.h>
+
+#include <llvm/IR/GlobalVariable.h>
+
+extern "C" {
+void printi(int64_t i) {
+  printf("%lld ", i);
+}
+}
 
 int main(int argc, char *argv[]) {
   llvm::InitializeNativeTarget();
+  llvm::InitializeNativeTargetAsmParser();
   llvm::InitializeNativeTargetAsmPrinter();
 
   std::printf("Scratch, for the moment\n");
@@ -59,9 +71,7 @@ int main(int argc, char *argv[]) {
   std::cout << "The module:" << "\n"
             << "\n"
             << "---------" << "\n";
-
   driver.llvm.module->print(llvm::outs(), nullptr);
-
   std::cout << "---------" << "\n"
             << "\n";
 
@@ -77,9 +87,11 @@ int main(int argc, char *argv[]) {
   std::cout << "Building execution engine... ";
   std::string err_str;
   llvm::ExecutionEngine *execution_engine = llvm::EngineBuilder(std::move(driver.llvm.module))
-                                                .setEngineKind(llvm::EngineKind::Interpreter)
+                                                // .setEngineKind(llvm::EngineKind::JIT)
                                                 .setErrorStr(&err_str)
                                                 .create();
+
+  execution_engine->addGlobalMapping("printi", (int64_t)(printi));
 
   if (!execution_engine) {
     std::cout << "Failed to construct execution engine: " << err_str << "\n";
@@ -88,13 +100,24 @@ int main(int argc, char *argv[]) {
     std::cout << "OK" << "\n";
   }
 
-  auto main = execution_engine->FindFunctionNamed(llvm::StringRef("main"));
+  // auto main = execution_engine->FindFunctionNamed(llvm::StringRef("main"));
+  auto main_ptr = execution_engine->getFunctionAddress("main");
+  if (!main_ptr) {
+    throw std::logic_error("Failed to identify main function for JIT");
+  }
+
+  int64_t (*fn)(int64_t) = (int64_t (*)(int64_t))main_ptr;
+
+  std::cout << "Executing..." << "\n";
 
   std::cout << "------" << "\n"
             << "\n";
-  auto result = execution_engine->runFunction(main, {});
+  // TODO: Variable argument length
+
+  int64_t GV = fn(0);
   std::cout << "\n"
             << "------" << "\n";
+  std::cout << GV << "\n";
 
-  return result.IntVal.getLimitedValue();
+  // return result.IntVal.getLimitedValue();
 }

@@ -39,13 +39,14 @@ OpUnary builder_printi(LLVMBundle &bundle) {
 
     expr_val = bundle.ensure_loaded(expr->type(), expr_val);
 
-    std::vector<llvm::Value *>
-        arg_vs{
-            bundle.builder.CreateGlobalString("%d\n", "digit_formatter"),
-            expr_val,
-        };
+    // std::vector<llvm::Value *>
+    //     arg_vs{
+    //         bundle.builder.CreateGlobalString("%d\n", "digit_formatter"),
+    //         expr_val,
+    //     };
 
-    return bundle.builder.CreateCall(bundle.foundation_fn_map["printf"], arg_vs);
+    // return bundle.builder.CreateCall(bundle.foundation_fn_map["printf"], arg_vs);
+    return bundle.builder.CreateCall(bundle.foundation_fn_map["printi"], expr_val);
   };
   return builder;
 }
@@ -56,10 +57,10 @@ OpUnary builder_printc(LLVMBundle &bundle) {
     llvm::Value *expr_val = expr->codegen(bundle);
 
     std::vector<llvm::Value *> arg_vs{
-        bundle.builder.CreateGlobalString("%c", "new_line"),
+        // bundle.builder.CreateGlobalString("%c", "new_line"),
         expr_val};
 
-    return bundle.builder.CreateCall(bundle.foundation_fn_map["printf"], arg_vs);
+    return bundle.builder.CreateCall(bundle.foundation_fn_map["printi"], arg_vs);
   };
   return builder;
 }

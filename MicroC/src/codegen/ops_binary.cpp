@@ -13,6 +13,7 @@ OpBinary builder_assign(LLVMBundle &bundle) {
 
     llvm::Value *destination_val = destination->codegen(bundle);
     llvm::Value *value_val = value->codegen(bundle);
+    value_val = bundle.ensure_loaded(value->type(), value_val);
 
     return bundle.builder.CreateStore(value_val, destination_val, "op.assign");
   };
