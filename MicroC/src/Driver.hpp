@@ -96,7 +96,7 @@ struct Driver {
     return std::make_shared<AST::Dec::Var>(std::move(dec));
   }
 
-  AST::DecHandle pk_DecFn(AST::TypHandle r_typ, std::string var, AST::ParamVec params, AST::StmtBlockHandle body) {
+  AST::DecFnHandle pk_DecFn(AST::TypHandle r_typ, std::string var, AST::ParamVec params, AST::StmtBlockHandle body) {
 
     if (this->env.find(var) != this->env.end()) {
       throw std::logic_error(std::format("Existing use of: '{}' unable to declare function.", var));

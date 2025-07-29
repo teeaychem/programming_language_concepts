@@ -8,8 +8,6 @@
 #include "llvm/IR/DIBuilder.h"
 struct LLVMBundle;
 
-// X
-
 // Types
 
 namespace AST {
@@ -187,7 +185,7 @@ typedef std::shared_ptr<AST::Stmt::Declaration> StmtDeclarationHandle;
 
 // Etc
 
-  typedef std::vector<std::pair<std::string, TypHandle>> ParamVec;
+typedef std::vector<std::pair<std::string, TypHandle>> ParamVec;
 typedef std::vector<std::variant<StmtHandle, DecHandle>> BlockVec;
 
 } // namespace AST
