@@ -60,7 +60,7 @@ std::string AST::Dec::Fn::to_string(size_t indent) const {
 }
 
 std::string AST::Dec::Var::to_string(size_t indent) const {
-  return std::format("{} {};", typ->to_string(indent), id);
+  return std::format("{} {}", typ->to_string(indent), id);
 }
 
 // Expr
