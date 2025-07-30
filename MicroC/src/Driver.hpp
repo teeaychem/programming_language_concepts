@@ -86,11 +86,11 @@ struct Driver {
     switch (data) {
 
     case AST::Typ::Data::Int: {
-      std::shared_ptr<AST::Typ::TypData> type_int = std::make_shared<AST::Typ::TypData>(AST::Typ::TypData(AST::Typ::Data::Int));
+      std::shared_ptr<AST::Typ::TypData> static type_int = std::make_shared<AST::Typ::TypData>(AST::Typ::TypData(AST::Typ::Data::Int));
       return type_int;
     } break;
     case AST::Typ::Data::Char: {
-      std::shared_ptr<AST::Typ::TypData> type_char = std::make_shared<AST::Typ::TypData>(AST::Typ::TypData(AST::Typ::Data::Char));
+      std::shared_ptr<AST::Typ::TypData> static type_char = std::make_shared<AST::Typ::TypData>(AST::Typ::TypData(AST::Typ::Data::Char));
       return type_char;
     } break;
     case AST::Typ::Data::Void: {
