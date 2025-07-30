@@ -360,7 +360,7 @@ Value *AST::Dec::Prototype::codegen(LLVMBundle &hdl) const {
     throw std::logic_error(std::format("Redeclaration of function: {}", this->name()));
   }
 
-  llvm::Type *return_type = this->r_typ->typegen(hdl);
+  llvm::Type *return_type = this->return_type()->typegen(hdl);
   std::vector<llvm::Type *> parameter_types{};
 
   { // Generate the parameter types
