@@ -53,7 +53,7 @@ struct TypData : TypT {
 
   // The default value for a type, used during declarations, etc.
   // Throws on void type.
-  llvm::Constant *defaultgen(LLVMBundle &hdl) const override {
+  llvm::Constant *defaultgen(LLVMBundle &hdl) const {
     switch (data) {
     case Data::Int:
       return llvm::ConstantInt::get(llvm::Type::getInt64Ty(*hdl.context), 0);
@@ -95,10 +95,6 @@ struct TypIndex : TypT {
   llvm::Type *typegen(LLVMBundle &hdl) const override {
     return llvm::ArrayType::get(typ->typegen(hdl), size.value_or(0));
   }
-
-  llvm::Constant *defaultgen(LLVMBundle &hdl) const override {
-    throw std::logic_error("Default initialisation of an array.");
-  }
 };
 
 inline TypHandle pk_Index(TypHandle typ, std::optional<std::int64_t> size) {
@@ -121,7 +117,7 @@ struct TypPointer : TypT {
   llvm::Type *typegen(LLVMBundle &hdl) const override { return llvm::PointerType::getUnqual(*hdl.context); }
 
   // An opaque pointer, given LLVMs preference for these.
-  llvm::Constant *defaultgen(LLVMBundle &hdl) const override {
+  llvm::Constant *defaultgen(LLVMBundle &hdl) const {
     return llvm::ConstantPointerNull::get(llvm::PointerType::getUnqual(*hdl.context));
   }
 };

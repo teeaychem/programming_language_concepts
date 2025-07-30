@@ -35,8 +35,6 @@ struct TypPointer;
 struct TypT {
   // Generate the representation of this type.
   virtual llvm::Type *typegen(LLVMBundle &hdl) const = 0;
-  // Generate the default value of this type.
-  virtual llvm::Constant *defaultgen(LLVMBundle &hdl) const = 0;
   // The kind of this type, corresponding to a struct.
   virtual Typ::Kind kind() const = 0;
   // String representation.
