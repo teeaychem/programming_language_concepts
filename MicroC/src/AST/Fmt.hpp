@@ -19,3 +19,8 @@ template <>
 struct std::formatter<AST::Expr::OpUnary> : formatter<string_view> {
   auto format(AST::Expr::OpUnary op, format_context &ctx) const -> format_context::iterator;
 };
+
+template <>
+struct std::formatter<AST::Expr::OpBinary> : formatter<string_view> {
+  auto format(AST::Expr::OpBinary op, format_context &ctx) const -> format_context::iterator;
+};

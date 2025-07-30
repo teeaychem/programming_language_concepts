@@ -103,8 +103,7 @@ Value *AST::Expr::Prim2::codegen(LLVMBundle &hdl) const {
   if (hdl.prim2_fn_map[this->op]) {
     return hdl.prim2_fn_map[this->op](a, b);
   } else {
-    std::cerr << "Unexpected binary op: " << this->op << "\n";
-    std::exit(-1);
+    throw std::logic_error(std::format("Unexpected binary op: {}", this->op));
   }
 }
 

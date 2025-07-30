@@ -1,3 +1,4 @@
+#include "AST/AST.hpp"
 #include "LLVMBundle.hpp"
 #include "llvm/IR/DIBuilder.h"
 #include "llvm/IR/IRBuilder.h"
@@ -7,8 +8,8 @@
 
 namespace ops_binary {
 
-OpBinary builder_assign(LLVMBundle &bundle) {
-  OpBinary builder = [&bundle](AST::ExprHandle destination, AST::ExprHandle value) {
+FnBinary builder_assign(LLVMBundle &bundle) {
+  FnBinary builder = [&bundle](AST::ExprHandle destination, AST::ExprHandle value) {
     llvm::Value *destination_val = destination->codegen(bundle);
     llvm::Value *value_val = value->codegen(bundle);
     value_val = bundle.ensure_loaded(value->type(), value_val);
@@ -18,8 +19,8 @@ OpBinary builder_assign(LLVMBundle &bundle) {
   return builder;
 }
 
-OpBinary builder_add(LLVMBundle &bundle) {
-  OpBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
+FnBinary builder_add(LLVMBundle &bundle) {
+  FnBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
     llvm::Value *a_val = a->codegen(bundle);
     llvm::Value *b_val = b->codegen(bundle);
 
@@ -31,8 +32,8 @@ OpBinary builder_add(LLVMBundle &bundle) {
   return builder;
 }
 
-OpBinary builder_sub(LLVMBundle &bundle) {
-  OpBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
+FnBinary builder_sub(LLVMBundle &bundle) {
+  FnBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
     llvm::Value *a_val = a->codegen(bundle);
     llvm::Value *b_val = b->codegen(bundle);
 
@@ -44,8 +45,8 @@ OpBinary builder_sub(LLVMBundle &bundle) {
   return builder;
 }
 
-OpBinary builder_mul(LLVMBundle &bundle) {
-  OpBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
+FnBinary builder_mul(LLVMBundle &bundle) {
+  FnBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
     llvm::Value *a_val = a->codegen(bundle);
     llvm::Value *b_val = b->codegen(bundle);
 
@@ -57,8 +58,8 @@ OpBinary builder_mul(LLVMBundle &bundle) {
   return builder;
 }
 
-OpBinary builder_div(LLVMBundle &bundle) {
-  OpBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
+FnBinary builder_div(LLVMBundle &bundle) {
+  FnBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
     llvm::Value *a_val = a->codegen(bundle);
     llvm::Value *b_val = b->codegen(bundle);
 
@@ -70,8 +71,8 @@ OpBinary builder_div(LLVMBundle &bundle) {
   return builder;
 }
 
-OpBinary builder_mod(LLVMBundle &bundle) {
-  OpBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
+FnBinary builder_mod(LLVMBundle &bundle) {
+  FnBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
     llvm::Value *a_val = a->codegen(bundle);
     llvm::Value *b_val = b->codegen(bundle);
 
@@ -83,8 +84,8 @@ OpBinary builder_mod(LLVMBundle &bundle) {
   return builder;
 }
 
-OpBinary builder_eq(LLVMBundle &bundle) {
-  OpBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
+FnBinary builder_eq(LLVMBundle &bundle) {
+  FnBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
     llvm::Value *a_val = a->codegen(bundle);
     llvm::Value *b_val = b->codegen(bundle);
 
@@ -96,8 +97,8 @@ OpBinary builder_eq(LLVMBundle &bundle) {
   return builder;
 }
 
-OpBinary builder_ne(LLVMBundle &bundle) {
-  OpBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
+FnBinary builder_ne(LLVMBundle &bundle) {
+  FnBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
     llvm::Value *a_val = a->codegen(bundle);
     llvm::Value *b_val = b->codegen(bundle);
 
@@ -109,8 +110,8 @@ OpBinary builder_ne(LLVMBundle &bundle) {
   return builder;
 }
 
-OpBinary builder_gt(LLVMBundle &bundle) {
-  OpBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
+FnBinary builder_gt(LLVMBundle &bundle) {
+  FnBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
     llvm::Value *a_val = a->codegen(bundle);
     llvm::Value *b_val = b->codegen(bundle);
 
@@ -122,8 +123,8 @@ OpBinary builder_gt(LLVMBundle &bundle) {
   return builder;
 }
 
-OpBinary builder_lt(LLVMBundle &bundle) {
-  OpBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
+FnBinary builder_lt(LLVMBundle &bundle) {
+  FnBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
     llvm::Value *a_val = a->codegen(bundle);
     llvm::Value *b_val = b->codegen(bundle);
 
@@ -135,8 +136,8 @@ OpBinary builder_lt(LLVMBundle &bundle) {
   return builder;
 }
 
-OpBinary builder_ge(LLVMBundle &bundle) {
-  OpBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
+FnBinary builder_ge(LLVMBundle &bundle) {
+  FnBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
     llvm::Value *a_val = a->codegen(bundle);
     llvm::Value *b_val = b->codegen(bundle);
 
@@ -148,8 +149,8 @@ OpBinary builder_ge(LLVMBundle &bundle) {
   return builder;
 }
 
-OpBinary builder_le(LLVMBundle &bundle) {
-  OpBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
+FnBinary builder_le(LLVMBundle &bundle) {
+  FnBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
     llvm::Value *a_val = a->codegen(bundle);
     llvm::Value *b_val = b->codegen(bundle);
 
@@ -161,8 +162,8 @@ OpBinary builder_le(LLVMBundle &bundle) {
   return builder;
 }
 
-OpBinary builder_and(LLVMBundle &bundle) {
-  OpBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
+FnBinary builder_and(LLVMBundle &bundle) {
+  FnBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
     llvm::Value *a_val = a->codegen(bundle);
     llvm::Value *b_val = b->codegen(bundle);
 
@@ -174,8 +175,8 @@ OpBinary builder_and(LLVMBundle &bundle) {
   return builder;
 }
 
-OpBinary builder_or(LLVMBundle &bundle) {
-  OpBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
+FnBinary builder_or(LLVMBundle &bundle) {
+  FnBinary builder = [&bundle](AST::ExprHandle a, AST::ExprHandle b) {
     llvm::Value *a_val = a->codegen(bundle);
     llvm::Value *b_val = b->codegen(bundle);
 
@@ -189,23 +190,23 @@ OpBinary builder_or(LLVMBundle &bundle) {
 
 } // namespace ops_binary
 void extend_ops_binary(LLVMBundle &bundle, OpsBinaryMap &op_map) {
-  op_map["="] = ops_binary::builder_assign(bundle);
+  op_map[AST::Expr::OpBinary::Assign] = ops_binary::builder_assign(bundle);
 
-  op_map["+"] = ops_binary::builder_add(bundle);
-  op_map["-"] = ops_binary::builder_sub(bundle);
-  op_map["*"] = ops_binary::builder_mul(bundle);
-  op_map["/"] = ops_binary::builder_div(bundle);
-  op_map["%"] = ops_binary::builder_mod(bundle);
+  op_map[AST::Expr::OpBinary::Add] = ops_binary::builder_add(bundle);
+  op_map[AST::Expr::OpBinary::Sub] = ops_binary::builder_sub(bundle);
+  op_map[AST::Expr::OpBinary::Mul] = ops_binary::builder_mul(bundle);
+  op_map[AST::Expr::OpBinary::Div] = ops_binary::builder_div(bundle);
+  op_map[AST::Expr::OpBinary::Mod] = ops_binary::builder_mod(bundle);
 
-  op_map["=="] = ops_binary::builder_eq(bundle);
-  op_map["!="] = ops_binary::builder_ne(bundle);
+  op_map[AST::Expr::OpBinary::Eq] = ops_binary::builder_eq(bundle);
+  op_map[AST::Expr::OpBinary::Neq] = ops_binary::builder_ne(bundle);
 
-  op_map[">"] = ops_binary::builder_gt(bundle);
-  op_map["<"] = ops_binary::builder_lt(bundle);
+  op_map[AST::Expr::OpBinary::Gt] = ops_binary::builder_gt(bundle);
+  op_map[AST::Expr::OpBinary::Lt] = ops_binary::builder_lt(bundle);
 
-  op_map[">="] = ops_binary::builder_ge(bundle);
-  op_map["<="] = ops_binary::builder_le(bundle);
+  op_map[AST::Expr::OpBinary::Geq] = ops_binary::builder_ge(bundle);
+  op_map[AST::Expr::OpBinary::Leq] = ops_binary::builder_le(bundle);
 
-  op_map["&&"] = ops_binary::builder_and(bundle);
-  op_map["||"] = ops_binary::builder_or(bundle);
+  op_map[AST::Expr::OpBinary::And] = ops_binary::builder_and(bundle);
+  op_map[AST::Expr::OpBinary::Or] = ops_binary::builder_or(bundle);
 }

@@ -145,36 +145,36 @@ ExprsNE:
 
 
 Expr:
-    NAME                      { $$ = driver.pk_ExprVar($1);                                    }
-  | AtomicConst               { $$ = $1;                                                       }
-  | Expr ASSIGN Expr          { $$ = driver.pk_ExprPrim2("=", $1, $3);                         }
-  | Expr PLUS_ASSIGN Expr     { $$ = driver.pk_ExprPrim2("+=", $1, $3);                        }
-  | Expr MINUS_ASSIGN Expr    { $$ = driver.pk_ExprPrim2("-=", $1, $3);                        }
-  | Expr STAR_ASSIGN Expr     { $$ = driver.pk_ExprPrim2("*=", $1, $3);                        }
-  | Expr SLASH_ASSIGN Expr    { $$ = driver.pk_ExprPrim2("/=", $1, $3);                        }
-  | Expr MOD_ASSIGN Expr      { $$ = driver.pk_ExprPrim2("%=", $1, $3);                        }
-  | NAME LPAR Exprs RPAR      { $$ = driver.pk_ExprCall($1, $3);                               }
-  | MINUS Expr                { $$ = driver.pk_ExprPrim1(AST::Expr::OpUnary::Minus, $2);       }
-  | AMP Expr                  { $$ = driver.pk_ExprPrim1(AST::Expr::OpUnary::AddressOf, $2);   }
-  | STAR Expr                 { $$ = driver.pk_ExprPrim1(AST::Expr::OpUnary::Dereference, $2); }
-  | NOT Expr                  { $$ = driver.pk_ExprPrim1(AST::Expr::OpUnary::Negation, $2);    }
-  | PRINT Expr                { $$ = driver.pk_ExprCall("printi", $2);                         }
-  | PRINTLN                   { $$ = driver.pk_ExprCall("println");                            }
-  | Expr PLUS  Expr           { $$ = driver.pk_ExprPrim2("+",  $1, $3);                        }
-  | Expr MINUS Expr           { $$ = driver.pk_ExprPrim2("-",  $1, $3);                        }
-  | Expr STAR  Expr           { $$ = driver.pk_ExprPrim2("*",  $1, $3);                        }
-  | Expr SLASH Expr           { $$ = driver.pk_ExprPrim2("/",  $1, $3);                        }
-  | Expr MOD   Expr           { $$ = driver.pk_ExprPrim2("%",  $1, $3);                        }
-  | Expr EQ    Expr           { $$ = driver.pk_ExprPrim2("==", $1, $3);                        }
-  | Expr NE    Expr           { $$ = driver.pk_ExprPrim2("!=", $1, $3);                        }
-  | Expr GT    Expr           { $$ = driver.pk_ExprPrim2(">",  $1, $3);                        }
-  | Expr LT    Expr           { $$ = driver.pk_ExprPrim2("<",  $1, $3);                        }
-  | Expr GE    Expr           { $$ = driver.pk_ExprPrim2(">=", $1, $3);                        }
-  | Expr LE    Expr           { $$ = driver.pk_ExprPrim2("<=", $1, $3);                        }
-  | Expr SEQAND Expr          { $$ = driver.pk_ExprPrim2("&&", $1, $3);                        }
-  | Expr SEQOR  Expr          { $$ = driver.pk_ExprPrim2("||", $1, $3);                        }
-  | Expr LBRACK Expr RBRACK   { $$ = driver.pk_ExprIndex($1, $3);                              }
-  | LPAR Expr RPAR            { $$ = $2;                                                       }  
+    NAME                      { $$ = driver.pk_ExprVar($1);                                       }
+  | AtomicConst               { $$ = $1;                                                          }
+  | Expr ASSIGN Expr          { $$ = driver.pk_ExprPrim2(AST::Expr::OpBinary::Assign, $1, $3);    }
+  | Expr PLUS_ASSIGN Expr     { $$ = driver.pk_ExprPrim2(AST::Expr::OpBinary::AssignAdd, $1, $3); }
+  | Expr MINUS_ASSIGN Expr    { $$ = driver.pk_ExprPrim2(AST::Expr::OpBinary::AssignSub, $1, $3); }
+  | Expr STAR_ASSIGN Expr     { $$ = driver.pk_ExprPrim2(AST::Expr::OpBinary::AssignMul, $1, $3); }
+  | Expr SLASH_ASSIGN Expr    { $$ = driver.pk_ExprPrim2(AST::Expr::OpBinary::AssignDiv, $1, $3); }
+  | Expr MOD_ASSIGN Expr      { $$ = driver.pk_ExprPrim2(AST::Expr::OpBinary::AssignMod, $1, $3); }
+  | NAME LPAR Exprs RPAR      { $$ = driver.pk_ExprCall($1, $3);                                  }
+  | MINUS Expr                { $$ = driver.pk_ExprPrim1(AST::Expr::OpUnary::Minus, $2);          }
+  | AMP Expr                  { $$ = driver.pk_ExprPrim1(AST::Expr::OpUnary::AddressOf, $2);      }
+  | STAR Expr                 { $$ = driver.pk_ExprPrim1(AST::Expr::OpUnary::Dereference, $2);    }
+  | NOT Expr                  { $$ = driver.pk_ExprPrim1(AST::Expr::OpUnary::Negation, $2);       }
+  | PRINT Expr                { $$ = driver.pk_ExprCall("printi", $2);                            }
+  | PRINTLN                   { $$ = driver.pk_ExprCall("println");                               }
+  | Expr PLUS  Expr           { $$ = driver.pk_ExprPrim2(AST::Expr::OpBinary::Add,  $1, $3);      }
+  | Expr MINUS Expr           { $$ = driver.pk_ExprPrim2(AST::Expr::OpBinary::Sub,  $1, $3);      }
+  | Expr STAR  Expr           { $$ = driver.pk_ExprPrim2(AST::Expr::OpBinary::Mul,  $1, $3);      }
+  | Expr SLASH Expr           { $$ = driver.pk_ExprPrim2(AST::Expr::OpBinary::Div,  $1, $3);      }
+  | Expr MOD   Expr           { $$ = driver.pk_ExprPrim2(AST::Expr::OpBinary::Mod,  $1, $3);      }
+  | Expr EQ    Expr           { $$ = driver.pk_ExprPrim2(AST::Expr::OpBinary::Eq, $1, $3);        }
+  | Expr NE    Expr           { $$ = driver.pk_ExprPrim2(AST::Expr::OpBinary::Neq, $1, $3);       }
+  | Expr GT    Expr           { $$ = driver.pk_ExprPrim2(AST::Expr::OpBinary::Gt,  $1, $3);       }
+  | Expr LT    Expr           { $$ = driver.pk_ExprPrim2(AST::Expr::OpBinary::Lt,  $1, $3);       }
+  | Expr GE    Expr           { $$ = driver.pk_ExprPrim2(AST::Expr::OpBinary::Geq, $1, $3);       }
+  | Expr LE    Expr           { $$ = driver.pk_ExprPrim2(AST::Expr::OpBinary::Leq, $1, $3);       }
+  | Expr SEQAND Expr          { $$ = driver.pk_ExprPrim2(AST::Expr::OpBinary::And, $1, $3);       }
+  | Expr SEQOR  Expr          { $$ = driver.pk_ExprPrim2(AST::Expr::OpBinary::Or, $1, $3);        }
+  | Expr LBRACK Expr RBRACK   { $$ = driver.pk_ExprIndex($1, $3);                                 }
+  | LPAR Expr RPAR            { $$ = $2;                                                          }  
 ;
 
 

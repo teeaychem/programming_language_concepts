@@ -100,6 +100,28 @@ enum class OpUnary {
   Negation,
 };
 
+enum class OpBinary {
+  Assign,
+  AssignAdd,
+  AssignSub,
+  AssignMul,
+  AssignDiv,
+  AssignMod,
+  Add,
+  Sub,
+  Mul,
+  Div,
+  Mod,
+  Eq,
+  Neq,
+  Gt,
+  Lt,
+  Leq,
+  Geq,
+  And,
+  Or
+};
+
 enum class Kind {
   // Assign,
   Call,

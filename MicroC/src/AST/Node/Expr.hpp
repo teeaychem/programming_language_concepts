@@ -88,11 +88,11 @@ struct Prim1 : ExprT {
 // Prim2
 
 struct Prim2 : ExprT {
-  std::string op;
+  AST::Expr::OpBinary op;
   ExprHandle a;
   ExprHandle b;
 
-  Prim2(std::string op, ExprHandle a, ExprHandle b)
+  Prim2(AST::Expr::OpBinary op, ExprHandle a, ExprHandle b)
       : op(op), a(std::move(a)), b(std::move(b)) {
     // FIXME: Fix type
     this->typ = this->a->type();
