@@ -1,4 +1,3 @@
-// #include "mCLLVM.hh"
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -11,10 +10,7 @@
 #include "llvm/ADT/APInt.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/MCJIT.h" // For JIT to be linked in
-#include "llvm/IR/Argument.h"
 #include "llvm/IR/BasicBlock.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/Instructions.h"
@@ -29,9 +25,14 @@
 
 #include <llvm/IR/GlobalVariable.h>
 
+// External `foundation` fns
 extern "C" {
 void printi(int64_t i) {
   printf("%lld ", i);
+}
+
+void println() {
+  printf("\n");
 }
 }
 
@@ -92,6 +93,7 @@ int main(int argc, char *argv[]) {
                                                 .create();
 
   execution_engine->addGlobalMapping("printi", (int64_t)(printi));
+  execution_engine->addGlobalMapping("println", (int64_t)(println));
 
   if (!execution_engine) {
     std::cout << "Failed to construct execution engine: " << err_str << "\n";
@@ -114,7 +116,7 @@ int main(int argc, char *argv[]) {
             << "\n";
   // TODO: Variable argument length
 
-  int64_t GV = fn(0);
+  int64_t GV = fn(10);
   std::cout << "\n"
             << "------" << "\n";
   std::cout << GV << "\n";

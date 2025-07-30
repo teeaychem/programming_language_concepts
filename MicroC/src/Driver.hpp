@@ -1,14 +1,13 @@
 #pragma once
 
-#include <cstdio>
 #include <format>
 #include <memory>
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #include "AST/AST.hpp"
-// #include "AST/Node/Access.hpp"
 #include "AST/Node/Dec.hpp"
 #include "AST/Node/Expr.hpp"
 #include "AST/Node/Stmt.hpp"
@@ -116,6 +115,15 @@ struct Driver {
   AST::ExprHandle pk_ExprCall(std::string name, std::vector<AST::ExprHandle> params) {
 
     AST::Expr::Call e(std::move(name), std::move(params));
+
+    return std::make_shared<AST::Expr::Call>(std::move(e));
+  }
+
+  AST::ExprHandle pk_ExprCall(std::string name) {
+
+    std::vector<AST::ExprHandle> empty_params = std::vector<AST::ExprHandle>{};
+
+    AST::Expr::Call e(std::move(name), std::move(empty_params));
 
     return std::make_shared<AST::Expr::Call>(std::move(e));
   }
