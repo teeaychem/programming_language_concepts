@@ -1,5 +1,4 @@
 #include "Fmt.hpp"
-// #include "AST/Node/Expr.hpp"
 
 auto std::formatter<AST::Typ::Data>::format(AST::Typ::Data c, std::format_context &ctx) const
     -> std::format_context::iterator {
@@ -37,7 +36,11 @@ auto std::formatter<AST::Stmt::Kind>::format(AST::Stmt::Kind c, std::format_cont
   case AST::Stmt::Kind::While: {
     name = "While";
   } break;
+  case AST::Stmt::Kind::Declaration: {
+    name = "";
+  } break;
   }
+
   return std::formatter<string_view>::format(name, ctx);
 }
 
