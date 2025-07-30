@@ -60,3 +60,69 @@ auto std::formatter<AST::Expr::OpUnary>::format(AST::Expr::OpUnary c, std::forma
   }
   return std::formatter<string_view>::format(name, ctx);
 }
+
+auto std::formatter<AST::Expr::OpBinary>::format(AST::Expr::OpBinary c, std::format_context &ctx) const
+    -> std::format_context::iterator {
+  string_view name = "unknown";
+  switch (c) {
+
+  case AST::Expr::OpBinary::Assign: {
+    name = "=";
+  } break;
+  case AST::Expr::OpBinary::AssignAdd: {
+    name = "+=";
+  } break;
+  case AST::Expr::OpBinary::AssignSub: {
+    name = "-=";
+  } break;
+  case AST::Expr::OpBinary::AssignMul: {
+    name = "*=";
+  } break;
+  case AST::Expr::OpBinary::AssignDiv: {
+    name = "/=";
+  } break;
+  case AST::Expr::OpBinary::AssignMod: {
+    name = "%=";
+  } break;
+  case AST::Expr::OpBinary::Add: {
+    name = "+";
+  } break;
+  case AST::Expr::OpBinary::Sub: {
+    name = "-";
+  } break;
+  case AST::Expr::OpBinary::Mul: {
+    name = "*";
+  } break;
+  case AST::Expr::OpBinary::Div: {
+    name = "/";
+  } break;
+  case AST::Expr::OpBinary::Mod: {
+    name = "%";
+  } break;
+  case AST::Expr::OpBinary::Eq: {
+    name = "==";
+  } break;
+  case AST::Expr::OpBinary::Neq: {
+    name = "!=";
+  } break;
+  case AST::Expr::OpBinary::Gt: {
+    name = ">";
+  } break;
+  case AST::Expr::OpBinary::Lt: {
+    name = "<";
+  } break;
+  case AST::Expr::OpBinary::Leq: {
+    name = "<=";
+  } break;
+  case AST::Expr::OpBinary::Geq: {
+    name = ">=";
+  } break;
+  case AST::Expr::OpBinary::And: {
+    name = "&&";
+  } break;
+  case AST::Expr::OpBinary::Or: {
+    name = "||";
+  } break;
+  }
+  return std::formatter<string_view>::format(name, ctx);
+}

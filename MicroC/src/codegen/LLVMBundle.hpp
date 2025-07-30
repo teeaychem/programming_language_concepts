@@ -14,8 +14,8 @@ typedef std::map<const std::string, OpFoundation> OpsFoundationMap;
 typedef std::function<llvm::Value *(AST::ExprHandle)> FnUnary;
 typedef std::map<AST::Expr::OpUnary, FnUnary> OpsUnaryMap;
 
-typedef std::function<llvm::Value *(AST::ExprHandle, AST::ExprHandle)> OpBinary;
-typedef std::map<const std::string, OpBinary> OpsBinaryMap;
+typedef std::function<llvm::Value *(AST::ExprHandle, AST::ExprHandle)> FnBinary;
+typedef std::map<AST::Expr::OpBinary, FnBinary> OpsBinaryMap;
 
 struct LLVMBundle;
 

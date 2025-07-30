@@ -97,6 +97,38 @@ struct Driver {
     return op_map[op];
   }
 
+  AST::Expr::OpBinary to_binary_op(std::string op) {
+
+    static std::map<std::string, AST::Expr::OpBinary> op_map{
+        {"=", AST::Expr::OpBinary::Assign},
+        {"+=", AST::Expr::OpBinary::AssignAdd},
+        {"-=", AST::Expr::OpBinary::AssignSub},
+        {"*=", AST::Expr::OpBinary::AssignMul},
+        {"/=", AST::Expr::OpBinary::AssignDiv},
+        {"%=", AST::Expr::OpBinary::AssignMod},
+        {"+", AST::Expr::OpBinary::Add},
+        {"-", AST::Expr::OpBinary::Sub},
+        {"*", AST::Expr::OpBinary::Mul},
+        {"/", AST::Expr::OpBinary::Div},
+        {"%", AST::Expr::OpBinary::Mod},
+        {"==", AST::Expr::OpBinary::Eq},
+        {"!=", AST::Expr::OpBinary::Neq},
+        {">", AST::Expr::OpBinary::Gt},
+        {"<", AST::Expr::OpBinary::Lt},
+        {"<=", AST::Expr::OpBinary::Leq},
+        {">=", AST::Expr::OpBinary::Geq},
+        {"&&", AST::Expr::OpBinary::And},
+        {"||", AST::Expr::OpBinary::Or}
+
+    };
+
+    if (!op_map.contains(op)) {
+      throw std::logic_error(std::format("Unrecognised binary op: {}", op));
+    }
+
+    return op_map[op];
+  }
+
   // types
 
   AST::TypHandle type_data_handle(AST::Typ::Data data) {
@@ -224,7 +256,7 @@ struct Driver {
     return std::make_shared<AST::Expr::Prim1>(std::move(prim1));
   }
 
-  AST::ExprHandle pk_ExprPrim2(std::string op, AST::ExprHandle a, AST::ExprHandle b) {
+  AST::ExprHandle pk_ExprPrim2(AST::Expr::OpBinary op, AST::ExprHandle a, AST::ExprHandle b) {
     AST::Expr::Prim2 prim2(op, std::move(a), std::move(b));
     return std::make_shared<AST::Expr::Prim2>(std::move(prim2));
   }
