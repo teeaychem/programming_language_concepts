@@ -206,7 +206,7 @@ Paramdecs:
 
 ParamdecsNE:
     Vardec                    { $$ = AST::ParamVec{$1};    }
-  | Vardec COMMA ParamdecsNE  { $3.push_back($1); $$ = $3; }
+  | ParamdecsNE COMMA Vardec  { $1.push_back($3); $$ = $1; }
 ;
 
 
