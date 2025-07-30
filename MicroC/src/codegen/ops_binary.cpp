@@ -9,8 +9,6 @@ namespace ops_binary {
 
 OpBinary builder_assign(LLVMBundle &bundle) {
   OpBinary builder = [&bundle](AST::ExprHandle destination, AST::ExprHandle value) {
-    std::cout << destination->to_string(0) << " = " << value->to_string(0) << "\n";
-
     llvm::Value *destination_val = destination->codegen(bundle);
     llvm::Value *value_val = value->codegen(bundle);
     value_val = bundle.ensure_loaded(value->type(), value_val);

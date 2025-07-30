@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
     } else {
       std::cout << "Parsing... " << "\n";
       driver.parse(argv[i]);
-      std::cout << "Parsing OK" << "\n";
+      std::cout << "OK" << "\n";
     }
   }
 
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
   std::cout << "Building execution engine... ";
   std::string err_str;
   llvm::ExecutionEngine *execution_engine = llvm::EngineBuilder(std::move(driver.llvm.module))
-                                                // .setEngineKind(llvm::EngineKind::JIT)
+                                                .setEngineKind(llvm::EngineKind::JIT)
                                                 .setErrorStr(&err_str)
                                                 .create();
 
@@ -115,7 +115,6 @@ int main(int argc, char *argv[]) {
   std::cout << "------" << "\n"
             << "\n";
   // TODO: Variable argument length
-
   int64_t GV = fn(10);
   std::cout << "\n"
             << "------" << "\n";

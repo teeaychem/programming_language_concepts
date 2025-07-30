@@ -119,6 +119,15 @@ struct Driver {
     return std::make_shared<AST::Expr::Call>(std::move(e));
   }
 
+  AST::ExprHandle pk_ExprCall(std::string name, AST::ExprHandle param) {
+
+    std::vector<AST::ExprHandle> params = std::vector<AST::ExprHandle>{param};
+
+    AST::Expr::Call e(std::move(name), std::move(params));
+
+    return std::make_shared<AST::Expr::Call>(std::move(e));
+  }
+
   AST::ExprHandle pk_ExprCall(std::string name) {
 
     std::vector<AST::ExprHandle> empty_params = std::vector<AST::ExprHandle>{};

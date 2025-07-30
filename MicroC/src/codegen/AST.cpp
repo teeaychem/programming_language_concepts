@@ -81,6 +81,8 @@ Value *AST::Expr::Call::codegen(LLVMBundle &hdl) const {
       throw std::logic_error(std::format("Failed to process argument: {}", arg->to_string(0)));
     }
 
+    arg_value = hdl.ensure_loaded(arg->type(), arg_value);
+
     arg_values.push_back(arg_value);
   }
 
