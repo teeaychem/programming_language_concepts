@@ -1,6 +1,5 @@
 #pragma once
 
-#include <format>
 #include <memory>
 #include <optional>
 #include <string>
@@ -21,14 +20,21 @@ YY_DECL; // Declare the prototype for bison
 struct Driver {
   std::vector<AST::StmtDeclarationHandle> prg{};
 
+  // Fn / Prototype / Variable to type mapping maintained during parsing.
+  // Empty before and after parsing.
   Env env{};
 
-  LLVMBundle llvm;
+  // A bundle of things useful for LLVM codegen.
+  LLVMBundle llvm{};
 
-  std::string file; // The file to be parsed
+  // The file to be parsed.
+  std::string src_file;
+
   bool trace_parsing;
   bool trace_scanning;
-  yy::location location; // Token location.
+
+  // Token location.
+  yy::location location;
 
   Driver()
       : trace_parsing(false),
@@ -38,13 +44,18 @@ struct Driver {
   void generate_llvm();
   void print_llvm();
 
-  int parse(const std::string &file); // Run the parser on file; return 0 on success.
+  // Run the parser on file; return 0 on success.
+  int parse(const std::string &file);
 
+  // Push a declaration to the AST representation of the program.
   void push_dec(AST::StmtDeclarationHandle stmt);
 
-  void scan_begin(); // Handling the scanner.
+  // Handling the scanner.
+  void scan_begin();
   void scan_end();
 
+  // Retrun a string representation of the parsed program in 'canonical' form.
+  // Useful for simple insight into how the AST was parsed.
   std::string prg_string();
 
   // etc
@@ -109,6 +120,10 @@ struct Driver {
   }
 
   // pk start
+
+  // Methods for creating nodes.
+  // Esp. used during parsing.
+  // `pk` stands for `pointer_make`, as each method returns a (shared) pointer to the node created.
 
   // pk typ
 
