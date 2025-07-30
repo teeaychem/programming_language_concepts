@@ -42,7 +42,3 @@ void Driver::print_llvm() {
   llvm.module->print(llvm::outs(), nullptr);
   printf("\n----------\n");
 }
- AST::TypHandle Driver::pk_Ptr(TypHandle of) {
-    TypPointer type_pointer(std::move(of));
-    return std::make_shared<TypPointer>(std::move(type_pointer));
-  }
