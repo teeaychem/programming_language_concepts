@@ -79,7 +79,50 @@ struct Driver {
     }
   }
 
+  // types
+
+  AST::TypHandle type_data_handle(AST::Typ::Data data) {
+
+    switch (data) {
+
+    case AST::Typ::Data::Int: {
+      std::shared_ptr<AST::Typ::TypData> type_int = std::make_shared<AST::Typ::TypData>(AST::Typ::TypData(AST::Typ::Data::Int));
+      return type_int;
+    } break;
+    case AST::Typ::Data::Char: {
+      std::shared_ptr<AST::Typ::TypData> type_char = std::make_shared<AST::Typ::TypData>(AST::Typ::TypData(AST::Typ::Data::Char));
+      return type_char;
+    } break;
+    case AST::Typ::Data::Void: {
+      std::shared_ptr<AST::Typ::TypData> type_void = std::make_shared<AST::Typ::TypData>(AST::Typ::TypData(AST::Typ::Data::Void));
+      return type_void;
+    } break;
+    }
+  }
+
   // pk start
+
+  // pk typ
+
+  inline AST::TypHandle pk_Data(AST::Typ::Data data) {
+    AST::Typ::TypData type_data{data};
+    return std::make_shared<AST::Typ::TypData>(std::move(type_data));
+  }
+
+  inline AST::TypHandle pk_Void() {
+    // AST::Typ::TypData type_data{AST::Typ::Data::Void};
+    return this->type_data_handle(AST::Typ::Data::Void);
+  }
+
+  inline AST::TypHandle pk_Index(AST::TypHandle typ, std::optional<std::int64_t> size) {
+    AST::Typ::TypIndex type_index(std::move(typ), std::move(size));
+    return std::make_shared<AST::Typ::TypIndex>(std::move(type_index));
+  }
+
+  inline AST::TypHandle pk_Ptr(AST::TypHandle of) {
+    AST::Typ::TypPointer type_pointer(std::move(of));
+    return std::make_shared<AST::Typ::TypPointer>(std::move(type_pointer));
+  }
 
   // pk Dec
 
@@ -113,10 +156,10 @@ struct Driver {
 
   // pk Expr
 
-  AST::ExprHandle pk_ExprAssign(AST::ExprHandle dest, AST::ExprHandle expr) {
-    AST::Expr::Assign e(dest, expr);
-    return std::make_shared<AST::Expr::Assign>(std::move(e));
-  }
+  // AST::ExprHandle pk_ExprAssign(AST::ExprHandle dest, AST::ExprHandle expr) {
+  //   AST::Expr::Assign assign(dest, expr);
+  //   return std::make_shared<AST::Expr::Assign>(std::move(assign));
+  // }
 
   AST::ExprHandle pk_ExprCall(std::string name, std::vector<AST::ExprHandle> params) {
 
@@ -140,8 +183,10 @@ struct Driver {
   }
 
   AST::ExprHandle pk_ExprCstI(std::int64_t i) {
-    AST::Expr::CstI e(i);
-    return std::make_shared<AST::Expr::CstI>(std::move(e));
+    auto typ = this->type_data_handle(AST::Typ::Data::Int);
+    AST::Expr::CstI csti(i, typ);
+
+    return std::make_shared<AST::Expr::CstI>(std::move(csti));
   }
 
   AST::ExprHandle pk_ExprIndex(AST::ExprHandle access, AST::ExprHandle index) {
@@ -151,22 +196,21 @@ struct Driver {
   }
 
   AST::ExprHandle pk_ExprPrim1(std::string op, AST::ExprHandle expr) {
-    AST::Expr::Prim1 e(op, std::move(expr));
-    return std::make_shared<AST::Expr::Prim1>(std::move(e));
+    AST::Expr::Prim1 prim1(op, std::move(expr));
+    return std::make_shared<AST::Expr::Prim1>(std::move(prim1));
   }
 
   AST::ExprHandle pk_ExprPrim2(std::string op, AST::ExprHandle a, AST::ExprHandle b) {
-    AST::Expr::Prim2 e(op, std::move(a), std::move(b));
-    return std::make_shared<AST::Expr::Prim2>(std::move(e));
+    AST::Expr::Prim2 prim2(op, std::move(a), std::move(b));
+    return std::make_shared<AST::Expr::Prim2>(std::move(prim2));
   }
 
   AST::ExprHandle pk_ExprVar(std::string var) {
     if (this->env.find(var) == this->env.end()) {
       throw std::logic_error(std::format("Unknown variable: {}", var));
     }
-    auto tmp = AST::Typ::pk_Data(AST::Typ::Data::Int);
-
-    AST::Expr::Var access(std::move(tmp), std::move(var));
+    auto typ = this->env[var];
+    AST::Expr::Var access(std::move(typ), std::move(var));
     return std::make_shared<AST::Expr::Var>(std::move(access));
   }
 

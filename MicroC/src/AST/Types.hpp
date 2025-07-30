@@ -65,16 +65,6 @@ struct TypData : TypT {
   }
 };
 
-inline TypHandle pk_Data(Data data) {
-  TypData type_data{data};
-  return std::make_shared<TypData>(std::move(type_data));
-}
-
-inline TypHandle pk_Void() {
-  TypData type_data{Data::Void};
-  return std::make_shared<TypData>(std::move(type_data));
-}
-
 // TypArr
 
 struct TypIndex : TypT {
@@ -97,11 +87,6 @@ struct TypIndex : TypT {
   }
 };
 
-inline TypHandle pk_Index(TypHandle typ, std::optional<std::int64_t> size) {
-  TypIndex type_index(std::move(typ), std::move(size));
-  return std::make_shared<TypIndex>(std::move(type_index));
-}
-
 // TypPtr
 
 struct TypPointer : TypT {
@@ -121,11 +106,6 @@ struct TypPointer : TypT {
     return llvm::ConstantPointerNull::get(llvm::PointerType::getUnqual(*hdl.context));
   }
 };
-
-inline TypHandle pk_Ptr(TypHandle of) {
-  TypPointer type_pointer(std::move(of));
-  return std::make_shared<TypPointer>(std::move(type_pointer));
-}
 
 } // namespace Typ
 

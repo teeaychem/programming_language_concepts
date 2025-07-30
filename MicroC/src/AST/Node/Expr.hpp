@@ -13,26 +13,6 @@ namespace AST {
 
 namespace Expr {
 
-// Assign
-
-struct Assign : ExprT {
-  // TODO: Checks on destination
-  ExprHandle dest;
-  ExprHandle expr;
-
-  Assign(ExprHandle dest, ExprHandle expr) : dest(dest),
-                                             expr(expr) {}
-
-  Expr::Kind kind() const override { return Expr::Kind::Assign; }
-  TypHandle type() const override {
-    std::cout << "Asssign::type() - " << dest->type()->to_string(0) << std::endl;
-    return this->dest->type();
-  }
-
-  llvm::Value *codegen(LLVMBundle &hdl) const override;
-  std::string to_string(size_t indent) const override;
-};
-
 // Call
 
 struct Call : ExprT {
@@ -48,9 +28,6 @@ struct Call : ExprT {
   Expr::Kind kind() const override {
     return Expr::Kind::Call;
   }
-  TypHandle type() const override {
-    return this->typ;
-  }
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
   std::string to_string(size_t indent) const override;
@@ -61,10 +38,11 @@ struct Call : ExprT {
 struct CstI : ExprT {
   int64_t i;
 
-  CstI(int64_t i) : i(i) {}
+  CstI(int64_t i, TypHandle typ) : i(i) {
+    this->typ = typ;
+  }
 
   Expr::Kind kind() const override { return Expr::Kind::CstI; }
-  TypHandle type() const override { return Typ::pk_Data(Typ::Data::Int); }
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
   std::string to_string(size_t indent) const override;
@@ -77,11 +55,12 @@ struct Index : ExprT {
   ExprHandle index;
 
   Index(ExprHandle expr, ExprHandle index) : access(expr),
-                                             index(index) {}
+                                             index(index) {
+    // FIXME: Correct type
+    this->typ = this->access->type()->deref_unsafe();
+  }
 
   Expr::Kind kind() const override { return Expr::Kind::Index; }
-  // TODO: Verify correct type
-  TypHandle type() const override { return this->access->type()->deref_unsafe(); }
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
   std::string to_string(size_t indent) const override;
@@ -95,10 +74,12 @@ struct Prim1 : ExprT {
 
   Prim1(std::string op, ExprHandle expr)
       : op(op),
-        expr(std::move(expr)) {}
+        expr(std::move(expr)) {
+    // FIXME: Fix type
+    this->typ = this->expr->type();
+  }
 
   Expr::Kind kind() const override { return Expr::Kind::Prim1; }
-  TypHandle type() const override { return this->expr->type(); }
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
   std::string to_string(size_t indent) const override;
@@ -112,10 +93,12 @@ struct Prim2 : ExprT {
   ExprHandle b;
 
   Prim2(std::string op, ExprHandle a, ExprHandle b)
-      : op(op), a(std::move(a)), b(std::move(b)) {}
+      : op(op), a(std::move(a)), b(std::move(b)) {
+    // FIXME: Fix type
+    this->typ = this->a->type();
+  }
 
   Expr::Kind kind() const override { return Expr::Kind::Prim2; }
-  TypHandle type() const override { return this->a->type(); }
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
   std::string to_string(size_t indent) const override;
@@ -123,13 +106,12 @@ struct Prim2 : ExprT {
 
 struct Var : ExprT {
   std::string var;
-  TypHandle typ;
 
-  Var(TypHandle typ, std::string &&v) : typ(typ),
-                                        var(std::move(v)) {}
+  Var(TypHandle typ, std::string &&v) : var(std::move(v)) {
+    this->typ = typ;
+  }
 
   Expr::Kind kind() const override { return Expr::Kind::Var; }
-  TypHandle type() const override { return this->typ; }
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
   std::string to_string(size_t indent) const override;

@@ -69,9 +69,6 @@ std::string AST::Dec::Var::to_string(size_t indent) const {
 
 // Expr
 
-std::string AST::Expr::Assign::to_string(size_t indent) const {
-  return std::format("{} = {}", this->dest->to_string(indent), this->expr->to_string(indent));
-}
 std::string AST::Expr::Call::to_string(size_t indent) const {
   std::stringstream call_ss{};
 

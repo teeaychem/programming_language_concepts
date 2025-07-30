@@ -1,8 +1,10 @@
 #pragma once
 
 #include <cstdio>
+#include <format>
 #include <map>
 #include <memory>
+#include <stdexcept>
 #include <string>
 
 #include "llvm/IR/DIBuilder.h"
@@ -83,7 +85,7 @@ struct NodeT {
 namespace AST {
 
 namespace Expr {
-struct Assign;
+// struct Assign;
 struct Call;
 struct CstI;
 struct Index;
@@ -92,7 +94,7 @@ struct Prim2;
 struct Var;
 
 enum class Kind {
-  Assign,
+  // Assign,
   Call,
   CstI,
   Index,
@@ -103,11 +105,17 @@ enum class Kind {
 } // namespace Expr
 
 struct ExprT : NodeT {
-  TypHandle typ;
+  TypHandle typ{nullptr};
 
   AST::Kind kind_abstract() const override { return AST::Kind::Expr; }
   virtual Expr::Kind kind() const = 0;
-  virtual AST::TypHandle type() const = 0;
+  AST::TypHandle type() const {
+    if (!this->typ) {
+      throw std::logic_error(std::format("No type for {}", this->to_string(0)));
+    }
+
+    return this->typ;
+  };
   llvm::Value *codegen_eval_true(LLVMBundle &hdl) const;
   llvm::Value *codegen_eval_false(LLVMBundle &hdl) const;
 };
