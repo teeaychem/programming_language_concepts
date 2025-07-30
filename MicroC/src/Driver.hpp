@@ -88,10 +88,24 @@ struct Driver {
     }
   }
 
+  // Returns the type which results from applying `op` to `expr`.
   AST::TypHandle type_resolution_prim1(AST::Expr::OpUnary op, AST::ExprHandle expr) {
-    // FIXME: Complete
 
-    return expr->type();
+    switch (op) {
+
+    case AST::Expr::OpUnary::AddressOf: {
+      return this->pk_Ptr(expr->type());
+    } break;
+    case AST::Expr::OpUnary::Dereference: {
+      return expr->type()->deref();
+    } break;
+    case AST::Expr::OpUnary::Minus: {
+      return expr->type();
+    } break;
+    case AST::Expr::OpUnary::Negation: {
+      return expr->type();
+    } break;
+    }
   }
 
   // pk start
