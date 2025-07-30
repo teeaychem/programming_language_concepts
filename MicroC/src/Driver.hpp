@@ -79,6 +79,24 @@ struct Driver {
     }
   }
 
+  // representation
+
+  AST::Expr::OpUnary to_unary_op(std::string op) {
+
+    static std::map<std::string, AST::Expr::OpUnary> op_map{
+        {"&", AST::Expr::OpUnary::AddressOf},
+        {"*", AST::Expr::OpUnary::Dereference},
+        {"-", AST::Expr::OpUnary::Minus},
+        {"!", AST::Expr::OpUnary::Negation},
+    };
+
+    if (!op_map.contains(op)) {
+      throw std::logic_error(std::format("Unrecognised unary op: {}", op));
+    }
+
+    return op_map[op];
+  }
+
   // types
 
   AST::TypHandle type_data_handle(AST::Typ::Data data) {
@@ -98,6 +116,12 @@ struct Driver {
       return type_void;
     } break;
     }
+  }
+
+  AST::TypHandle type_resolution_prim1(AST::Expr::OpUnary op, AST::ExprHandle expr) {
+    // FIXME: Complete
+
+    return expr->type();
   }
 
   // pk start
@@ -195,7 +219,7 @@ struct Driver {
     return std::make_shared<AST::Expr::Index>(std::move(instance));
   }
 
-  AST::ExprHandle pk_ExprPrim1(std::string op, AST::ExprHandle expr) {
+  AST::ExprHandle pk_ExprPrim1(AST::Expr::OpUnary op, AST::ExprHandle expr) {
     AST::Expr::Prim1 prim1(op, std::move(expr));
     return std::make_shared<AST::Expr::Prim1>(std::move(prim1));
   }

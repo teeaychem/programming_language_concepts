@@ -25,7 +25,7 @@ struct TypData : TypT {
       : data(data) {};
 
   std::string to_string(size_t indent) const override;
-  TypHandle deref_unsafe() const override { throw std::logic_error("deref() called on TypData"); }
+  TypHandle deref() const override { throw std::logic_error("deref() called on TypData"); }
 
   // Base case of `complete_data_unsafe`, replaces void with `data` or throws a logic_error.
   void complete_data_unsafe(Data data) override {
@@ -80,7 +80,7 @@ struct TypIndex : TypT {
   TypHandle expr_type() const { return typ; }
   std::optional<std::size_t> type_size() const { return size; }
   void complete_data_unsafe(Data data) override { typ->complete_data_unsafe(data); }
-  TypHandle deref_unsafe() const override { return typ; }
+  TypHandle deref() const override { return typ; }
 
   llvm::Type *typegen(LLVMBundle &hdl) const override {
     return llvm::ArrayType::get(typ->typegen(hdl), size.value_or(0));
@@ -98,7 +98,7 @@ struct TypPointer : TypT {
 
   std::string to_string(size_t indent) const override;
   void complete_data_unsafe(Data data) override { destination->complete_data_unsafe(data); }
-  TypHandle deref_unsafe() const override { return destination; }
+  TypHandle deref() const override { return destination; }
   llvm::Type *typegen(LLVMBundle &hdl) const override { return llvm::PointerType::getUnqual(*hdl.context); }
 
   // An opaque pointer, given LLVMs preference for these.

@@ -101,12 +101,9 @@ std::string AST::Expr::Index::to_string(size_t indent) const {
 }
 
 std::string AST::Expr::Prim1::to_string(size_t indent) const {
-  if (1 < this->op.size()) {
-    return std::format("{} {}", op, expr->to_string(indent));
-  } else {
-    return std::format("{}{}", op, expr->to_string(indent));
-  }
+  return std::format("{}{}", op, expr->to_string(indent));
 }
+
 std::string AST::Expr::Prim2::to_string(size_t indent) const {
   return std::format("({} {} {})", this->a->to_string(indent), this->op, this->b->to_string(indent));
 }

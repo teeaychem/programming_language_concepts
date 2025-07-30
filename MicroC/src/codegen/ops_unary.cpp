@@ -9,8 +9,8 @@
 
 namespace ops_unary {
 // Unary subtraction
-OpUnary builder_sub(LLVMBundle &bundle) {
-  OpUnary builder = [&bundle](AST::ExprHandle expr) {
+FnUnary builder_sub(LLVMBundle &bundle) {
+  FnUnary builder = [&bundle](AST::ExprHandle expr) {
     llvm::Value *expr_val = expr->codegen(bundle);
     expr_val = bundle.ensure_loaded(expr->type(), expr_val);
 
@@ -20,8 +20,8 @@ OpUnary builder_sub(LLVMBundle &bundle) {
 }
 
 // Logical negation
-OpUnary builder_not(LLVMBundle &bundle) {
-  OpUnary builder = [&bundle](AST::ExprHandle expr) {
+FnUnary builder_not(LLVMBundle &bundle) {
+  FnUnary builder = [&bundle](AST::ExprHandle expr) {
     llvm::Value *expr_val = expr->codegen(bundle);
 
     expr_val = bundle.ensure_loaded(expr->type(), expr_val);
@@ -32,8 +32,8 @@ OpUnary builder_not(LLVMBundle &bundle) {
 }
 
 // Print an integer
-OpUnary builder_printi(LLVMBundle &bundle) {
-  OpUnary builder = [&bundle](AST::ExprHandle expr) {
+FnUnary builder_printi(LLVMBundle &bundle) {
+  FnUnary builder = [&bundle](AST::ExprHandle expr) {
     llvm::Value *expr_val = expr->codegen(bundle);
 
     expr_val = bundle.ensure_loaded(expr->type(), expr_val);
@@ -44,8 +44,8 @@ OpUnary builder_printi(LLVMBundle &bundle) {
 }
 
 // Dereference
-OpUnary builder_star(LLVMBundle &bundle) {
-  OpUnary builder = [&bundle](AST::ExprHandle expr) {
+FnUnary builder_star(LLVMBundle &bundle) {
+  FnUnary builder = [&bundle](AST::ExprHandle expr) {
     // FIXME: A copy of access deref for the moment
     llvm::Value *expr_val = expr->codegen(bundle);
 
@@ -55,8 +55,8 @@ OpUnary builder_star(LLVMBundle &bundle) {
 }
 
 // Address
-OpUnary builder_amp(LLVMBundle &bundle) {
-  OpUnary builder = [&bundle](AST::ExprHandle expr) {
+FnUnary builder_amp(LLVMBundle &bundle) {
+  FnUnary builder = [&bundle](AST::ExprHandle expr) {
     // FIXME: A copy of access deref for the moment
     llvm::Value *expr_val = expr->codegen(bundle);
 
@@ -69,11 +69,9 @@ OpUnary builder_amp(LLVMBundle &bundle) {
 
 void extend_ops_unary(LLVMBundle &bundle, OpsUnaryMap &op_map) {
 
-  op_map["-"] = ops_unary::builder_sub(bundle);
-  op_map["!"] = ops_unary::builder_not(bundle);
+  op_map[AST::Expr::OpUnary::Minus] = ops_unary::builder_sub(bundle);
+  op_map[AST::Expr::OpUnary::Negation] = ops_unary::builder_not(bundle);
 
-  op_map["*"] = ops_unary::builder_star(bundle);
-  op_map["&"] = ops_unary::builder_amp(bundle);
-
-  op_map["printi"] = ops_unary::builder_printi(bundle);
+  op_map[AST::Expr::OpUnary::Dereference] = ops_unary::builder_star(bundle);
+  op_map[AST::Expr::OpUnary::AddressOf] = ops_unary::builder_amp(bundle);
 }

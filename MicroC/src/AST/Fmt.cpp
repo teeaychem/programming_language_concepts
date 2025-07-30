@@ -1,5 +1,5 @@
 #include "Fmt.hpp"
-#include "AST/Node/Expr.hpp"
+// #include "AST/Node/Expr.hpp"
 
 auto std::formatter<AST::Typ::Data>::format(AST::Typ::Data c, std::format_context &ctx) const
     -> std::format_context::iterator {
@@ -41,3 +41,22 @@ auto std::formatter<AST::Stmt::Kind>::format(AST::Stmt::Kind c, std::format_cont
   return std::formatter<string_view>::format(name, ctx);
 }
 
+auto std::formatter<AST::Expr::OpUnary>::format(AST::Expr::OpUnary c, std::format_context &ctx) const
+    -> std::format_context::iterator {
+  string_view name = "unknown";
+  switch (c) {
+  case AST::Expr::OpUnary::AddressOf: {
+    name = "&";
+  } break;
+  case AST::Expr::OpUnary::Dereference: {
+    name = "*";
+  } break;
+  case AST::Expr::OpUnary::Minus: {
+    name = "-";
+  } break;
+  case AST::Expr::OpUnary::Negation: {
+    name = "!";
+  } break;
+  }
+  return std::formatter<string_view>::format(name, ctx);
+}

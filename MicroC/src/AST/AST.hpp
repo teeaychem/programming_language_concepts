@@ -42,7 +42,7 @@ struct TypT {
   // String representation.
   virtual std::string to_string(size_t indent) const = 0;
   // Dereference this type, may panic if dereference is not possible.
-  virtual std::shared_ptr<TypT> deref_unsafe() const = 0;
+  virtual std::shared_ptr<TypT> deref() const = 0;
   // Completes the type, may throw if already complete.
   virtual void complete_data_unsafe(AST::Typ::Data d_typ) = 0;
 
@@ -93,6 +93,13 @@ struct Prim1;
 struct Prim2;
 struct Var;
 
+enum class OpUnary {
+  AddressOf,
+  Dereference,
+  Minus,
+  Negation,
+};
+
 enum class Kind {
   // Assign,
   Call,
@@ -113,7 +120,6 @@ struct ExprT : NodeT {
     if (!this->typ) {
       throw std::logic_error(std::format("No type for {}", this->to_string(0)));
     }
-
     return this->typ;
   };
   llvm::Value *codegen_eval_true(LLVMBundle &hdl) const;
