@@ -258,8 +258,7 @@ Topdec:
      auto s = driver.pk_StmtDeclaration(dec);
      driver.push_dec(s);                                                        }
   | Fndec       {
-    auto dec = $1;
-    auto s = driver.pk_StmtDeclaration(std::move(dec));
+    auto s = driver.pk_StmtDeclaration(std::move($1));
     driver.push_dec(s);                                                         }
 ;
 
