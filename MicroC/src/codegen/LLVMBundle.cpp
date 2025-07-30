@@ -3,8 +3,14 @@
 #include "AST/Types.hpp"
 
 #include <iostream>
+#include <stdexcept>
 
 llvm::Value *LLVMBundle::ensure_loaded(AST::TypHandle typ, llvm::Value *value) {
+
+  if (typ == nullptr) {
+    throw std::logic_error("Unable to load without type information");
+  }
+
   switch (typ->kind()) {
 
   case AST::Typ::Kind::Array: {

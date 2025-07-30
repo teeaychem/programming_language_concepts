@@ -120,27 +120,33 @@ struct Driver {
 
   AST::ExprHandle pk_ExprCall(std::string name, std::vector<AST::ExprHandle> params) {
 
-    AST::Expr::Call e(std::move(name), std::move(params));
+    auto r_typ = this->env[name];
 
-    return std::make_shared<AST::Expr::Call>(std::move(e));
+    AST::Expr::Call call(std::move(name), std::move(params), r_typ);
+
+    return std::make_shared<AST::Expr::Call>(std::move(call));
   }
 
   AST::ExprHandle pk_ExprCall(std::string name, AST::ExprHandle param) {
 
     std::vector<AST::ExprHandle> params = std::vector<AST::ExprHandle>{param};
 
-    AST::Expr::Call e(std::move(name), std::move(params));
+    auto r_typ = this->env[name];
 
-    return std::make_shared<AST::Expr::Call>(std::move(e));
+    AST::Expr::Call call(std::move(name), std::move(params), r_typ);
+
+    return std::make_shared<AST::Expr::Call>(std::move(call));
   }
 
   AST::ExprHandle pk_ExprCall(std::string name) {
 
     std::vector<AST::ExprHandle> empty_params = std::vector<AST::ExprHandle>{};
 
-    AST::Expr::Call e(std::move(name), std::move(empty_params));
+    auto r_typ = this->env[name];
 
-    return std::make_shared<AST::Expr::Call>(std::move(e));
+    AST::Expr::Call call(std::move(name), std::move(empty_params), r_typ);
+
+    return std::make_shared<AST::Expr::Call>(std::move(call));
   }
 
   AST::ExprHandle pk_ExprCstI(std::int64_t i) {

@@ -39,13 +39,18 @@ struct Call : ExprT {
   std::string name;
   std::vector<ExprHandle> arguments;
 
-  Call(std::string name, std::vector<ExprHandle> params)
+  Call(std::string name, std::vector<ExprHandle> params, TypHandle r_typ)
       : name(name),
         arguments(std::move(params)) {
+    this->typ = r_typ;
   }
 
-  Expr::Kind kind() const override { return Expr::Kind::Call; }
-  TypHandle type() const override { return this->typ; }
+  Expr::Kind kind() const override {
+    return Expr::Kind::Call;
+  }
+  TypHandle type() const override {
+    return this->typ;
+  }
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
   std::string to_string(size_t indent) const override;
