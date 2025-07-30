@@ -18,7 +18,7 @@
 #include <utility>
 #include <vector>
 
-// #include "AST/Fmt.hpp"
+#include "AST/Fmt.hpp"
 
 using namespace llvm;
 
@@ -94,8 +94,7 @@ Value *AST::Expr::Prim1::codegen(LLVMBundle &hdl) const {
   if (hdl.prim1_fn_map[this->op]) {
     return hdl.prim1_fn_map[this->op](expr);
   } else {
-    std::cerr << "Unexpected unary op: " << this->op << "\n";
-    std::exit(-1);
+    throw std::logic_error(std::format("Unexpected unary op: {}", this->op));
   }
 }
 

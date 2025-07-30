@@ -19,10 +19,10 @@ struct Call : ExprT {
   std::string name;
   std::vector<ExprHandle> arguments;
 
-  Call(std::string name, std::vector<ExprHandle> params, TypHandle r_typ)
+  Call(std::string name, std::vector<ExprHandle> params, TypHandle return_type)
       : name(name),
         arguments(std::move(params)) {
-    this->typ = r_typ;
+    this->typ = return_type;
   }
 
   Expr::Kind kind() const override {
@@ -38,8 +38,8 @@ struct Call : ExprT {
 struct CstI : ExprT {
   int64_t i;
 
-  CstI(int64_t i, TypHandle typ) : i(i) {
-    this->typ = typ;
+  CstI(int64_t i, TypHandle type) : i(i) {
+    this->typ = type;
   }
 
   Expr::Kind kind() const override { return Expr::Kind::CstI; }
@@ -56,8 +56,8 @@ struct Index : ExprT {
 
   Index(ExprHandle expr, ExprHandle index) : access(expr),
                                              index(index) {
-    // FIXME: Correct type
-    this->typ = this->access->type()->deref_unsafe();
+    // Dereference the expression being accessed
+    this->typ = this->access->type()->deref();
   }
 
   Expr::Kind kind() const override { return Expr::Kind::Index; }
@@ -69,10 +69,10 @@ struct Index : ExprT {
 // Prim1
 
 struct Prim1 : ExprT {
-  std::string op;
+  OpUnary op;
   ExprHandle expr;
 
-  Prim1(std::string op, ExprHandle expr)
+  Prim1(OpUnary op, ExprHandle expr)
       : op(op),
         expr(std::move(expr)) {
     // FIXME: Fix type
