@@ -8,7 +8,7 @@
 #include <map>
 
 namespace ops_foundation {
-OpFoundation builder_printf(LLVMBundle &bundle) {
+OpFoundation builder_printi(LLVMBundle &bundle) {
 
   auto MC_INT = (llvm::Type *)llvm::Type::getInt64Ty(*bundle.context);
 
@@ -20,8 +20,19 @@ OpFoundation builder_printf(LLVMBundle &bundle) {
   return fn;
 }
 
+OpFoundation builder_println(LLVMBundle &bundle) {
+
+  auto typ = llvm::FunctionType::get(llvm::PointerType::getUnqual(llvm::Type::getVoidTy(*bundle.context)), false);
+
+  auto fn = llvm::Function::Create(typ, llvm::Function::ExternalLinkage, "println", bundle.module.get());
+  fn->setCallingConv(llvm::CallingConv::C);
+
+  return fn;
+}
+
 } // namespace ops_foundation
 void extend_ops_foundation(LLVMBundle &bundle, OpsFoundationMap &op_map) {
 
-  op_map["printi"] = ops_foundation::builder_printf(bundle);
+  op_map["printi"] = ops_foundation::builder_printi(bundle);
+  op_map["println"] = ops_foundation::builder_println(bundle);
 }
