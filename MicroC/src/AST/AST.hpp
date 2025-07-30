@@ -103,7 +103,7 @@ enum class Kind {
 } // namespace Expr
 
 struct ExprT : NodeT {
-  TypHandle typ{nullptr};
+  TypHandle typ;
 
   AST::Kind kind_abstract() const override { return AST::Kind::Expr; }
   virtual Expr::Kind kind() const = 0;
