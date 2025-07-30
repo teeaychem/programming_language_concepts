@@ -130,23 +130,13 @@ struct Driver {
   AST::ExprHandle pk_ExprCall(std::string name, AST::ExprHandle param) {
 
     std::vector<AST::ExprHandle> params = std::vector<AST::ExprHandle>{param};
-
-    auto r_typ = this->env[name];
-
-    AST::Expr::Call call(std::move(name), std::move(params), r_typ);
-
-    return std::make_shared<AST::Expr::Call>(std::move(call));
+    return this->pk_ExprCall(name, params);
   }
 
   AST::ExprHandle pk_ExprCall(std::string name) {
 
     std::vector<AST::ExprHandle> empty_params = std::vector<AST::ExprHandle>{};
-
-    auto r_typ = this->env[name];
-
-    AST::Expr::Call call(std::move(name), std::move(empty_params), r_typ);
-
-    return std::make_shared<AST::Expr::Call>(std::move(call));
+    return this->pk_ExprCall(name, empty_params);
   }
 
   AST::ExprHandle pk_ExprCstI(std::int64_t i) {
