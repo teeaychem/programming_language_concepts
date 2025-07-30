@@ -25,7 +25,6 @@ struct Block : StmtT {
 
   std::string to_string(size_t indent) const override;
   llvm::Value *codegen(LLVMBundle &hdl) const override;
-  void type_resolution(Env &env) override;
 };
 
 // Declaration
@@ -43,7 +42,6 @@ struct Declaration : StmtT {
 
   std::string to_string(size_t indent) const override;
   llvm::Value *codegen(LLVMBundle &hdl) const override;
-  void type_resolution(Env &env) override;
 };
 
 // Expr
@@ -61,7 +59,6 @@ struct Expr : StmtT {
 
   std::string to_string(size_t indent) const override;
   llvm::Value *codegen(LLVMBundle &hdl) const override;
-  void type_resolution(Env &env) override;
 };
 
 // If
@@ -83,7 +80,6 @@ struct If : StmtT {
 
   std::string to_string(size_t indent) const override;
   llvm::Value *codegen(LLVMBundle &hdl) const override;
-  void type_resolution(Env &env) override;
 };
 
 // Return
@@ -101,7 +97,6 @@ struct Return : StmtT {
 
   std::string to_string(size_t indent) const override;
   llvm::Value *codegen(LLVMBundle &hdl) const override;
-  void type_resolution(Env &env) override;
 };
 
 // While
@@ -121,7 +116,6 @@ struct While : StmtT {
 
   std::string to_string(size_t indent) const override;
   llvm::Value *codegen(LLVMBundle &hdl) const override;
-  void type_resolution(Env &env) override;
 };
 
 } // namespace Stmt

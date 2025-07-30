@@ -101,7 +101,7 @@
 
 %nterm <AST::Typ::Data> DataType
 
-%nterm <std::tuple<AST::TypHandle, std::string, AST::ParamVec>> FnPrototype
+%nterm <AST::PrototypeHandle> FnPrototype
 
 %printer {  } <*>; // yyo << $$;
 
@@ -181,17 +181,19 @@ Expr:
 FnPrototype:
     VOID NAME LPAR Paramdecs RPAR      {
       driver.add_to_env($4);
-      $$ = std::make_tuple(AST::Typ::pk_Void(), $2, $4);
+      auto p = driver.pk_Prototype(AST::Typ::pk_Void(), $2, $4);
+      $$ = p;
     }
   | DataType NAME LPAR Paramdecs RPAR  {
       driver.add_to_env($4);
-      $$ = std::make_tuple(AST::Typ::pk_Data($1), $2, $4);
+      auto p = driver.pk_Prototype(AST::Typ::pk_Data($1), $2, $4);
+      $$ = p;
     }
 ;
 
 Fndec:
     FnPrototype Block      {
-      auto r = driver.pk_DecFn(std::get<0>($1), std::get<1>($1), std::get<2>($1), $2);
+      auto r = driver.pk_DecFn($1, $2);
       driver.fn_finalise(r);
       $$ = r;
     }

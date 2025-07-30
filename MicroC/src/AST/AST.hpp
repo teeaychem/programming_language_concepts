@@ -71,7 +71,6 @@ struct NodeT {
   virtual AST::Kind kind_abstract() const = 0;
   virtual std::string to_string(size_t indent) const = 0;
   //
-  virtual void type_resolution(Env &env) = 0;
 
   virtual ~NodeT() = default;
 };
@@ -148,10 +147,12 @@ namespace Dec {
 enum class Kind {
   Var,
   Fn,
+  Prototype,
 };
 
 struct Var;
 struct Fn;
+struct Prototype;
 } // namespace Dec
 
 struct DecT : NodeT {
@@ -174,6 +175,7 @@ typedef std::shared_ptr<DecT> DecHandle;
 
 typedef std::shared_ptr<Dec::Var> DecVarHandle;
 typedef std::shared_ptr<Dec::Fn> DecFnHandle;
+typedef std::shared_ptr<Dec::Prototype> PrototypeHandle;
 
 typedef std::shared_ptr<ExprT> ExprHandle;
 

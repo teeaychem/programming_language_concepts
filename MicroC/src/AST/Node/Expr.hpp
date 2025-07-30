@@ -31,7 +31,6 @@ struct Assign : ExprT {
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
   std::string to_string(size_t indent) const override;
-  void type_resolution(Env &env) override;
 };
 
 // Call
@@ -50,7 +49,6 @@ struct Call : ExprT {
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
   std::string to_string(size_t indent) const override;
-  void type_resolution(Env &env) override;
 };
 
 // CstI
@@ -65,7 +63,6 @@ struct CstI : ExprT {
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
   std::string to_string(size_t indent) const override;
-  void type_resolution(Env &env) override;
 };
 
 // Index
@@ -83,7 +80,6 @@ struct Index : ExprT {
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
   std::string to_string(size_t indent) const override;
-  void type_resolution(Env &env) override;
 };
 
 // Prim1
@@ -101,7 +97,6 @@ struct Prim1 : ExprT {
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
   std::string to_string(size_t indent) const override;
-  void type_resolution(Env &env) override;
 };
 
 // Prim2
@@ -119,7 +114,6 @@ struct Prim2 : ExprT {
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
   std::string to_string(size_t indent) const override;
-  void type_resolution(Env &env) override;
 };
 
 struct Var : ExprT {
@@ -134,7 +128,6 @@ struct Var : ExprT {
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
   std::string to_string(size_t indent) const override;
-  void type_resolution(Env &env) override;
 };
 
 } // namespace Expr
