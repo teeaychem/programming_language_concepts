@@ -37,13 +37,13 @@ Value *AST::Expr::Var::codegen(LLVMBundle &hdl) const {
 
 // Expr
 
-Value *AST::Expr::Assign::codegen(LLVMBundle &hdl) const {
-  Value *value = this->expr->codegen(hdl);
-  Value *destination = this->dest->codegen(hdl);
-  hdl.builder.CreateStore(value, destination);
+// Value *AST::Expr::Assign::codegen(LLVMBundle &hdl) const {
+//   Value *value = this->expr->codegen(hdl);
+//   Value *destination = this->dest->codegen(hdl);
+//   hdl.builder.CreateStore(value, destination);
 
-  return value;
-}
+//   return value;
+// }
 
 Value *AST::Expr::Call::codegen(LLVMBundle &hdl) const {
   Function *callee_f = hdl.module->getFunction(this->name);
