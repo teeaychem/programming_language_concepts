@@ -154,11 +154,11 @@ name  [a-zA-Z][a-zA-Z_0-9]*
 
 void Driver::scan_begin () {
   yy_flex_debug = trace_scanning;
-  if (file.empty () || file == "-") {
+  if (src_file.empty () || src_file == "-") {
     yyin = stdin;
   }
-  else if (!(yyin = fopen (file.c_str (), "r"))) {
-    std::cerr << "Unable to open " << file << ": " << strerror (errno) << '\n';
+  else if (!(yyin = fopen (src_file.c_str (), "r"))) {
+    std::cerr << "Unable to open " << src_file << ": " << strerror (errno) << '\n';
     exit(EXIT_FAILURE);
   }
 }

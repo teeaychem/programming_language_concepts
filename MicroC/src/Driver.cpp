@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cstdio>
 #include <memory>
 #include <sstream>
@@ -17,9 +18,13 @@ void Driver::generate_llvm() {
   }
 };
 
-int Driver::parse(const std::string &f) {
-  file = f;
-  location.initialize(&file);
+int Driver::parse(const std::string &file) {
+
+  // Ensure a fresh env.
+  assert(this->env.empty());
+
+  src_file = file;
+  location.initialize(&src_file);
   int res;
   {
     scan_begin();
@@ -28,6 +33,10 @@ int Driver::parse(const std::string &f) {
     res = parse();
     scan_end();
   }
+
+  // Clear the env as it holds no actionable information.
+  this->env.clear();
+
   return res;
 }
 
@@ -122,6 +131,8 @@ AST::Expr::OpUnary Driver::to_unary_op(std::string op) {
 
 // pk start
 
+// TODO: Clean up moves, as these were implemented without much thought.
+
 // pk typ
 
 AST::TypHandle Driver::pk_Data(AST::Typ::Data data) {
@@ -179,7 +190,6 @@ AST::PrototypeHandle Driver::pk_Prototype(AST::TypHandle r_typ, std::string var,
 AST::ExprHandle Driver::pk_ExprCall(std::string name, std::vector<AST::ExprHandle> params) {
 
   auto r_typ = this->env[name];
-
   AST::Expr::Call call(std::move(name), std::move(params), r_typ);
 
   return std::make_shared<AST::Expr::Call>(std::move(call));
@@ -253,37 +263,38 @@ AST::StmtHandle Driver::pk_StmtExpr(AST::ExprHandle expr) {
 
 AST::StmtHandle Driver::pk_StmtIf(AST::ExprHandle condition, AST::StmtHandle thn, AST::StmtHandle els) {
 
-  AST::StmtBlockHandle yes_block;
-  AST::StmtBlockHandle no_block;
+  AST::StmtBlockHandle block_then;
+  AST::StmtBlockHandle block_else;
 
   if (thn->kind() == AST::Stmt::Kind::Block) {
-    yes_block = std::static_pointer_cast<AST::Stmt::Block>(thn);
+    block_then = std::static_pointer_cast<AST::Stmt::Block>(thn);
   } else {
     auto fresh_block = AST::Block();
     fresh_block.push_Stmt(thn);
-    yes_block = Driver::pk_StmtBlock(std::move(fresh_block));
+    block_then = Driver::pk_StmtBlock(std::move(fresh_block));
   }
 
   if (els->kind() == AST::Stmt::Kind::Block) {
-    no_block = std::static_pointer_cast<AST::Stmt::Block>(els);
+    block_else = std::static_pointer_cast<AST::Stmt::Block>(els);
   } else {
     auto fresh_block = AST::Block();
     fresh_block.push_Stmt(els);
-    no_block = Driver::pk_StmtBlock(std::move(fresh_block));
+    block_else = Driver::pk_StmtBlock(std::move(fresh_block));
   }
 
-  AST::Stmt::If e(std::move(condition), std::move(yes_block), std::move(no_block));
-  return std::make_shared<AST::Stmt::If>(std::move(e));
+  AST::Stmt::If stmt(std::move(condition), std::move(block_then), std::move(block_else));
+
+  return std::make_shared<AST::Stmt::If>(std::move(stmt));
 }
 
 AST::StmtHandle Driver::pk_StmtReturn(std::optional<AST::ExprHandle> value) {
-  AST::Stmt::Return e(std::move(value));
-  return std::make_shared<AST::Stmt::Return>(std::move(e));
+  AST::Stmt::Return stmt(std::move(value));
+  return std::make_shared<AST::Stmt::Return>(std::move(stmt));
 }
 
 AST::StmtHandle Driver::pk_StmtWhile(AST::ExprHandle condition, AST::StmtHandle block) {
-  AST::Stmt::While e(condition, block);
-  return std::make_shared<AST::Stmt::While>(std::move(e));
+  AST::Stmt::While stmt(condition, block);
+  return std::make_shared<AST::Stmt::While>(std::move(stmt));
 }
 
 // pk end
