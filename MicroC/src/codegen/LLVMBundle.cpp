@@ -5,7 +5,6 @@
 #include <iostream>
 
 llvm::Value *LLVMBundle::ensure_loaded(AST::TypHandle typ, llvm::Value *value) {
-  std::cout << "ensure_loaded called" << "\n";
   switch (typ->kind()) {
 
   case AST::Typ::Kind::Array: {

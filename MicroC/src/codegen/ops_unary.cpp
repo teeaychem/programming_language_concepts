@@ -34,33 +34,11 @@ OpUnary builder_not(LLVMBundle &bundle) {
 // Print an integer
 OpUnary builder_printi(LLVMBundle &bundle) {
   OpUnary builder = [&bundle](AST::ExprHandle expr) {
-    std::cout << "printi: " << expr->to_string(0) << "\n";
     llvm::Value *expr_val = expr->codegen(bundle);
 
     expr_val = bundle.ensure_loaded(expr->type(), expr_val);
 
-    // std::vector<llvm::Value *>
-    //     arg_vs{
-    //         bundle.builder.CreateGlobalString("%d\n", "digit_formatter"),
-    //         expr_val,
-    //     };
-
-    // return bundle.builder.CreateCall(bundle.foundation_fn_map["printf"], arg_vs);
     return bundle.builder.CreateCall(bundle.foundation_fn_map["printi"], expr_val);
-  };
-  return builder;
-}
-
-// Print a character
-OpUnary builder_printc(LLVMBundle &bundle) {
-  OpUnary builder = [&bundle](AST::ExprHandle expr) {
-    llvm::Value *expr_val = expr->codegen(bundle);
-
-    std::vector<llvm::Value *> arg_vs{
-        // bundle.builder.CreateGlobalString("%c", "new_line"),
-        expr_val};
-
-    return bundle.builder.CreateCall(bundle.foundation_fn_map["printi"], arg_vs);
   };
   return builder;
 }
@@ -98,5 +76,4 @@ void extend_ops_unary(LLVMBundle &bundle, OpsUnaryMap &op_map) {
   op_map["&"] = ops_unary::builder_amp(bundle);
 
   op_map["printi"] = ops_unary::builder_printi(bundle);
-  op_map["printc"] = ops_unary::builder_printc(bundle);
 }
