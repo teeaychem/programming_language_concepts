@@ -3,14 +3,12 @@
 #include <format>
 #include <memory>
 #include <optional>
-#include <stdexcept>
 #include <string>
 #include <vector>
 
 #include "AST/AST.hpp"
 #include "AST/Node/Dec.hpp"
 #include "AST/Node/Expr.hpp"
-#include "AST/Node/Stmt.hpp"
 
 #include "AST/Types.hpp"
 #include "codegen/LLVMBundle.hpp"
@@ -40,32 +38,9 @@ struct Driver {
   void generate_llvm();
   void print_llvm();
 
-  int parse(const std::string &f); // Run the parser on file F.  Return 0 on success.
+  int parse(const std::string &file); // Run the parser on file; return 0 on success.
 
-  void push_dec(AST::StmtDeclarationHandle stmt) {
-
-    switch (stmt->declaration->kind()) {
-
-    case AST::Dec::Kind::Var: {
-      this->env[stmt->declaration->name()] = stmt->declaration->type();
-    } break;
-
-    case AST::Dec::Kind::Fn: {
-      auto as_fn = std::static_pointer_cast<AST::Dec::Fn>(stmt->declaration);
-      if (!this->env.contains(as_fn->name())) {
-        // throw std::logic_error(std::format("Missing prototype for {}", as_fn->name()));
-        this->env[as_fn->name()] = as_fn->return_type();
-      }
-    } break;
-
-    case AST::Dec::Kind::Prototype: {
-      auto as_pt = std::static_pointer_cast<AST::Dec::Prototype>(stmt->declaration);
-      this->env[as_pt->name()] = as_pt->return_type();
-    } break;
-    }
-
-    prg.push_back(stmt);
-  }
+  void push_dec(AST::StmtDeclarationHandle stmt);
 
   void scan_begin(); // Handling the scanner.
   void scan_end();
@@ -89,53 +64,8 @@ struct Driver {
 
   // representation
 
-  AST::Expr::OpUnary to_unary_op(std::string op) {
-
-    static std::map<std::string, AST::Expr::OpUnary> op_map{
-        {"&", AST::Expr::OpUnary::AddressOf},
-        {"*", AST::Expr::OpUnary::Dereference},
-        {"-", AST::Expr::OpUnary::Minus},
-        {"!", AST::Expr::OpUnary::Negation},
-    };
-
-    if (!op_map.contains(op)) {
-      throw std::logic_error(std::format("Unrecognised unary op: {}", op));
-    }
-
-    return op_map[op];
-  }
-
-  AST::Expr::OpBinary to_binary_op(std::string op) {
-
-    static std::map<std::string, AST::Expr::OpBinary> op_map{
-        {"=", AST::Expr::OpBinary::Assign},
-        {"+=", AST::Expr::OpBinary::AssignAdd},
-        {"-=", AST::Expr::OpBinary::AssignSub},
-        {"*=", AST::Expr::OpBinary::AssignMul},
-        {"/=", AST::Expr::OpBinary::AssignDiv},
-        {"%=", AST::Expr::OpBinary::AssignMod},
-        {"+", AST::Expr::OpBinary::Add},
-        {"-", AST::Expr::OpBinary::Sub},
-        {"*", AST::Expr::OpBinary::Mul},
-        {"/", AST::Expr::OpBinary::Div},
-        {"%", AST::Expr::OpBinary::Mod},
-        {"==", AST::Expr::OpBinary::Eq},
-        {"!=", AST::Expr::OpBinary::Neq},
-        {">", AST::Expr::OpBinary::Gt},
-        {"<", AST::Expr::OpBinary::Lt},
-        {"<=", AST::Expr::OpBinary::Leq},
-        {">=", AST::Expr::OpBinary::Geq},
-        {"&&", AST::Expr::OpBinary::And},
-        {"||", AST::Expr::OpBinary::Or}
-
-    };
-
-    if (!op_map.contains(op)) {
-      throw std::logic_error(std::format("Unrecognised binary op: {}", op));
-    }
-
-    return op_map[op];
-  }
+  AST::Expr::OpUnary to_unary_op(std::string op);
+  AST::Expr::OpBinary to_binary_op(std::string op);
 
   // types
 
@@ -168,172 +98,53 @@ struct Driver {
 
   // pk typ
 
-  inline AST::TypHandle pk_Data(AST::Typ::Data data) {
-    AST::Typ::TypData type_data{data};
-    return std::make_shared<AST::Typ::TypData>(std::move(type_data));
-  }
+  AST::TypHandle pk_Data(AST::Typ::Data data);
 
-  inline AST::TypHandle pk_Void() {
-    // AST::Typ::TypData type_data{AST::Typ::Data::Void};
-    return this->type_data_handle(AST::Typ::Data::Void);
-  }
+  AST::TypHandle pk_Void();
 
-  inline AST::TypHandle pk_Index(AST::TypHandle typ, std::optional<std::int64_t> size) {
-    AST::Typ::TypIndex type_index(std::move(typ), std::move(size));
-    return std::make_shared<AST::Typ::TypIndex>(std::move(type_index));
-  }
+  AST::TypHandle pk_Index(AST::TypHandle typ, std::optional<std::int64_t> size);
 
-  inline AST::TypHandle pk_Ptr(AST::TypHandle of) {
-    AST::Typ::TypPointer type_pointer(std::move(of));
-    return std::make_shared<AST::Typ::TypPointer>(std::move(type_pointer));
-  }
+  AST::TypHandle pk_Ptr(AST::TypHandle of);
 
   // pk Dec
 
-  AST::DecVarHandle pk_DecVar(AST::Dec::Scope scope, AST::TypHandle typ, std::string var) {
+  AST::DecVarHandle pk_DecVar(AST::Dec::Scope scope, AST::TypHandle typ, std::string var);
 
-    if (scope == AST::Dec::Scope::Global) {
-      if (this->env.find(var) != this->env.end()) {
-        throw std::logic_error(std::format("Redeclaration of global: {}", var));
-      }
-    }
+  AST::DecFnHandle pk_DecFn(AST::PrototypeHandle prototype, AST::StmtBlockHandle body);
 
-    AST::Dec::Var dec(scope, std::move(typ), var);
-    return std::make_shared<AST::Dec::Var>(std::move(dec));
-  }
-
-  AST::DecFnHandle pk_DecFn(AST::PrototypeHandle prototype, AST::StmtBlockHandle body) {
-
-    AST::Dec::Fn fn(std::move(prototype), std::move(body));
-    return std::make_shared<AST::Dec::Fn>(std::move(fn));
-  }
-
-  AST::PrototypeHandle pk_Prototype(AST::TypHandle r_typ, std::string var, AST::ParamVec params) {
-
-    if (this->env.find(var) != this->env.end()) {
-      throw std::logic_error(std::format("Existing use of: '{}' unable to declare function.", var));
-    }
-
-    AST::Dec::Prototype prototype(std::move(r_typ), var, std::move(params));
-    return std::make_shared<AST::Dec::Prototype>(std::move(prototype));
-  }
+  AST::PrototypeHandle pk_Prototype(AST::TypHandle r_typ, std::string var, AST::ParamVec params);
 
   // pk Expr
 
-  // AST::ExprHandle pk_ExprAssign(AST::ExprHandle dest, AST::ExprHandle expr) {
-  //   AST::Expr::Assign assign(dest, expr);
-  //   return std::make_shared<AST::Expr::Assign>(std::move(assign));
-  // }
+  AST::ExprHandle pk_ExprCall(std::string name, std::vector<AST::ExprHandle> params);
+  AST::ExprHandle pk_ExprCall(std::string name, AST::ExprHandle param);
+  AST::ExprHandle pk_ExprCall(std::string name);
 
-  AST::ExprHandle pk_ExprCall(std::string name, std::vector<AST::ExprHandle> params) {
+  AST::ExprHandle pk_ExprCstI(std::int64_t i);
 
-    auto r_typ = this->env[name];
+  AST::ExprHandle pk_ExprIndex(AST::ExprHandle access, AST::ExprHandle index);
 
-    AST::Expr::Call call(std::move(name), std::move(params), r_typ);
+  AST::ExprHandle pk_ExprPrim1(AST::Expr::OpUnary op, AST::ExprHandle expr);
 
-    return std::make_shared<AST::Expr::Call>(std::move(call));
-  }
+  AST::ExprHandle pk_ExprPrim2(AST::Expr::OpBinary op, AST::ExprHandle a, AST::ExprHandle b);
 
-  AST::ExprHandle pk_ExprCall(std::string name, AST::ExprHandle param) {
-
-    std::vector<AST::ExprHandle> params = std::vector<AST::ExprHandle>{param};
-    return this->pk_ExprCall(name, params);
-  }
-
-  AST::ExprHandle pk_ExprCall(std::string name) {
-
-    std::vector<AST::ExprHandle> empty_params = std::vector<AST::ExprHandle>{};
-    return this->pk_ExprCall(name, empty_params);
-  }
-
-  AST::ExprHandle pk_ExprCstI(std::int64_t i) {
-    auto typ = this->type_data_handle(AST::Typ::Data::Int);
-    AST::Expr::CstI csti(i, typ);
-
-    return std::make_shared<AST::Expr::CstI>(std::move(csti));
-  }
-
-  AST::ExprHandle pk_ExprIndex(AST::ExprHandle access, AST::ExprHandle index) {
-
-    AST::Expr::Index instance(std::move(access), std::move(index));
-    return std::make_shared<AST::Expr::Index>(std::move(instance));
-  }
-
-  AST::ExprHandle pk_ExprPrim1(AST::Expr::OpUnary op, AST::ExprHandle expr) {
-    AST::Expr::Prim1 prim1(op, std::move(expr));
-    return std::make_shared<AST::Expr::Prim1>(std::move(prim1));
-  }
-
-  AST::ExprHandle pk_ExprPrim2(AST::Expr::OpBinary op, AST::ExprHandle a, AST::ExprHandle b) {
-    AST::Expr::Prim2 prim2(op, std::move(a), std::move(b));
-    return std::make_shared<AST::Expr::Prim2>(std::move(prim2));
-  }
-
-  AST::ExprHandle pk_ExprVar(std::string var) {
-    if (this->env.find(var) == this->env.end()) {
-      throw std::logic_error(std::format("Unknown variable: {}", var));
-    }
-    auto typ = this->env[var];
-    AST::Expr::Var access(std::move(typ), std::move(var));
-    return std::make_shared<AST::Expr::Var>(std::move(access));
-  }
+  AST::ExprHandle pk_ExprVar(std::string var);
 
   // pk Stmt
 
-  AST::StmtBlockHandle pk_StmtBlock(AST::Block &&bv) {
-    AST::Stmt::Block stmt(std::move(bv));
-    return std::make_shared<AST::Stmt::Block>(std::move(stmt));
-  }
+  AST::StmtBlockHandle pk_StmtBlock(AST::Block &&block);
 
-  AST::StmtHandle pk_StmtBlockStmt(AST::Block &&bv) {
-    AST::Stmt::Block stmt(std::move(bv));
-    return std::make_shared<AST::Stmt::Block>(std::move(stmt));
-  }
+  AST::StmtHandle pk_StmtBlockStmt(AST::Block &&block);
 
-  AST::StmtDeclarationHandle pk_StmtDeclaration(AST::DecHandle &&declaration) {
-    AST::Stmt::Declaration stmt(std::move(declaration));
-    return std::make_shared<AST::Stmt::Declaration>(std::move(stmt));
-  }
+  AST::StmtDeclarationHandle pk_StmtDeclaration(AST::DecHandle &&declaration);
 
-  AST::StmtHandle pk_StmtExpr(AST::ExprHandle expr) {
-    AST::Stmt::Expr stmt(std::move(expr));
-    return std::make_shared<AST::Stmt::Expr>(std::move(stmt));
-  }
+  AST::StmtHandle pk_StmtExpr(AST::ExprHandle expr);
 
-  AST::StmtHandle pk_StmtIf(AST::ExprHandle condition, AST::StmtHandle yes, AST::StmtHandle no) {
+  AST::StmtHandle pk_StmtIf(AST::ExprHandle condition, AST::StmtHandle thn, AST::StmtHandle els);
 
-    AST::StmtBlockHandle yes_block;
-    AST::StmtBlockHandle no_block;
+  AST::StmtHandle pk_StmtReturn(std::optional<AST::ExprHandle> value);
 
-    if (yes->kind() == AST::Stmt::Kind::Block) {
-      yes_block = std::static_pointer_cast<AST::Stmt::Block>(yes);
-    } else {
-      auto fresh_block = AST::Block();
-      fresh_block.push_Stmt(yes);
-      yes_block = pk_StmtBlock(std::move(fresh_block));
-    }
-
-    if (no->kind() == AST::Stmt::Kind::Block) {
-      no_block = std::static_pointer_cast<AST::Stmt::Block>(no);
-    } else {
-      auto fresh_block = AST::Block();
-      fresh_block.push_Stmt(no);
-      no_block = pk_StmtBlock(std::move(fresh_block));
-    }
-
-    AST::Stmt::If e(std::move(condition), std::move(yes_block), std::move(no_block));
-    return std::make_shared<AST::Stmt::If>(std::move(e));
-  }
-
-  AST::StmtHandle pk_StmtReturn(std::optional<AST::ExprHandle> value) {
-    AST::Stmt::Return e(std::move(value));
-    return std::make_shared<AST::Stmt::Return>(std::move(e));
-  }
-
-  AST::StmtHandle pk_StmtWhile(AST::ExprHandle condition, AST::StmtHandle bv) {
-    AST::Stmt::While e(condition, bv);
-    return std::make_shared<AST::Stmt::While>(std::move(e));
-  }
+  AST::StmtHandle pk_StmtWhile(AST::ExprHandle condition, AST::StmtHandle block);
 
   // pk end
 };
