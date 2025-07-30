@@ -279,46 +279,97 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) const {
 
   auto typ = this->typ->typegen(hdl);
 
-  if (this->typ->kind() == Typ::Kind::Array) {
-    if (this->scope != Scope::Local) {
-      throw std::logic_error("Global declaration of an array");
+  switch (this->typ->kind()) {
+
+  case Typ::Kind::Array: {
+
+    auto as_array = std::static_pointer_cast<Typ::TypIndex>(this->typ);
+
+    ArrayType *array_type = ArrayType::get(as_array->expr_type()->typegen(hdl), as_array->size.value_or(0));
+
+    switch (this->scope) {
+
+    case Scope::Local: {
+
+      auto size_value = llvm::ConstantInt::get(llvm::Type::getInt64Ty(*hdl.context), as_array->size.value_or(0));
+      auto alloca = hdl.builder.CreateAlloca(typ, size_value, this->name());
+      hdl.named_values[this->name()] = alloca;
+
+      return alloca;
+    } break;
+
+    case Scope::Global: {
+
+      auto alloca = hdl.module->getOrInsertGlobal(this->name(), array_type);
+      GlobalVariable *globalVar = hdl.module->getNamedGlobal(this->name());
+      ConstantAggregateZero *array_init = ConstantAggregateZero::get(array_type);
+      globalVar->setInitializer(array_init);
+      hdl.named_values[this->name()] = globalVar;
+
+      return globalVar;
+
+    } break;
+    }
+  } break;
+
+  case Typ::Kind::Data: {
+
+    auto as_data = std::static_pointer_cast<Typ::TypData>(this->typ);
+    auto value = as_data->defaultgen(hdl);
+
+    switch (this->scope) {
+
+    case Scope::Local: {
+
+      auto alloca = hdl.builder.CreateAlloca(typ, nullptr, this->name());
+      hdl.builder.CreateStore(value, alloca);
+      hdl.named_values[this->name()] = alloca;
+
+    } break;
+
+    case Scope::Global: {
+
+      auto alloca = hdl.module->getOrInsertGlobal(this->name(), typ);
+      GlobalVariable *globalVar = hdl.module->getNamedGlobal(this->name());
+      globalVar->setInitializer(value);
+      hdl.named_values[this->name()] = globalVar;
+
+    } break;
     }
 
-    auto typ_array = std::static_pointer_cast<Typ::TypIndex>(this->typ);
+    return value;
 
-    ArrayType *array_type = ArrayType::get(typ_array->expr_type()->typegen(hdl), typ_array->size.value_or(0));
-
-    auto size_value = llvm::ConstantInt::get(llvm::Type::getInt64Ty(*hdl.context), typ_array->size.value_or(0));
-
-    auto alloca = hdl.builder.CreateAlloca(typ, size_value, this->name());
-    hdl.named_values[this->name()] = alloca;
-    return alloca;
-  }
-
-  // Non-array variables ...
-
-  auto value = this->typ->defaultgen(hdl);
-
-  switch (this->scope) {
-
-  case Scope::Local: {
-    auto alloca = hdl.builder.CreateAlloca(typ, nullptr, this->name());
-    hdl.builder.CreateStore(value, alloca);
-
-    hdl.named_values[this->name()] = alloca;
   } break;
 
-  case Scope::Global: {
-    auto alloca = hdl.module->getOrInsertGlobal(this->name(), typ);
+  case Typ::Kind::Pointer: {
 
-    GlobalVariable *globalVar = hdl.module->getNamedGlobal(this->name());
-    globalVar->setInitializer(value);
+    auto as_ptr = std::static_pointer_cast<Typ::TypPointer>(this->typ);
+    auto value = as_ptr->defaultgen(hdl);
 
-    hdl.named_values[this->name()] = globalVar;
+    switch (this->scope) {
+
+    case Scope::Local: {
+
+      auto alloca = hdl.builder.CreateAlloca(typ, nullptr, this->name());
+      hdl.builder.CreateStore(value, alloca);
+      hdl.named_values[this->name()] = alloca;
+
+    } break;
+
+    case Scope::Global: {
+
+      auto alloca = hdl.module->getOrInsertGlobal(this->name(), typ);
+      GlobalVariable *globalVar = hdl.module->getNamedGlobal(this->name());
+      globalVar->setInitializer(value);
+      hdl.named_values[this->name()] = globalVar;
+
+    } break;
+    }
+
+    return value;
+
   } break;
   }
-
-  return value; // Return the default value for type, as it's initialised
 }
 
 Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) const {
