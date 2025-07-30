@@ -355,26 +355,26 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) const {
 
 // tmp
 
-Function *codegen_fn_prototype(LLVMBundle &hdl, AST::Dec::Fn const *fn) {
-  if (hdl.env.vars.count(fn->name()) != 0) {
-    throw std::logic_error(std::format("Redeclaration of function: {}", fn->name()));
+Value *AST::Dec::Prototype::codegen(LLVMBundle &hdl) const {
+  if (hdl.env.vars.count(this->name()) != 0) {
+    throw std::logic_error(std::format("Redeclaration of function: {}", this->name()));
   }
 
-  llvm::Type *return_type = fn->r_typ->typegen(hdl);
+  llvm::Type *return_type = this->r_typ->typegen(hdl);
   std::vector<llvm::Type *> parameter_types{};
 
   { // Generate the parameter types
-    parameter_types.reserve(fn->params.size());
+    parameter_types.reserve(this->params.size());
 
-    for (auto &p : fn->params) {
+    for (auto &p : this->params) {
       parameter_types.push_back(p.second->typegen(hdl));
     }
   }
 
   auto fn_type = FunctionType::get(return_type, parameter_types, false);
-  Function *fnx = Function::Create(fn_type, Function::ExternalLinkage, fn->id, hdl.module.get());
+  Function *fnx = Function::Create(fn_type, Function::ExternalLinkage, this->id, hdl.module.get());
 
-  hdl.env.fns[fn->id] = fnx;
+  hdl.env.fns[this->id] = fnx;
 
   return fnx;
 }
@@ -383,11 +383,11 @@ Function *codegen_fn_prototype(LLVMBundle &hdl, AST::Dec::Fn const *fn) {
 
 Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) const {
 
-  Function *fn = codegen_fn_prototype(hdl, this);
+  Function *fn = (Function *)this->prototype->codegen(hdl);
 
   // Fn details
 
-  llvm::Type *return_type = this->r_typ->typegen(hdl);
+  llvm::Type *return_type = this->return_type()->typegen(hdl);
 
   BasicBlock *outer_return_block = hdl.return_block; // stash any existing return block, to be restored on exit
   Value *outer_return_alloca = hdl.return_alloca;    // likewise for return value allocation
@@ -402,7 +402,7 @@ Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) const {
     size_t name_idx{0};
     for (auto &arg : fn->args()) {
 
-      auto &base_name = this->params[name_idx++].first;
+      auto &base_name = this->prototype->params[name_idx++].first;
 
       arg.setName(base_name);
 

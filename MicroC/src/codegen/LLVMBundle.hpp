@@ -23,13 +23,18 @@ void extend_ops_foundation(LLVMBundle &bundle, OpsFoundationMap &op_map);
 void extend_ops_unary(LLVMBundle &bundle, OpsUnaryMap &op_map);
 void extend_ops_binary(LLVMBundle &bundle, OpsBinaryMap &op_map);
 
+struct LLVMEnv {
+  std::map<std::string, llvm::Value *> vars{};
+  std::map<std::string, llvm::Function *> fns{};
+};
+
 struct LLVMBundle {
 
   std::unique_ptr<llvm::LLVMContext> context;
   std::unique_ptr<llvm::Module> module;
   llvm::IRBuilder<> builder;
 
-  std::map<std::string, llvm::Value *> named_values{};
+  LLVMEnv env{};
 
   llvm::BasicBlock *return_block{nullptr};
   llvm::Value *return_alloca{nullptr};
@@ -45,9 +50,7 @@ struct LLVMBundle {
   LLVMBundle()
       : context(std::make_unique<llvm::LLVMContext>()),
         module(std::make_unique<llvm::Module>("microC", *context)),
-        builder(llvm::IRBuilder<>(*context)),
-
-        named_values({}) {
+        builder(llvm::IRBuilder<>(*context)) {
 
     extend_ops_foundation(*this, this->foundation_fn_map);
     extend_ops_unary(*this, this->prim1_fn_map);

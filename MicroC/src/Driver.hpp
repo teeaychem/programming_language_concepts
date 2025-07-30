@@ -74,7 +74,7 @@ struct Driver {
 
   void fn_finalise(AST::DecFnHandle fn) {
     // TODO: Shadowing of global variables...
-    for (auto &param : fn->params) {
+    for (auto &param : fn->prototype->params) {
       this->env.erase(param.first);
     }
   }
@@ -95,14 +95,20 @@ struct Driver {
     return std::make_shared<AST::Dec::Var>(std::move(dec));
   }
 
-  AST::DecFnHandle pk_DecFn(AST::TypHandle r_typ, std::string var, AST::ParamVec params, AST::StmtBlockHandle body) {
+  AST::DecFnHandle pk_DecFn(AST::PrototypeHandle prototype, AST::StmtBlockHandle body) {
+
+    AST::Dec::Fn fn(std::move(prototype), std::move(body));
+    return std::make_shared<AST::Dec::Fn>(std::move(fn));
+  }
+
+  AST::PrototypeHandle pk_Prototype(AST::TypHandle r_typ, std::string var, AST::ParamVec params) {
 
     if (this->env.find(var) != this->env.end()) {
       throw std::logic_error(std::format("Existing use of: '{}' unable to declare function.", var));
     }
 
-    AST::Dec::Fn dec(std::move(r_typ), var, std::move(params), std::move(body));
-    return std::make_shared<AST::Dec::Fn>(std::move(dec));
+    AST::Dec::Prototype prototype(std::move(r_typ), var, std::move(params));
+    return std::make_shared<AST::Dec::Prototype>(std::move(prototype));
   }
 
   // pk Expr

@@ -31,24 +31,20 @@ struct Var : DecT {
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
   std::string to_string(size_t indent) const override;
-  void type_resolution(Env &env) override;
 };
 
-// Fn
+// Prototype
 
-struct Fn : DecT {
+struct Prototype : DecT {
   TypHandle r_typ;
   std::string id;
 
   ParamVec params;
 
-  StmtBlockHandle body;
-
-  Fn(TypHandle r_typ, std::string name, ParamVec params, StmtBlockHandle body)
+  Prototype(TypHandle r_typ, std::string name, ParamVec params)
       : r_typ(std::move(r_typ)),
         id(name),
-        params(std::move(params)),
-        body(std::move(body)) {}
+        params(std::move(params)) {}
 
   Dec::Kind kind() const override { return Dec::Kind::Fn; }
   TypHandle type() const override { return r_typ; };
@@ -57,7 +53,25 @@ struct Fn : DecT {
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
   std::string to_string(size_t indent) const override;
-  void type_resolution(Env &env) override;
+};
+
+// Fn
+
+struct Fn : DecT {
+  PrototypeHandle prototype;
+  StmtBlockHandle body;
+
+  Fn(PrototypeHandle prototype, StmtBlockHandle body)
+      : prototype(std::move(prototype)),
+        body(std::move(body)) {}
+
+  Dec::Kind kind() const override { return Dec::Kind::Fn; }
+  TypHandle type() const override { return prototype->r_typ; };
+  std::string name() const override { return this->prototype->id; };
+  TypHandle return_type() const { return prototype->r_typ; };
+
+  llvm::Value *codegen(LLVMBundle &hdl) const override;
+  std::string to_string(size_t indent) const override;
 };
 
 } // namespace Dec

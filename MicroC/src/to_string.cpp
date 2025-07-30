@@ -43,6 +43,10 @@ std::string AST::Typ::TypPointer::to_string(size_t indent) const {
 // Dec
 
 std::string AST::Dec::Fn::to_string(size_t indent) const {
+  return std::format("{} {}", this->prototype->to_string(0), this->body->to_string(indent));
+}
+
+std::string AST::Dec::Prototype::to_string(size_t indent) const {
   std::stringstream fn_ss{};
 
   fn_ss << std::format("{} {} (", r_typ->to_string(indent), this->id);
@@ -54,7 +58,7 @@ std::string AST::Dec::Fn::to_string(size_t indent) const {
     fn_ss.seekp(-2, std::ios_base::end);
   }
 
-  fn_ss << std::format(") {}", this->body->to_string(indent));
+  fn_ss << ")";
 
   return fn_ss.str();
 }
@@ -64,7 +68,6 @@ std::string AST::Dec::Var::to_string(size_t indent) const {
 }
 
 // Expr
-
 
 std::string AST::Expr::Assign::to_string(size_t indent) const {
   return std::format("{} = {}", this->dest->to_string(indent), this->expr->to_string(indent));
