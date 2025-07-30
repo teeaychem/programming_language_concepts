@@ -17,9 +17,12 @@ enum class Scope {
 };
 
 struct Var : DecT {
-  Scope scope;
-  TypHandle typ;
+private:
   std::string id;
+  TypHandle typ;
+
+public:
+  Scope scope;
 
   Var(Scope scope, TypHandle typ, std::string name)
       : scope(scope),
@@ -36,9 +39,11 @@ struct Var : DecT {
 // Prototype
 
 struct Prototype : DecT {
+private:
   TypHandle r_typ;
   std::string id;
 
+public:
   ParamVec params;
 
   Prototype(TypHandle r_typ, std::string name, ParamVec params)
@@ -66,9 +71,9 @@ struct Fn : DecT {
         body(std::move(body)) {}
 
   Dec::Kind kind() const override { return Dec::Kind::Fn; }
-  TypHandle type() const override { return prototype->r_typ; };
-  std::string name() const override { return this->prototype->id; };
-  TypHandle return_type() const { return prototype->r_typ; };
+  TypHandle type() const override { return prototype->return_type(); };
+  std::string name() const override { return this->prototype->name(); };
+  TypHandle return_type() const { return prototype->return_type(); };
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
   std::string to_string(size_t indent) const override;
