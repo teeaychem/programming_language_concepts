@@ -52,7 +52,15 @@ struct Driver {
 
     case AST::Dec::Kind::Fn: {
       auto as_fn = std::static_pointer_cast<AST::Dec::Fn>(stmt->declaration);
-      this->env[as_fn->name()] = as_fn->return_type();
+      if (!this->env.contains(as_fn->name())) {
+        // throw std::logic_error(std::format("Missing prototype for {}", as_fn->name()));
+        this->env[as_fn->name()] = as_fn->return_type();
+      }
+    } break;
+
+    case AST::Dec::Kind::Prototype: {
+      auto as_pt = std::static_pointer_cast<AST::Dec::Prototype>(stmt->declaration);
+      this->env[as_pt->name()] = as_pt->return_type();
     } break;
     }
 
