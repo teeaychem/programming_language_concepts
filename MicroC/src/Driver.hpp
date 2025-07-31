@@ -155,11 +155,11 @@ struct Driver {
         }
       }
 
-      else if (lhs->type()->kind() == AST::Typ::Kind::Array) {
+      else if (lhs->type()->kind() == AST::Typ::Kind::Ptr) {
         return type_resolution_prim2_ptr_expr(op, lhs, rhs);
       }
 
-      else if (rhs->type()->kind() == AST::Typ::Kind::Array) {
+      else if (rhs->type()->kind() == AST::Typ::Kind::Ptr) {
         return type_resolution_prim2_ptr_expr(op, rhs, lhs);
       }
 
@@ -202,7 +202,7 @@ struct Driver {
 
   AST::TypHandle pk_Void();
 
-  AST::TypHandle pk_Index(AST::TypHandle typ, std::optional<std::int64_t> size);
+  AST::TypHandle pk_Ptr(AST::TypHandle typ, std::optional<std::int64_t> size);
 
   AST::TypHandle pk_Ptr(AST::TypHandle of);
 
