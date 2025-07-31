@@ -133,7 +133,9 @@ llvm::Value *builder_assign(LLVMBundle &bundle, AST::ExprHandle destination, AST
   llvm::Value *value_val = value->codegen(bundle);
   value_val = bundle.ensure_loaded(value->type(), value_val);
 
-  return bundle.builder.CreateStore(value_val, destination_val, "op.assign");
+  bundle.builder.CreateStore(value_val, destination_val, "op.assign");
+
+  return value_val;
 }
 
 llvm::Value *builder_add(LLVMBundle &bundle, AST::ExprHandle lhs, AST::ExprHandle rhs) {
