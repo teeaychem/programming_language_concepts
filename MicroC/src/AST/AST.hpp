@@ -14,16 +14,16 @@ namespace AST {
 namespace Typ {
 
 enum class Kind {
-  Array, // An array.
-  Int,   // An integer.
-  Char,  // A character.
-  Void,  // Unspecified, and requires completion to be a usable type.
+  Ptr,  // An array.
+  Int,  // An integer.
+  Char, // A character.
+  Void, // Unspecified, and requires completion to be a usable type.
 };
 
-struct TypIndex;
-struct TypInt;
-struct TypChar;
-struct TypVoid;
+struct Ptr;
+struct Int;
+struct Char;
+struct Void;
 
 } // namespace Typ
 
@@ -49,7 +49,7 @@ struct TypT {
   virtual ~TypT() = default;
 };
 
-typedef std::shared_ptr<Typ::TypIndex> TypIndexHandle;
+typedef std::shared_ptr<Typ::Ptr> TypPtrHandle;
 
 } // namespace AST
 

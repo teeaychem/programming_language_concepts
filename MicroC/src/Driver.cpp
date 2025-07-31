@@ -132,30 +132,28 @@ AST::Expr::OpUnary Driver::to_unary_op(std::string op) {
 
 // pk typ
 AST::TypHandle Driver::pk_Int() {
-  AST::Typ::TypInt type_int{};
-  return std::make_shared<AST::Typ::TypInt>(std::move(type_int));
+  AST::Typ::Int type_int{};
+  return std::make_shared<AST::Typ::Int>(std::move(type_int));
 };
 
 AST::TypHandle Driver::pk_Char() {
-  AST::Typ::TypChar type_char{};
-  return std::make_shared<AST::Typ::TypChar>(std::move(type_char));
+  AST::Typ::Char type_char{};
+  return std::make_shared<AST::Typ::Char>(std::move(type_char));
 };
 
 AST::TypHandle Driver::pk_Void() {
-  AST::Typ::TypVoid type_void{};
-  return std::make_shared<AST::Typ::TypVoid>(std::move(type_void));
+  AST::Typ::Void type_void{};
+  return std::make_shared<AST::Typ::Void>(std::move(type_void));
 }
 
-AST::TypHandle Driver::pk_Index(AST::TypHandle typ, std::optional<std::int64_t> size) {
-  AST::Typ::TypIndex type_index(std::move(typ), std::move(size));
-  return std::make_shared<AST::Typ::TypIndex>(std::move(type_index));
+AST::TypHandle Driver::pk_Ptr(AST::TypHandle typ, std::optional<std::int64_t> area) {
+  AST::Typ::Ptr type_index(std::move(typ), std::move(area));
+  return std::make_shared<AST::Typ::Ptr>(std::move(type_index));
 }
 
 AST::TypHandle Driver::pk_Ptr(AST::TypHandle typ) {
-  AST::Typ::TypIndex type_index(std::move(typ), std::nullopt);
-  return std::make_shared<AST::Typ::TypIndex>(std::move(type_index));
-  // AST::Typ::TypPointer type_pointer(std::move(of));
-  // return std::make_shared<AST::Typ::TypPointer>(std::move(type_pointer));
+  AST::Typ::Ptr type_index(std::move(typ), std::nullopt);
+  return std::make_shared<AST::Typ::Ptr>(std::move(type_index));
 }
 
 // pk Dec

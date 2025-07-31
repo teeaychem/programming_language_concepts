@@ -32,19 +32,19 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) const {
 
   switch (this->typ->kind()) {
 
-  case Typ::Kind::Array: {
+  case Typ::Kind::Ptr: {
 
-    auto as_index = std::static_pointer_cast<Typ::TypIndex>(this->typ);
+    auto as_index = std::static_pointer_cast<Typ::Ptr>(this->typ);
 
-    if (as_index->size.has_value()) {
+    if (as_index->area().has_value()) {
 
-      ArrayType *array_type = ArrayType::get(as_index->expr_type()->llvm(hdl), as_index->size.value_or(0));
+      ArrayType *array_type = ArrayType::get(as_index->pointee_type()->llvm(hdl), as_index->area().value());
 
       switch (this->scope) {
 
       case Scope::Local: {
 
-        auto size_value = llvm::ConstantInt::get(llvm::Type::getInt64Ty(*hdl.context), as_index->size.value_or(0));
+        auto size_value = llvm::ConstantInt::get(llvm::Type::getInt64Ty(*hdl.context), as_index->area().value());
         auto alloca = hdl.builder.CreateAlloca(typ, size_value, this->name());
         hdl.env.vars[this->name()] = alloca;
 
@@ -98,7 +98,7 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) const {
 
   case Typ::Kind::Int: {
 
-    auto as_int = std::static_pointer_cast<AST::Typ::TypInt>(this->typ);
+    auto as_int = std::static_pointer_cast<AST::Typ::Int>(this->typ);
     auto default_value = as_int->defaultgen(hdl);
 
     switch (this->scope) {
@@ -127,7 +127,7 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) const {
 
   case Typ::Kind::Char: {
 
-    auto as_char = std::static_pointer_cast<AST::Typ::TypChar>(this->typ);
+    auto as_char = std::static_pointer_cast<AST::Typ::Char>(this->typ);
     auto default_value = as_char->defaultgen(hdl);
 
     switch (this->scope) {

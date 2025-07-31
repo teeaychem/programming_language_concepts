@@ -13,10 +13,10 @@ namespace Typ {
 
 // TypData
 
-struct TypInt : TypT {
+struct Int : TypT {
   Typ::Kind kind() const override { return Typ::Kind::Int; }
 
-  TypInt() {};
+  Int() {};
 
   std::string to_string(size_t indent) const override;
   TypHandle deref() const override { throw std::logic_error("deref called on an int"); }
@@ -33,10 +33,10 @@ struct TypInt : TypT {
   }
 };
 
-struct TypChar : TypT {
+struct Char : TypT {
   Typ::Kind kind() const override { return Typ::Kind::Char; }
 
-  TypChar() {};
+  Char() {};
 
   std::string to_string(size_t indent) const override;
   TypHandle deref() const override { throw std::logic_error("deref called on a char"); }
@@ -53,10 +53,10 @@ struct TypChar : TypT {
   }
 };
 
-struct TypVoid : TypT {
+struct Void : TypT {
   Typ::Kind kind() const override { return Typ::Kind::Void; }
 
-  TypVoid() {};
+  Void() {};
 
   std::string to_string(size_t indent) const override;
 
@@ -74,22 +74,30 @@ struct TypVoid : TypT {
 
 // TypIndex
 
-struct TypIndex : TypT {
-  Typ::Kind kind() const override { return Typ::Kind::Array; }
+struct Ptr : TypT {
+  Typ::Kind kind() const override { return Typ::Kind::Ptr; }
 
-  TypHandle destination;
-  std::optional<std::size_t> size;
+private:
+  // What's pointed to.
+  TypHandle _pointee;
 
-  TypIndex(TypHandle typ, std::optional<std::int64_t> size)
-      : destination(std::move(typ)), size(size) {}
+  // The 'area' of the pointer.
+  // If Some(a) then the pointer can be offset a times (incl. zero) to point to some `pointee`.
+  std::optional<std::size_t> _area;
+
+public:
+  Ptr(TypHandle typ, std::optional<std::int64_t> area)
+      : _pointee(std::move(typ)),
+        _area(area) {}
 
   std::string to_string(size_t indent) const override;
-  TypHandle expr_type() const { return destination; }
-  std::optional<std::size_t> type_size() const { return size; }
+
+  TypHandle pointee_type() const { return _pointee; }
+  std::optional<std::size_t> area() const { return _area; }
 
   TypHandle complete_data(TypHandle data) override {
 
-    switch (this->destination->kind()) {
+    switch (this->_pointee->kind()) {
 
     case Kind::Int:
     case Kind::Char: {
@@ -97,30 +105,30 @@ struct TypIndex : TypT {
     } break;
 
     case Kind::Void: {
-      auto fresh_pointer = TypIndex(data, std::nullopt);
-      auto fresh_handle = std::make_shared<AST::Typ::TypIndex>(fresh_pointer);
+      auto fresh_pointer = Ptr(data, std::nullopt);
+      auto fresh_handle = std::make_shared<AST::Typ::Ptr>(fresh_pointer);
 
-      this->destination = fresh_handle;
+      this->_pointee = fresh_handle;
       return fresh_handle;
     } break;
 
-    case Kind::Array: {
-      auto fresh_destination = destination->complete_data(data);
-      auto fresh_pointer = TypIndex(fresh_destination, std::nullopt);
-      auto fresh_handle = std::make_shared<AST::Typ::TypIndex>(fresh_pointer);
+    case Kind::Ptr: {
+      auto fresh_destination = this->_pointee->complete_data(data);
+      auto fresh_pointer = Ptr(fresh_destination, std::nullopt);
+      auto fresh_handle = std::make_shared<AST::Typ::Ptr>(fresh_pointer);
 
-      this->destination = fresh_destination;
+      this->_pointee = fresh_destination;
       return fresh_destination;
     } break;
     }
   }
 
-  TypHandle deref() const override { return destination; }
+  TypHandle deref() const override { return _pointee; }
 
   llvm::Type *llvm(LLVMBundle &hdl) const override {
 
-    if (size.has_value()) {
-      return llvm::ArrayType::get(destination->llvm(hdl), size.value());
+    if (this->_area.has_value()) {
+      return llvm::ArrayType::get(this->_pointee->llvm(hdl), this->_area.value());
     } else {
       return llvm::PointerType::getUnqual(*hdl.context);
     }

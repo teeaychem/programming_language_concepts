@@ -13,7 +13,7 @@ llvm::Value *LLVMBundle::ensure_loaded(AST::TypHandle typ, llvm::Value *value) {
 
   switch (typ->kind()) {
 
-  case AST::Typ::Kind::Array: {
+  case AST::Typ::Kind::Ptr: {
     // FIXME
     return value;
   } break;
