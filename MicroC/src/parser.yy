@@ -121,7 +121,7 @@ Block:
 AtomicConst:
     CSTINT        { $$ = driver.pk_ExprCstI($1);                                                 }
   | CSTBOOL       { $$ = std::move(driver.pk_ExprCstI($1));                                      }
-  | NULL          { $$ = driver.pk_ExprPrim1(AST::Expr::OpUnary::Minus, driver.pk_ExprCstI(1));  }
+  | NULL          { $$ = driver.pk_ExprPrim1(AST::Expr::OpUnary::Sub, driver.pk_ExprCstI(1));  }
 ;
 
 
@@ -154,7 +154,7 @@ Expr:
   | Expr SLASH_ASSIGN Expr    { $$ = driver.pk_ExprPrim2(AST::Expr::OpBinary::AssignDiv, $1, $3); }
   | Expr MOD_ASSIGN Expr      { $$ = driver.pk_ExprPrim2(AST::Expr::OpBinary::AssignMod, $1, $3); }
   | NAME LPAR Exprs RPAR      { $$ = driver.pk_ExprCall($1, $3);                                  }
-  | MINUS Expr                { $$ = driver.pk_ExprPrim1(AST::Expr::OpUnary::Minus, $2);          }
+  | MINUS Expr                { $$ = driver.pk_ExprPrim1(AST::Expr::OpUnary::Sub, $2);          }
   | AMP Expr                  { $$ = driver.pk_ExprPrim1(AST::Expr::OpUnary::AddressOf, $2);      }
   | STAR Expr                 { $$ = driver.pk_ExprPrim1(AST::Expr::OpUnary::Dereference, $2);    }
   | NOT Expr                  { $$ = driver.pk_ExprPrim1(AST::Expr::OpUnary::Negation, $2);       }

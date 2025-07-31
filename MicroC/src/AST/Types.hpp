@@ -35,7 +35,7 @@ struct TypData : TypT {
     }
   }
 
-  llvm::Type *typegen(LLVMBundle &hdl) const override {
+  llvm::Type *llvm(LLVMBundle &hdl) const override {
     switch (data) {
     case Data::Int:
       return llvm::Type::getInt64Ty(*hdl.context);
@@ -77,8 +77,8 @@ struct TypIndex : TypT {
   void complete_data_unsafe(Data data) override { typ->complete_data_unsafe(data); }
   TypHandle deref() const override { return typ; }
 
-  llvm::Type *typegen(LLVMBundle &hdl) const override {
-    return llvm::ArrayType::get(typ->typegen(hdl), size.value_or(0));
+  llvm::Type *llvm(LLVMBundle &hdl) const override {
+    return llvm::ArrayType::get(typ->llvm(hdl), size.value_or(0));
   }
 };
 
@@ -94,7 +94,7 @@ struct TypPointer : TypT {
   std::string to_string(size_t indent) const override;
   void complete_data_unsafe(Data data) override { destination->complete_data_unsafe(data); }
   TypHandle deref() const override { return destination; }
-  llvm::Type *typegen(LLVMBundle &hdl) const override { return llvm::PointerType::getUnqual(*hdl.context); }
+  llvm::Type *llvm(LLVMBundle &hdl) const override { return llvm::PointerType::getUnqual(*hdl.context); }
 
   // An opaque pointer, given LLVMs preference for these.
   llvm::Constant *defaultgen(LLVMBundle &hdl) const {

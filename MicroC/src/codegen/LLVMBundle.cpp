@@ -21,7 +21,7 @@ llvm::Value *LLVMBundle::ensure_loaded(AST::TypHandle typ, llvm::Value *value) {
   case AST::Typ::Kind::Data: {
 
     if (value->getType()->isPointerTy()) {
-      return this->builder.CreateLoad(typ->typegen(*this), value);
+      return this->builder.CreateLoad(typ->llvm(*this), value);
     } else {
       return value;
     }

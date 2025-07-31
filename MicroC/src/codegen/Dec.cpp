@@ -33,7 +33,7 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) const {
     return existing->second;
   }
 
-  auto typ = this->typ->typegen(hdl);
+  auto typ = this->typ->llvm(hdl);
 
   switch (this->typ->kind()) {
 
@@ -41,7 +41,7 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) const {
 
     auto as_array = std::static_pointer_cast<Typ::TypIndex>(this->typ);
 
-    ArrayType *array_type = ArrayType::get(as_array->expr_type()->typegen(hdl), as_array->size.value_or(0));
+    ArrayType *array_type = ArrayType::get(as_array->expr_type()->llvm(hdl), as_array->size.value_or(0));
 
     switch (this->scope) {
 
@@ -135,14 +135,14 @@ Value *AST::Dec::Prototype::codegen(LLVMBundle &hdl) const {
     throw std::logic_error(std::format("Redeclaration of function: {}", this->name()));
   }
 
-  llvm::Type *return_type = this->return_type()->typegen(hdl);
+  llvm::Type *return_type = this->return_type()->llvm(hdl);
   std::vector<llvm::Type *> parameter_types{};
 
   { // Generate the parameter types
     parameter_types.reserve(this->params.size());
 
     for (auto &p : this->params) {
-      parameter_types.push_back(p.second->typegen(hdl));
+      parameter_types.push_back(p.second->llvm(hdl));
     }
   }
 
@@ -162,7 +162,7 @@ Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) const {
 
   // Fn details
 
-  llvm::Type *return_type = this->return_type()->typegen(hdl);
+  llvm::Type *return_type = this->return_type()->llvm(hdl);
 
   BasicBlock *outer_return_block = hdl.return_block; // stash any existing return block, to be restored on exit
   Value *outer_return_alloca = hdl.return_alloca;    // likewise for return value allocation
