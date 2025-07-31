@@ -1,14 +1,11 @@
 #pragma once
 
-#include <memory>
 #include <optional>
-#include <stdexcept>
 #include <string>
 #include <vector>
 
 #include "AST/AST.hpp"
 #include "AST/Node/Dec.hpp"
-#include "AST/Node/Expr.hpp"
 
 #include "AST/Fmt.hpp"
 #include "AST/Types.hpp"

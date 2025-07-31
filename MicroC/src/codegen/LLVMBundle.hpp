@@ -1,12 +1,14 @@
 #pragma once
 
-#include "AST/AST.hpp"
+#include <map>
+#include <string>
+
 #include "llvm/IR/DIBuilder.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
-#include <map>
-#include <memory>
+
+#include "AST/AST.hpp"
 
 typedef llvm::Function *OpFoundation;
 typedef std::map<const std::string, OpFoundation> OpsFoundationMap;
