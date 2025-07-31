@@ -121,7 +121,7 @@ struct Driver {
       return expr->type()->deref();
     } break;
 
-    case AST::Expr::OpUnary::Minus: {
+    case AST::Expr::OpUnary::Sub: {
       return expr->type();
     } break;
 

@@ -56,7 +56,7 @@ auto std::formatter<AST::Expr::OpUnary>::format(AST::Expr::OpUnary c, std::forma
   case AST::Expr::OpUnary::Dereference: {
     name = "*";
   } break;
-  case AST::Expr::OpUnary::Minus: {
+  case AST::Expr::OpUnary::Sub: {
     name = "-";
   } break;
   case AST::Expr::OpUnary::Negation: {

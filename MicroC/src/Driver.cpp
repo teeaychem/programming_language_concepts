@@ -115,7 +115,7 @@ AST::Expr::OpUnary Driver::to_unary_op(std::string op) {
   static std::map<std::string, AST::Expr::OpUnary> op_map{
       {"&", AST::Expr::OpUnary::AddressOf},
       {"*", AST::Expr::OpUnary::Dereference},
-      {"-", AST::Expr::OpUnary::Minus},
+      {"-", AST::Expr::OpUnary::Sub},
       {"!", AST::Expr::OpUnary::Negation},
   };
 

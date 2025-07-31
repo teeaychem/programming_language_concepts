@@ -33,7 +33,7 @@ struct TypPointer;
 
 struct TypT {
   // Generate the representation of this type.
-  virtual llvm::Type *typegen(LLVMBundle &hdl) const = 0;
+  virtual llvm::Type *llvm(LLVMBundle &hdl) const = 0;
   // The kind of this type, corresponding to a struct.
   virtual Typ::Kind kind() const = 0;
   // String representation.
@@ -108,7 +108,7 @@ struct Var;
 enum class OpUnary {
   AddressOf,
   Dereference,
-  Minus,
+  Sub,
   Negation,
 };
 
