@@ -1,3 +1,4 @@
+#include <stdexcept>
 #include <vector>
 
 #include "llvm/IR/Constants.h"
@@ -98,15 +99,6 @@ Value *AST::Expr::Prim1::codegen(LLVMBundle &bundle) const {
   }
 }
 
-Value *AST::Expr::Prim2::codegen(LLVMBundle &bundle) const {
-
-  if (bundle.prim2_fn_map[this->op]) {
-    return bundle.prim2_fn_map[this->op](lhs, rhs);
-  } else {
-    throw std::logic_error(std::format("Unexpected binary op: {}", this->op));
-  }
-}
-
 // Support
 
 Value *AST::ExprT::codegen_eval_true(LLVMBundle &bundle) const {
@@ -128,5 +120,216 @@ Value *AST::ExprT::codegen_eval_false(LLVMBundle &bundle) const {
   } else {
     Value *zero = ConstantInt::get(this->type()->llvm(bundle), 0);
     return bundle.builder.CreateCmp(ICmpInst::ICMP_EQ, evaluation, zero);
+  }
+}
+
+// Binary ops
+
+namespace OpBinaryCodegen {
+
+llvm::Value *builder_assign(LLVMBundle &bundle, AST::ExprHandle destination, AST::ExprHandle value) {
+
+  llvm::Value *destination_val = destination->codegen(bundle);
+  llvm::Value *value_val = value->codegen(bundle);
+  value_val = bundle.ensure_loaded(value->type(), value_val);
+
+  return bundle.builder.CreateStore(value_val, destination_val, "op.assign");
+}
+
+llvm::Value *builder_add(LLVMBundle &bundle, AST::ExprHandle a, AST::ExprHandle b) {
+
+  llvm::Value *a_val = a->codegen(bundle);
+  llvm::Value *b_val = b->codegen(bundle);
+
+  a_val = bundle.ensure_loaded(a->type(), a_val);
+  b_val = bundle.ensure_loaded(b->type(), b_val);
+
+  return bundle.builder.CreateAdd(a_val, b_val, "op.add");
+}
+
+llvm::Value *builder_sub(LLVMBundle &bundle, AST::ExprHandle a, AST::ExprHandle b) {
+
+  llvm::Value *a_val = a->codegen(bundle);
+  llvm::Value *b_val = b->codegen(bundle);
+
+  a_val = bundle.ensure_loaded(a->type(), a_val);
+  b_val = bundle.ensure_loaded(b->type(), b_val);
+
+  return bundle.builder.CreateSub(a_val, b_val, "op.sub");
+}
+
+llvm::Value *builder_mul(LLVMBundle &bundle, AST::ExprHandle a, AST::ExprHandle b) {
+
+  llvm::Value *a_val = a->codegen(bundle);
+  llvm::Value *b_val = b->codegen(bundle);
+
+  a_val = bundle.ensure_loaded(a->type(), a_val);
+  b_val = bundle.ensure_loaded(b->type(), b_val);
+
+  return bundle.builder.CreateMul(a_val, b_val, "op.mul");
+}
+
+llvm::Value *builder_div(LLVMBundle &bundle, AST::ExprHandle a, AST::ExprHandle b) {
+  llvm::Value *a_val = a->codegen(bundle);
+  llvm::Value *b_val = b->codegen(bundle);
+
+  a_val = bundle.ensure_loaded(a->type(), a_val);
+  b_val = bundle.ensure_loaded(b->type(), b_val);
+
+  return bundle.builder.CreateSDiv(a_val, b_val, "op.div");
+}
+
+llvm::Value *builder_mod(LLVMBundle &bundle, AST::ExprHandle a, AST::ExprHandle b) {
+  llvm::Value *a_val = a->codegen(bundle);
+  llvm::Value *b_val = b->codegen(bundle);
+
+  a_val = bundle.ensure_loaded(a->type(), a_val);
+  b_val = bundle.ensure_loaded(b->type(), b_val);
+
+  return bundle.builder.CreateSRem(a_val, b_val, "op.mod");
+}
+
+llvm::Value *builder_eq(LLVMBundle &bundle, AST::ExprHandle a, AST::ExprHandle b) {
+  llvm::Value *a_val = a->codegen(bundle);
+  llvm::Value *b_val = b->codegen(bundle);
+
+  a_val = bundle.ensure_loaded(a->type(), a_val);
+  b_val = bundle.ensure_loaded(b->type(), b_val);
+
+  return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_EQ, a_val, b_val);
+}
+
+llvm::Value *builder_ne(LLVMBundle &bundle, AST::ExprHandle a, AST::ExprHandle b) {
+  llvm::Value *a_val = a->codegen(bundle);
+  llvm::Value *b_val = b->codegen(bundle);
+
+  a_val = bundle.ensure_loaded(a->type(), a_val);
+  b_val = bundle.ensure_loaded(b->type(), b_val);
+
+  return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_NE, a_val, b_val);
+}
+
+llvm::Value *builder_gt(LLVMBundle &bundle, AST::ExprHandle a, AST::ExprHandle b) {
+  llvm::Value *a_val = a->codegen(bundle);
+  llvm::Value *b_val = b->codegen(bundle);
+
+  a_val = bundle.ensure_loaded(a->type(), a_val);
+  b_val = bundle.ensure_loaded(b->type(), b_val);
+
+  return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SGT, a_val, b_val);
+}
+
+llvm::Value *builder_lt(LLVMBundle &bundle, AST::ExprHandle a, AST::ExprHandle b) {
+  llvm::Value *a_val = a->codegen(bundle);
+  llvm::Value *b_val = b->codegen(bundle);
+
+  a_val = bundle.ensure_loaded(a->type(), a_val);
+  b_val = bundle.ensure_loaded(b->type(), b_val);
+
+  return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SLT, a_val, b_val);
+}
+
+llvm::Value *builder_geq(LLVMBundle &bundle, AST::ExprHandle a, AST::ExprHandle b) {
+  llvm::Value *a_val = a->codegen(bundle);
+  llvm::Value *b_val = b->codegen(bundle);
+
+  a_val = bundle.ensure_loaded(a->type(), a_val);
+  b_val = bundle.ensure_loaded(b->type(), b_val);
+
+  return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SGE, a_val, b_val);
+}
+
+llvm::Value *builder_leq(LLVMBundle &bundle, AST::ExprHandle a, AST::ExprHandle b) {
+  llvm::Value *a_val = a->codegen(bundle);
+  llvm::Value *b_val = b->codegen(bundle);
+
+  a_val = bundle.ensure_loaded(a->type(), a_val);
+  b_val = bundle.ensure_loaded(b->type(), b_val);
+
+  return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SLE, a_val, b_val);
+}
+
+llvm::Value *builder_and(LLVMBundle &bundle, AST::ExprHandle a, AST::ExprHandle b) {
+  llvm::Value *a_val = a->codegen(bundle);
+  llvm::Value *b_val = b->codegen(bundle);
+
+  a_val = bundle.ensure_loaded(a->type(), a_val);
+  b_val = bundle.ensure_loaded(b->type(), b_val);
+
+  return bundle.builder.CreateAnd(a_val, b_val);
+}
+
+llvm::Value *builder_or(LLVMBundle &bundle, AST::ExprHandle a, AST::ExprHandle b) {
+  llvm::Value *a_val = a->codegen(bundle);
+  llvm::Value *b_val = b->codegen(bundle);
+
+  a_val = bundle.ensure_loaded(a->type(), a_val);
+  b_val = bundle.ensure_loaded(b->type(), b_val);
+
+  return bundle.builder.CreateOr(a_val, b_val);
+}
+} // namespace OpBinaryCodegen
+
+Value *AST::Expr::Prim2::codegen(LLVMBundle &bundle) const {
+
+  switch (op) {
+
+  case OpBinary::Assign: {
+    return OpBinaryCodegen::builder_assign(bundle, this->lhs, this->rhs);
+  } break;
+  case OpBinary::AssignAdd: {
+    throw std::logic_error("todo");
+  } break;
+  case OpBinary::AssignSub: {
+    throw std::logic_error("todo");
+  } break;
+  case OpBinary::AssignMul: {
+    throw std::logic_error("todo");
+  } break;
+  case OpBinary::AssignDiv: {
+    throw std::logic_error("todo");
+  } break;
+  case OpBinary::AssignMod: {
+    throw std::logic_error("todo");
+  } break;
+  case OpBinary::Add: {
+    return OpBinaryCodegen::builder_add(bundle, this->lhs, this->rhs);
+  } break;
+  case OpBinary::Sub: {
+    return OpBinaryCodegen::builder_sub(bundle, this->lhs, this->rhs);
+  } break;
+  case OpBinary::Mul: {
+    return OpBinaryCodegen::builder_mul(bundle, this->lhs, this->rhs);
+  } break;
+  case OpBinary::Div: {
+    return OpBinaryCodegen::builder_div(bundle, this->lhs, this->rhs);
+  } break;
+  case OpBinary::Mod: {
+    return OpBinaryCodegen::builder_mod(bundle, this->lhs, this->rhs);
+  } break;
+  case OpBinary::Eq: {
+    return OpBinaryCodegen::builder_eq(bundle, this->lhs, this->rhs);
+  } break;
+  case OpBinary::Neq: {
+    return OpBinaryCodegen::builder_ne(bundle, this->lhs, this->rhs);
+  } break;
+  case OpBinary::Gt: {
+    return OpBinaryCodegen::builder_gt(bundle, this->lhs, this->rhs);
+  } break;
+  case OpBinary::Lt: {
+    return OpBinaryCodegen::builder_lt(bundle, this->lhs, this->rhs);
+  } break;
+  case OpBinary::Leq: {
+    return OpBinaryCodegen::builder_geq(bundle, this->lhs, this->rhs);
+  } break;
+  case OpBinary::Geq: {
+    return OpBinaryCodegen::builder_leq(bundle, this->lhs, this->rhs);
+  } break;
+  case OpBinary::And: {
+    return OpBinaryCodegen::builder_and(bundle, this->lhs, this->rhs);
+  } break;
+  case OpBinary::Or: {
+    return OpBinaryCodegen::builder_or(bundle, this->lhs, this->rhs);
+  } break;
   }
 }
