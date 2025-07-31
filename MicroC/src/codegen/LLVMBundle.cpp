@@ -1,9 +1,5 @@
 #include "LLVMBundle.hpp"
 #include "AST/AST.hpp"
-#include "AST/Types.hpp"
-
-#include <iostream>
-#include <stdexcept>
 
 llvm::Value *LLVMBundle::ensure_loaded(AST::TypHandle typ, llvm::Value *value) {
 
@@ -14,8 +10,14 @@ llvm::Value *LLVMBundle::ensure_loaded(AST::TypHandle typ, llvm::Value *value) {
   switch (typ->kind()) {
 
   case AST::Typ::Kind::Ptr: {
-    // FIXME
+    // FIXME: Fresh take likely needed.
+    // Something else is needed to ensure pointers to pointers are fine.
+    // Inspection of AST types should be sufficient.
+    if (!value->getType()->isPointerTy()) {
+      throw std::logic_error("Attempt to load non-pointer into pointer.");
+    }
     return value;
+
   } break;
 
   case AST::Typ::Kind::Int: {
@@ -38,6 +40,5 @@ llvm::Value *LLVMBundle::ensure_loaded(AST::TypHandle typ, llvm::Value *value) {
     return value;
 
   } break;
-
   }
 }
