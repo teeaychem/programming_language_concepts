@@ -136,137 +136,137 @@ llvm::Value *builder_assign(LLVMBundle &bundle, AST::ExprHandle destination, AST
   return bundle.builder.CreateStore(value_val, destination_val, "op.assign");
 }
 
-llvm::Value *builder_add(LLVMBundle &bundle, AST::ExprHandle a, AST::ExprHandle b) {
+llvm::Value *builder_add(LLVMBundle &bundle, AST::ExprHandle lhs, AST::ExprHandle rhs) {
 
-  llvm::Value *a_val = a->codegen(bundle);
-  llvm::Value *b_val = b->codegen(bundle);
+  llvm::Value *lhs_val = lhs->codegen(bundle);
+  llvm::Value *rhs_val = rhs->codegen(bundle);
 
-  a_val = bundle.ensure_loaded(a->type(), a_val);
-  b_val = bundle.ensure_loaded(b->type(), b_val);
+  lhs_val = bundle.ensure_loaded(lhs->type(), lhs_val);
+  rhs_val = bundle.ensure_loaded(rhs->type(), rhs_val);
 
-  return bundle.builder.CreateAdd(a_val, b_val, "op.add");
+  return bundle.builder.CreateAdd(lhs_val, rhs_val, "op.add");
 }
 
-llvm::Value *builder_sub(LLVMBundle &bundle, AST::ExprHandle a, AST::ExprHandle b) {
+llvm::Value *builder_sub(LLVMBundle &bundle, AST::ExprHandle lhs, AST::ExprHandle rhs) {
 
-  llvm::Value *a_val = a->codegen(bundle);
-  llvm::Value *b_val = b->codegen(bundle);
+  llvm::Value *lhs_val = lhs->codegen(bundle);
+  llvm::Value *rhs_val = rhs->codegen(bundle);
 
-  a_val = bundle.ensure_loaded(a->type(), a_val);
-  b_val = bundle.ensure_loaded(b->type(), b_val);
+  lhs_val = bundle.ensure_loaded(lhs->type(), lhs_val);
+  rhs_val = bundle.ensure_loaded(rhs->type(), rhs_val);
 
-  return bundle.builder.CreateSub(a_val, b_val, "op.sub");
+  return bundle.builder.CreateSub(lhs_val, rhs_val, "op.sub");
 }
 
-llvm::Value *builder_mul(LLVMBundle &bundle, AST::ExprHandle a, AST::ExprHandle b) {
+llvm::Value *builder_mul(LLVMBundle &bundle, AST::ExprHandle lhs, AST::ExprHandle rhs) {
 
-  llvm::Value *a_val = a->codegen(bundle);
-  llvm::Value *b_val = b->codegen(bundle);
+  llvm::Value *lhs_val = lhs->codegen(bundle);
+  llvm::Value *rhs_val = rhs->codegen(bundle);
 
-  a_val = bundle.ensure_loaded(a->type(), a_val);
-  b_val = bundle.ensure_loaded(b->type(), b_val);
+  lhs_val = bundle.ensure_loaded(lhs->type(), lhs_val);
+  rhs_val = bundle.ensure_loaded(rhs->type(), rhs_val);
 
-  return bundle.builder.CreateMul(a_val, b_val, "op.mul");
+  return bundle.builder.CreateMul(lhs_val, rhs_val, "op.mul");
 }
 
-llvm::Value *builder_div(LLVMBundle &bundle, AST::ExprHandle a, AST::ExprHandle b) {
-  llvm::Value *a_val = a->codegen(bundle);
-  llvm::Value *b_val = b->codegen(bundle);
+llvm::Value *builder_div(LLVMBundle &bundle, AST::ExprHandle lhs, AST::ExprHandle rhs) {
+  llvm::Value *lhs_val = lhs->codegen(bundle);
+  llvm::Value *rhs_val = rhs->codegen(bundle);
 
-  a_val = bundle.ensure_loaded(a->type(), a_val);
-  b_val = bundle.ensure_loaded(b->type(), b_val);
+  lhs_val = bundle.ensure_loaded(lhs->type(), lhs_val);
+  rhs_val = bundle.ensure_loaded(rhs->type(), rhs_val);
 
-  return bundle.builder.CreateSDiv(a_val, b_val, "op.div");
+  return bundle.builder.CreateSDiv(lhs_val, rhs_val, "op.div");
 }
 
-llvm::Value *builder_mod(LLVMBundle &bundle, AST::ExprHandle a, AST::ExprHandle b) {
-  llvm::Value *a_val = a->codegen(bundle);
-  llvm::Value *b_val = b->codegen(bundle);
+llvm::Value *builder_mod(LLVMBundle &bundle, AST::ExprHandle lhs, AST::ExprHandle rhs) {
+  llvm::Value *lhs_val = lhs->codegen(bundle);
+  llvm::Value *rhs_val = rhs->codegen(bundle);
 
-  a_val = bundle.ensure_loaded(a->type(), a_val);
-  b_val = bundle.ensure_loaded(b->type(), b_val);
+  lhs_val = bundle.ensure_loaded(lhs->type(), lhs_val);
+  rhs_val = bundle.ensure_loaded(rhs->type(), rhs_val);
 
-  return bundle.builder.CreateSRem(a_val, b_val, "op.mod");
+  return bundle.builder.CreateSRem(lhs_val, rhs_val, "op.mod");
 }
 
-llvm::Value *builder_eq(LLVMBundle &bundle, AST::ExprHandle a, AST::ExprHandle b) {
-  llvm::Value *a_val = a->codegen(bundle);
-  llvm::Value *b_val = b->codegen(bundle);
+llvm::Value *builder_eq(LLVMBundle &bundle, AST::ExprHandle lhs, AST::ExprHandle rhs) {
+  llvm::Value *lhs_val = lhs->codegen(bundle);
+  llvm::Value *rhs_val = rhs->codegen(bundle);
 
-  a_val = bundle.ensure_loaded(a->type(), a_val);
-  b_val = bundle.ensure_loaded(b->type(), b_val);
+  lhs_val = bundle.ensure_loaded(lhs->type(), lhs_val);
+  rhs_val = bundle.ensure_loaded(rhs->type(), rhs_val);
 
-  return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_EQ, a_val, b_val);
+  return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_EQ, lhs_val, rhs_val);
 }
 
-llvm::Value *builder_ne(LLVMBundle &bundle, AST::ExprHandle a, AST::ExprHandle b) {
-  llvm::Value *a_val = a->codegen(bundle);
-  llvm::Value *b_val = b->codegen(bundle);
+llvm::Value *builder_ne(LLVMBundle &bundle, AST::ExprHandle lhs, AST::ExprHandle rhs) {
+  llvm::Value *lhs_val = lhs->codegen(bundle);
+  llvm::Value *rhs_val = rhs->codegen(bundle);
 
-  a_val = bundle.ensure_loaded(a->type(), a_val);
-  b_val = bundle.ensure_loaded(b->type(), b_val);
+  lhs_val = bundle.ensure_loaded(lhs->type(), lhs_val);
+  rhs_val = bundle.ensure_loaded(rhs->type(), rhs_val);
 
-  return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_NE, a_val, b_val);
+  return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_NE, lhs_val, rhs_val);
 }
 
-llvm::Value *builder_gt(LLVMBundle &bundle, AST::ExprHandle a, AST::ExprHandle b) {
-  llvm::Value *a_val = a->codegen(bundle);
-  llvm::Value *b_val = b->codegen(bundle);
+llvm::Value *builder_gt(LLVMBundle &bundle, AST::ExprHandle lhs, AST::ExprHandle rhs) {
+  llvm::Value *lhs_val = lhs->codegen(bundle);
+  llvm::Value *rhs_val = rhs->codegen(bundle);
 
-  a_val = bundle.ensure_loaded(a->type(), a_val);
-  b_val = bundle.ensure_loaded(b->type(), b_val);
+  lhs_val = bundle.ensure_loaded(lhs->type(), lhs_val);
+  rhs_val = bundle.ensure_loaded(rhs->type(), rhs_val);
 
-  return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SGT, a_val, b_val);
+  return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SGT, lhs_val, rhs_val);
 }
 
-llvm::Value *builder_lt(LLVMBundle &bundle, AST::ExprHandle a, AST::ExprHandle b) {
-  llvm::Value *a_val = a->codegen(bundle);
-  llvm::Value *b_val = b->codegen(bundle);
+llvm::Value *builder_lt(LLVMBundle &bundle, AST::ExprHandle lhs, AST::ExprHandle rhs) {
+  llvm::Value *lhs_val = lhs->codegen(bundle);
+  llvm::Value *rhs_val = rhs->codegen(bundle);
 
-  a_val = bundle.ensure_loaded(a->type(), a_val);
-  b_val = bundle.ensure_loaded(b->type(), b_val);
+  lhs_val = bundle.ensure_loaded(lhs->type(), lhs_val);
+  rhs_val = bundle.ensure_loaded(rhs->type(), rhs_val);
 
-  return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SLT, a_val, b_val);
+  return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SLT, lhs_val, rhs_val);
 }
 
-llvm::Value *builder_geq(LLVMBundle &bundle, AST::ExprHandle a, AST::ExprHandle b) {
-  llvm::Value *a_val = a->codegen(bundle);
-  llvm::Value *b_val = b->codegen(bundle);
+llvm::Value *builder_geq(LLVMBundle &bundle, AST::ExprHandle lhs, AST::ExprHandle rhs) {
+  llvm::Value *lhs_val = lhs->codegen(bundle);
+  llvm::Value *rhs_val = rhs->codegen(bundle);
 
-  a_val = bundle.ensure_loaded(a->type(), a_val);
-  b_val = bundle.ensure_loaded(b->type(), b_val);
+  lhs_val = bundle.ensure_loaded(lhs->type(), lhs_val);
+  rhs_val = bundle.ensure_loaded(rhs->type(), rhs_val);
 
-  return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SGE, a_val, b_val);
+  return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SGE, lhs_val, rhs_val);
 }
 
-llvm::Value *builder_leq(LLVMBundle &bundle, AST::ExprHandle a, AST::ExprHandle b) {
-  llvm::Value *a_val = a->codegen(bundle);
-  llvm::Value *b_val = b->codegen(bundle);
+llvm::Value *builder_leq(LLVMBundle &bundle, AST::ExprHandle lhs, AST::ExprHandle rhs) {
+  llvm::Value *lhs_val = lhs->codegen(bundle);
+  llvm::Value *rhs_val = rhs->codegen(bundle);
 
-  a_val = bundle.ensure_loaded(a->type(), a_val);
-  b_val = bundle.ensure_loaded(b->type(), b_val);
+  lhs_val = bundle.ensure_loaded(lhs->type(), lhs_val);
+  rhs_val = bundle.ensure_loaded(rhs->type(), rhs_val);
 
-  return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SLE, a_val, b_val);
+  return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SLE, lhs_val, rhs_val);
 }
 
-llvm::Value *builder_and(LLVMBundle &bundle, AST::ExprHandle a, AST::ExprHandle b) {
-  llvm::Value *a_val = a->codegen(bundle);
-  llvm::Value *b_val = b->codegen(bundle);
+llvm::Value *builder_and(LLVMBundle &bundle, AST::ExprHandle lhs, AST::ExprHandle rhs) {
+  llvm::Value *lhs_val = lhs->codegen(bundle);
+  llvm::Value *rhs_val = rhs->codegen(bundle);
 
-  a_val = bundle.ensure_loaded(a->type(), a_val);
-  b_val = bundle.ensure_loaded(b->type(), b_val);
+  lhs_val = bundle.ensure_loaded(lhs->type(), lhs_val);
+  rhs_val = bundle.ensure_loaded(rhs->type(), rhs_val);
 
-  return bundle.builder.CreateAnd(a_val, b_val);
+  return bundle.builder.CreateAnd(lhs_val, rhs_val);
 }
 
-llvm::Value *builder_or(LLVMBundle &bundle, AST::ExprHandle a, AST::ExprHandle b) {
-  llvm::Value *a_val = a->codegen(bundle);
-  llvm::Value *b_val = b->codegen(bundle);
+llvm::Value *builder_or(LLVMBundle &bundle, AST::ExprHandle lhs, AST::ExprHandle rhs) {
+  llvm::Value *lhs_val = lhs->codegen(bundle);
+  llvm::Value *rhs_val = rhs->codegen(bundle);
 
-  a_val = bundle.ensure_loaded(a->type(), a_val);
-  b_val = bundle.ensure_loaded(b->type(), b_val);
+  lhs_val = bundle.ensure_loaded(lhs->type(), lhs_val);
+  rhs_val = bundle.ensure_loaded(rhs->type(), rhs_val);
 
-  return bundle.builder.CreateOr(a_val, b_val);
+  return bundle.builder.CreateOr(lhs_val, rhs_val);
 }
 } // namespace OpBinaryCodegen
 
