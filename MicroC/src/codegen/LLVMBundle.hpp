@@ -13,13 +13,9 @@
 typedef llvm::Function *OpFoundation;
 typedef std::map<const std::string, OpFoundation> OpsFoundationMap;
 
-typedef std::function<llvm::Value *(AST::ExprHandle, AST::ExprHandle)> FnBinary;
-typedef std::map<AST::Expr::OpBinary, FnBinary> OpsBinaryMap;
-
 struct LLVMBundle;
 
 void extend_ops_foundation(LLVMBundle &bundle, OpsFoundationMap &op_map);
-void extend_ops_binary(LLVMBundle &bundle, OpsBinaryMap &op_map);
 
 struct LLVMEnv {
   std::map<std::string, llvm::Value *> vars{};
@@ -39,7 +35,6 @@ struct LLVMBundle {
 
   // Maps to fn builders
   OpsFoundationMap foundation_fn_map{};
-  OpsBinaryMap prim2_fn_map{};
 
   // Utils
   llvm::Value *ensure_loaded(AST::TypHandle typ, llvm::Value *value);
@@ -50,7 +45,6 @@ struct LLVMBundle {
         builder(llvm::IRBuilder<>(*context)) {
 
     extend_ops_foundation(*this, this->foundation_fn_map);
-    extend_ops_binary(*this, this->prim2_fn_map);
   };
 };
 
