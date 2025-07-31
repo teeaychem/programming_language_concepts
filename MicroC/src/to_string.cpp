@@ -36,12 +36,8 @@ std::string AST::Typ::TypIndex::to_string(size_t indent) const {
   if (this->size.has_value()) {
     return std::format("{}[{}]", this->destination->to_string(indent), size.value());
   } else {
-    return std::format("{}[]", this->destination->to_string(indent));
+    return std::format("*{}", this->destination->to_string(indent));
   }
-}
-
-std::string AST::Typ::TypPointer::to_string(size_t indent) const {
-  return std::format("*{}", destination->to_string(indent));
 }
 
 // Nodes

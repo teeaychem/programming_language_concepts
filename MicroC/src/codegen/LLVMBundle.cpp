@@ -39,9 +39,5 @@ llvm::Value *LLVMBundle::ensure_loaded(AST::TypHandle typ, llvm::Value *value) {
 
   } break;
 
-  case AST::Typ::Kind::Pointer: {
-    // FIXME
-    return value;
-  } break;
   }
 }

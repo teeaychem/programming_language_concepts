@@ -14,18 +14,16 @@ namespace AST {
 namespace Typ {
 
 enum class Kind {
-  Array,   // An array.
-  Int,     // An integer.
-  Char,    // A character.
-  Void,    // Unspecified, and requires completion to be a usable type.
-  Pointer, // A pointer.
+  Array, // An array.
+  Int,   // An integer.
+  Char,  // A character.
+  Void,  // Unspecified, and requires completion to be a usable type.
 };
 
 struct TypIndex;
 struct TypInt;
 struct TypChar;
 struct TypVoid;
-struct TypPointer;
 
 } // namespace Typ
 

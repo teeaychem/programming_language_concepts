@@ -72,54 +72,7 @@ struct TypVoid : TypT {
   llvm::Constant *defaultgen(LLVMBundle &hdl) const { throw std::logic_error("Declaration of void type"); }
 };
 
-// TypPtr
-
-struct TypPointer : TypT {
-  Typ::Kind kind() const override { return Typ::Kind::Pointer; }
-
-  TypHandle destination;
-
-  TypPointer(TypHandle of) : destination(std::move(of)) {}
-
-  std::string to_string(size_t indent) const override;
-
-  TypHandle complete_data(TypHandle data) override {
-
-    switch (this->destination->kind()) {
-
-    case Kind::Int:
-    case Kind::Char: {
-      throw std::logic_error("Idx to data");
-    } break;
-    case Kind::Void: {
-      auto fresh_pointer = TypPointer(data);
-      auto fresh_handle = std::make_shared<AST::Typ::TypPointer>(fresh_pointer);
-
-      this->destination = fresh_handle;
-      return fresh_handle;
-    } break;
-    case Kind::Array:
-    case Kind::Pointer: {
-      auto fresh_destination = destination->complete_data(data);
-      auto fresh_pointer = TypPointer(fresh_destination);
-      auto fresh_handle = std::make_shared<AST::Typ::TypPointer>(fresh_pointer);
-
-      this->destination = fresh_destination;
-      return fresh_destination;
-    } break;
-    }
-  }
-
-  TypHandle deref() const override { return destination; }
-  llvm::Type *llvm(LLVMBundle &hdl) const override { return llvm::PointerType::getUnqual(*hdl.context); }
-
-  // An opaque pointer, given LLVMs preference for these.
-  llvm::Constant *defaultgen(LLVMBundle &hdl) const {
-    return llvm::ConstantPointerNull::get(llvm::PointerType::getUnqual(*hdl.context));
-  }
-};
-
-// TypArr
+// TypIndex
 
 struct TypIndex : TypT {
   Typ::Kind kind() const override { return Typ::Kind::Array; }
@@ -142,18 +95,19 @@ struct TypIndex : TypT {
     case Kind::Char: {
       throw std::logic_error("Idx to data");
     } break;
+
     case Kind::Void: {
-      auto fresh_pointer = TypPointer(data);
-      auto fresh_handle = std::make_shared<AST::Typ::TypPointer>(fresh_pointer);
+      auto fresh_pointer = TypIndex(data, std::nullopt);
+      auto fresh_handle = std::make_shared<AST::Typ::TypIndex>(fresh_pointer);
 
       this->destination = fresh_handle;
       return fresh_handle;
     } break;
-    case Kind::Array:
-    case Kind::Pointer: {
+
+    case Kind::Array: {
       auto fresh_destination = destination->complete_data(data);
-      auto fresh_pointer = TypPointer(fresh_destination);
-      auto fresh_handle = std::make_shared<AST::Typ::TypPointer>(fresh_pointer);
+      auto fresh_pointer = TypIndex(fresh_destination, std::nullopt);
+      auto fresh_handle = std::make_shared<AST::Typ::TypIndex>(fresh_pointer);
 
       this->destination = fresh_destination;
       return fresh_destination;
@@ -164,7 +118,12 @@ struct TypIndex : TypT {
   TypHandle deref() const override { return destination; }
 
   llvm::Type *llvm(LLVMBundle &hdl) const override {
-    return llvm::ArrayType::get(destination->llvm(hdl), size.value_or(0));
+
+    if (size.has_value()) {
+      return llvm::ArrayType::get(destination->llvm(hdl), size.value());
+    } else {
+      return llvm::PointerType::getUnqual(*hdl.context);
+    }
   }
 };
 

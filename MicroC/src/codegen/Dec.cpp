@@ -157,35 +157,6 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) const {
     throw std::logic_error("Creation of variable with void type");
 
   } break;
-
-  case Typ::Kind::Pointer: {
-
-    auto as_ptr = std::static_pointer_cast<Typ::TypPointer>(this->typ);
-    auto default_value = as_ptr->defaultgen(hdl);
-
-    switch (this->scope) {
-
-    case Scope::Local: {
-
-      auto alloca = hdl.builder.CreateAlloca(typ, nullptr, this->name());
-      hdl.builder.CreateStore(default_value, alloca);
-      hdl.env.vars[this->name()] = alloca;
-
-    } break;
-
-    case Scope::Global: {
-
-      auto alloca = hdl.module->getOrInsertGlobal(this->name(), typ);
-      GlobalVariable *globalVar = hdl.module->getNamedGlobal(this->name());
-      globalVar->setInitializer(default_value);
-      hdl.env.vars[this->name()] = globalVar;
-
-    } break;
-    }
-
-    return default_value;
-
-  } break;
   }
 }
 
