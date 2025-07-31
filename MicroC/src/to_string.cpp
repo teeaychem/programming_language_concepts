@@ -105,7 +105,7 @@ std::string AST::Expr::Prim1::to_string(size_t indent) const {
 }
 
 std::string AST::Expr::Prim2::to_string(size_t indent) const {
-  return std::format("({} {} {})", this->a->to_string(indent), this->op, this->b->to_string(indent));
+  return std::format("({} {} {})", this->lhs->to_string(indent), this->op, this->rhs->to_string(indent));
 }
 
 std::string AST::Expr::Var::to_string(size_t indent) const {

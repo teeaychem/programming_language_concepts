@@ -19,7 +19,7 @@ struct Call : ExprT {
   std::string name;
   std::vector<ExprHandle> arguments;
 
-  Call(std::string name, std::vector<ExprHandle> params, TypHandle return_type)
+  Call(TypHandle return_type, std::string name, std::vector<ExprHandle> params)
       : name(name),
         arguments(std::move(params)) {
     this->typ = return_type;
@@ -38,7 +38,7 @@ struct Call : ExprT {
 struct CstI : ExprT {
   int64_t i;
 
-  CstI(int64_t i, TypHandle type) : i(i) {
+  CstI(TypHandle type, int64_t i) : i(i) {
     this->typ = type;
   }
 
@@ -72,11 +72,10 @@ struct Prim1 : ExprT {
   OpUnary op;
   ExprHandle expr;
 
-  Prim1(OpUnary op, ExprHandle expr)
+  Prim1(TypHandle typ, OpUnary op, ExprHandle expr)
       : op(op),
         expr(std::move(expr)) {
-    // FIXME: Fix type
-    this->typ = this->expr->type();
+    this->typ = typ;
   }
 
   Expr::Kind kind() const override { return Expr::Kind::Prim1; }
@@ -89,13 +88,14 @@ struct Prim1 : ExprT {
 
 struct Prim2 : ExprT {
   AST::Expr::OpBinary op;
-  ExprHandle a;
-  ExprHandle b;
+  ExprHandle lhs;
+  ExprHandle rhs;
 
-  Prim2(AST::Expr::OpBinary op, ExprHandle a, ExprHandle b)
-      : op(op), a(std::move(a)), b(std::move(b)) {
-    // FIXME: Fix type
-    this->typ = this->a->type();
+  Prim2(TypHandle typ, AST::Expr::OpBinary op, ExprHandle lhs, ExprHandle rhs)
+      : op(op),
+        lhs(std::move(lhs)),
+        rhs(std::move(rhs)) {
+    this->typ = typ;
   }
 
   Expr::Kind kind() const override { return Expr::Kind::Prim2; }
