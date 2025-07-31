@@ -101,7 +101,7 @@ Value *AST::Expr::Prim1::codegen(LLVMBundle &hdl) const {
 Value *AST::Expr::Prim2::codegen(LLVMBundle &hdl) const {
 
   if (hdl.prim2_fn_map[this->op]) {
-    return hdl.prim2_fn_map[this->op](a, b);
+    return hdl.prim2_fn_map[this->op](lhs, rhs);
   } else {
     throw std::logic_error(std::format("Unexpected binary op: {}", this->op));
   }

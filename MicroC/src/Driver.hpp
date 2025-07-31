@@ -1,7 +1,9 @@
 #pragma once
 
+#include <future>
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -85,15 +87,24 @@ struct Driver {
     switch (data) {
 
     case AST::Typ::Data::Int: {
-      std::shared_ptr<AST::Typ::TypData> static type_int = std::make_shared<AST::Typ::TypData>(AST::Typ::TypData(AST::Typ::Data::Int));
+
+      auto typ_int = AST::Typ::TypData(AST::Typ::Data::Int);
+      std::shared_ptr<AST::Typ::TypData> static type_int = std::make_shared<AST::Typ::TypData>(typ_int);
+
       return type_int;
     } break;
+
     case AST::Typ::Data::Char: {
-      std::shared_ptr<AST::Typ::TypData> static type_char = std::make_shared<AST::Typ::TypData>(AST::Typ::TypData(AST::Typ::Data::Char));
+      auto typ_char = AST::Typ::TypData(AST::Typ::Data::Char);
+      std::shared_ptr<AST::Typ::TypData> static type_char = std::make_shared<AST::Typ::TypData>(typ_char);
+
       return type_char;
     } break;
+
     case AST::Typ::Data::Void: {
-      std::shared_ptr<AST::Typ::TypData> type_void = std::make_shared<AST::Typ::TypData>(AST::Typ::TypData(AST::Typ::Data::Void));
+      auto typ_void = AST::Typ::TypData(AST::Typ::Data::Void);
+      std::shared_ptr<AST::Typ::TypData> type_void = std::make_shared<AST::Typ::TypData>(typ_void);
+
       return type_void;
     } break;
     }
@@ -107,14 +118,70 @@ struct Driver {
     case AST::Expr::OpUnary::AddressOf: {
       return this->pk_Ptr(expr->type());
     } break;
+
     case AST::Expr::OpUnary::Dereference: {
       return expr->type()->deref();
     } break;
+
     case AST::Expr::OpUnary::Minus: {
       return expr->type();
     } break;
+
     case AST::Expr::OpUnary::Negation: {
       return expr->type();
+    } break;
+    }
+  }
+
+  void type_ensure_match(AST::ExprHandle lhs, AST::ExprHandle rhs) {
+    if (lhs->typ->kind() != rhs->typ->kind()) {
+      throw std::logic_error("Conflicting types");
+    }
+  }
+
+  AST::TypHandle type_resolution_prim2(AST::Expr::OpBinary op, AST::ExprHandle lhs, AST::ExprHandle rhs) {
+
+    switch (op) {
+
+    case AST::Expr::OpBinary::Assign:
+    case AST::Expr::OpBinary::AssignAdd:
+    case AST::Expr::OpBinary::AssignSub:
+    case AST::Expr::OpBinary::AssignMul:
+    case AST::Expr::OpBinary::AssignDiv:
+    case AST::Expr::OpBinary::AssignMod: {
+      type_ensure_match(lhs, rhs);
+
+      return lhs->type();
+    } break;
+
+    case AST::Expr::OpBinary::Add:
+    case AST::Expr::OpBinary::Sub:
+    case AST::Expr::OpBinary::Mul:
+    case AST::Expr::OpBinary::Div:
+    case AST::Expr::OpBinary::Mod: {
+      if (lhs->typ->kind() == rhs->typ->kind()) {
+        return lhs->type();
+      } else {
+        throw std::logic_error("todo");
+}
+
+    } break;
+
+    case AST::Expr::OpBinary::Eq:
+    case AST::Expr::OpBinary::Neq:
+    case AST::Expr::OpBinary::Gt:
+    case AST::Expr::OpBinary::Lt:
+    case AST::Expr::OpBinary::Leq:
+    case AST::Expr::OpBinary::Geq: {
+      type_ensure_match(lhs, rhs);
+
+      return type_data_handle(AST::Typ::Data::Int);
+    } break;
+
+    case AST::Expr::OpBinary::And:
+    case AST::Expr::OpBinary::Or: {
+
+      return type_data_handle(AST::Typ::Data::Int);
     } break;
     }
   }

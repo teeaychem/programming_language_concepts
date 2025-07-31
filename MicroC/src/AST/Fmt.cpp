@@ -4,6 +4,7 @@ auto std::formatter<AST::Typ::Data>::format(AST::Typ::Data c, std::format_contex
     -> std::format_context::iterator {
   string_view name = "unknown";
   switch (c) {
+
   case AST::Typ::Data::Int: {
     name = "int";
   } break;
@@ -48,6 +49,7 @@ auto std::formatter<AST::Expr::OpUnary>::format(AST::Expr::OpUnary c, std::forma
     -> std::format_context::iterator {
   string_view name = "unknown";
   switch (c) {
+
   case AST::Expr::OpUnary::AddressOf: {
     name = "&";
   } break;

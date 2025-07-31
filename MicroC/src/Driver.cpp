@@ -190,7 +190,7 @@ AST::PrototypeHandle Driver::pk_Prototype(AST::TypHandle r_typ, std::string var,
 AST::ExprHandle Driver::pk_ExprCall(std::string name, std::vector<AST::ExprHandle> params) {
 
   auto r_typ = this->env[name];
-  AST::Expr::Call call(std::move(name), std::move(params), r_typ);
+  AST::Expr::Call call(std::move(r_typ), std::move(name), std::move(params));
 
   return std::make_shared<AST::Expr::Call>(std::move(call));
 }
@@ -209,7 +209,7 @@ AST::ExprHandle Driver::pk_ExprCall(std::string name) {
 
 AST::ExprHandle Driver::pk_ExprCstI(std::int64_t i) {
   auto typ = this->type_data_handle(AST::Typ::Data::Int);
-  AST::Expr::CstI csti(i, typ);
+  AST::Expr::CstI csti(std::move(typ), i);
 
   return std::make_shared<AST::Expr::CstI>(std::move(csti));
 }
@@ -221,12 +221,17 @@ AST::ExprHandle Driver::pk_ExprIndex(AST::ExprHandle access, AST::ExprHandle ind
 }
 
 AST::ExprHandle Driver::pk_ExprPrim1(AST::Expr::OpUnary op, AST::ExprHandle expr) {
-  AST::Expr::Prim1 prim1(op, std::move(expr));
+
+  auto typ = this->type_resolution_prim1(op, expr);
+  AST::Expr::Prim1 prim1(std::move(typ), op, std::move(expr));
+
   return std::make_shared<AST::Expr::Prim1>(std::move(prim1));
 }
 
-AST::ExprHandle Driver::pk_ExprPrim2(AST::Expr::OpBinary op, AST::ExprHandle a, AST::ExprHandle b) {
-  AST::Expr::Prim2 prim2(op, std::move(a), std::move(b));
+AST::ExprHandle Driver::pk_ExprPrim2(AST::Expr::OpBinary op, AST::ExprHandle lhs, AST::ExprHandle rhs) {
+
+  auto typ = this->type_resolution_prim2(op, lhs, rhs);
+  AST::Expr::Prim2 prim2(std::move(typ), op, std::move(lhs), std::move(rhs));
   return std::make_shared<AST::Expr::Prim2>(std::move(prim2));
 }
 
