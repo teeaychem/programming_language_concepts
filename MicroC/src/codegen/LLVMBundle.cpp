@@ -1,44 +1,39 @@
 #include "LLVMBundle.hpp"
 #include "AST/AST.hpp"
+#include "AST/Node/Expr.hpp"
 
-llvm::Value *LLVMBundle::ensure_loaded(AST::TypHandle typ, llvm::Value *value) {
+llvm::Value *LLVMBundle::access_if(AST::ExprHandle expr, llvm::Value *value) {
 
-  if (typ == nullptr) {
+  if (expr == nullptr) {
     throw std::logic_error("Unable to load without type information");
   }
 
-  switch (typ->kind()) {
-
-  case AST::Typ::Kind::Ptr: {
-    // FIXME: Fresh take likely needed.
-    // Something else is needed to ensure pointers to pointers are fine.
-    // Inspection of AST types should be sufficient.
-    if (!value->getType()->isPointerTy()) {
-      throw std::logic_error("Attempt to load non-pointer into pointer.");
-    }
-    return value;
-
-  } break;
-
-  case AST::Typ::Kind::Int: {
-    if (value->getType()->isPointerTy()) {
-      return this->builder.CreateLoad(typ->llvm(*this), value);
-    } else {
-      return value;
-    }
+  if (value == nullptr) {
+    throw std::logic_error("Unable to load without type information");
   }
 
-  case AST::Typ::Kind::Char: {
-    if (value->getType()->isPointerTy()) {
-      return this->builder.CreateLoad(typ->llvm(*this), value);
-    } else {
-      return value;
+  if (expr->kind() == AST::Expr::Kind::Var) {
+    return this->builder.CreateLoad(expr->type()->llvm(*this), value);
+  }
+
+  else if (expr->kind() == AST::Expr::Kind::Index) {
+    return this->builder.CreateLoad(expr->type()->llvm(*this), value);
+  }
+
+  else if (expr->kind() == AST::Expr::Kind::Prim1) {
+    auto as_prim1 = std::static_pointer_cast<AST::Expr::Prim1>(expr);
+
+    switch (as_prim1->op) {
+    case AST::Expr::OpUnary::AddressOf:
+    case AST::Expr::OpUnary::Dereference: {
+      return this->builder.CreateLoad(expr->type()->llvm(*this), value);
+    } break;
+
+    case AST::Expr::OpUnary::Sub:
+    case AST::Expr::OpUnary::Negation: {
+    } break;
     }
   }
 
-  case AST::Typ::Kind::Void: {
-    return value;
-
-  } break;
-  }
+  return value;
 }

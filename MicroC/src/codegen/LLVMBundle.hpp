@@ -37,7 +37,7 @@ struct LLVMBundle {
   OpsFoundationMap foundation_fn_map{};
 
   // Utils
-  llvm::Value *ensure_loaded(AST::TypHandle typ, llvm::Value *value);
+  llvm::Value *access_if(AST::ExprHandle expr, llvm::Value *value);
 
   LLVMBundle()
       : context(std::make_unique<llvm::LLVMContext>()),
