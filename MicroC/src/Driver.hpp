@@ -1,6 +1,5 @@
 #pragma once
 
-#include <future>
 #include <memory>
 #include <optional>
 #include <stdexcept>
@@ -11,8 +10,10 @@
 #include "AST/Node/Dec.hpp"
 #include "AST/Node/Expr.hpp"
 
+#include "AST/Fmt.hpp"
 #include "AST/Types.hpp"
 #include "codegen/LLVMBundle.hpp"
+
 #include "parser.hpp"
 
 // Give flex the prototype of yylex
@@ -139,6 +140,23 @@ struct Driver {
     }
   }
 
+  // Throws an error detailing an unsupported operation `op` on `lhs` and `rhs`.
+  // A TypHandle is 'returned' in order to help lint failure to return a value in control paths which call this method.
+  AST::TypHandle type_unsupported_binary_op(AST::Expr::OpBinary op, AST::ExprHandle lhs, AST::ExprHandle rhs) {
+    throw std::logic_error(std::format("Unsupported operation {} on {} and {}", op, lhs->type()->to_string(0), rhs->type()->to_string(0)));
+  }
+
+  AST::TypHandle type_resolution_prim2_ptr_expr(AST::Expr::OpBinary op, AST::ExprHandle ptr, AST::ExprHandle expr) {
+    if (expr->typ->kind() == AST::Typ::Kind::Data) {
+      auto as_data = std::static_pointer_cast<AST::Typ::TypData>(expr->type());
+      if (as_data->data == AST::Typ::Data::Int) {
+        return ptr->typ;
+      }
+    }
+
+    return type_unsupported_binary_op(op, ptr, expr);
+  }
+
   AST::TypHandle type_resolution_prim2(AST::Expr::OpBinary op, AST::ExprHandle lhs, AST::ExprHandle rhs) {
 
     switch (op) {
@@ -160,10 +178,40 @@ struct Driver {
     case AST::Expr::OpBinary::Div:
     case AST::Expr::OpBinary::Mod: {
       if (lhs->typ->kind() == rhs->typ->kind()) {
-        return lhs->type();
-      } else {
+        if (lhs->type()->kind() == AST::Typ::Kind::Data) {
+          auto as_data = std::static_pointer_cast<AST::Typ::TypData>(lhs->type());
+
+          switch (as_data->data) {
+
+          case AST::Typ::Data::Int:
+          case AST::Typ::Data::Char: {
+            return lhs->type();
+          }
+
+          case AST::Typ::Data::Void: {
+            return type_unsupported_binary_op(op, lhs, rhs);
+          } break;
+          }
+
+        }
+
+        else {
+          return type_unsupported_binary_op(op, lhs, rhs);
+        }
+
+      }
+
+      else if (lhs->typ->kind() == AST::Typ::Kind::Pointer) {
+        return type_resolution_prim2_ptr_expr(op, lhs, rhs);
+      }
+
+      else if (rhs->typ->kind() == AST::Typ::Kind::Pointer) {
+        return type_resolution_prim2_ptr_expr(op, rhs, lhs);
+      }
+
+      else {
         throw std::logic_error("todo");
-}
+      }
 
     } break;
 
