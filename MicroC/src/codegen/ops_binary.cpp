@@ -1,10 +1,11 @@
-#include "AST/AST.hpp"
+#include <map>
+
 #include "LLVMBundle.hpp"
 #include "llvm/IR/DIBuilder.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
-#include <iostream>
-#include <map>
+
+#include "AST/AST.hpp"
 
 namespace ops_binary {
 
