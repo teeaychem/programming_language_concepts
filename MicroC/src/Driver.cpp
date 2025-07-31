@@ -131,15 +131,19 @@ AST::Expr::OpUnary Driver::to_unary_op(std::string op) {
 // TODO: Clean up moves, as these were implemented without much thought.
 
 // pk typ
+AST::TypHandle Driver::pk_Int() {
+  AST::Typ::TypInt type_int{};
+  return std::make_shared<AST::Typ::TypInt>(std::move(type_int));
+};
 
-AST::TypHandle Driver::pk_Data(AST::Typ::Data data) {
-  AST::Typ::TypData type_data{data};
-  return std::make_shared<AST::Typ::TypData>(std::move(type_data));
-}
+AST::TypHandle Driver::pk_Char() {
+  AST::Typ::TypChar type_char{};
+  return std::make_shared<AST::Typ::TypChar>(std::move(type_char));
+};
 
 AST::TypHandle Driver::pk_Void() {
-  // AST::Typ::TypData type_data{AST::Typ::Data::Void};
-  return this->type_data_handle(AST::Typ::Data::Void);
+  AST::Typ::TypVoid type_void{};
+  return std::make_shared<AST::Typ::TypVoid>(std::move(type_void));
 }
 
 AST::TypHandle Driver::pk_Index(AST::TypHandle typ, std::optional<std::int64_t> size) {
@@ -205,7 +209,7 @@ AST::ExprHandle Driver::pk_ExprCall(std::string name) {
 }
 
 AST::ExprHandle Driver::pk_ExprCstI(std::int64_t i) {
-  auto typ = this->type_data_handle(AST::Typ::Data::Int);
+  auto typ = this->pk_Int();
   AST::Expr::CstI csti(std::move(typ), i);
 
   return std::make_shared<AST::Expr::CstI>(std::move(csti));

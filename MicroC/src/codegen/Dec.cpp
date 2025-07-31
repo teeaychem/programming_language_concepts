@@ -68,10 +68,10 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) const {
     }
   } break;
 
-  case Typ::Kind::Data: {
+  case Typ::Kind::Int: {
 
-    auto as_data = std::static_pointer_cast<Typ::TypData>(this->typ);
-    auto value = as_data->defaultgen(hdl);
+    auto as_int = std::static_pointer_cast<AST::Typ::TypInt>(this->typ);
+    auto value = as_int->defaultgen(hdl);
 
     switch (this->scope) {
 
@@ -94,6 +94,38 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) const {
     }
 
     return value;
+
+  } break;
+
+  case Typ::Kind::Char: {
+
+    auto as_char = std::static_pointer_cast<AST::Typ::TypChar>(this->typ);
+    auto value = as_char->defaultgen(hdl);
+
+    switch (this->scope) {
+
+    case Scope::Local: {
+
+      auto alloca = hdl.builder.CreateAlloca(typ, nullptr, this->name());
+      hdl.builder.CreateStore(value, alloca);
+      hdl.env.vars[this->name()] = alloca;
+
+    } break;
+
+    case Scope::Global: {
+
+      auto alloca = hdl.module->getOrInsertGlobal(this->name(), typ);
+      GlobalVariable *globalVar = hdl.module->getNamedGlobal(this->name());
+      globalVar->setInitializer(value);
+      hdl.env.vars[this->name()] = globalVar;
+
+    } break;
+    }
+
+    return value;
+  }
+  case Typ::Kind::Void: {
+    throw std::logic_error("Creation of variable with void type");
 
   } break;
 
@@ -236,4 +268,3 @@ Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) const {
 
   return ConstantInt::get(Type::getInt64Ty(*hdl.context), 2020);
 }
-

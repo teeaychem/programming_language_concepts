@@ -80,34 +80,6 @@ struct Driver {
 
   // types
 
-  AST::TypHandle type_data_handle(AST::Typ::Data data) {
-
-    switch (data) {
-
-    case AST::Typ::Data::Int: {
-
-      auto typ_int = AST::Typ::TypData(AST::Typ::Data::Int);
-      std::shared_ptr<AST::Typ::TypData> static type_int = std::make_shared<AST::Typ::TypData>(typ_int);
-
-      return type_int;
-    } break;
-
-    case AST::Typ::Data::Char: {
-      auto typ_char = AST::Typ::TypData(AST::Typ::Data::Char);
-      std::shared_ptr<AST::Typ::TypData> static type_char = std::make_shared<AST::Typ::TypData>(typ_char);
-
-      return type_char;
-    } break;
-
-    case AST::Typ::Data::Void: {
-      auto typ_void = AST::Typ::TypData(AST::Typ::Data::Void);
-      std::shared_ptr<AST::Typ::TypData> type_void = std::make_shared<AST::Typ::TypData>(typ_void);
-
-      return type_void;
-    } break;
-    }
-  }
-
   // Returns the type which results from applying `op` to `expr`.
   AST::TypHandle type_resolution_prim1(AST::Expr::OpUnary op, AST::ExprHandle expr) {
 
@@ -144,11 +116,8 @@ struct Driver {
   }
 
   AST::TypHandle type_resolution_prim2_ptr_expr(AST::Expr::OpBinary op, AST::ExprHandle ptr, AST::ExprHandle expr) {
-    if (expr->type()->kind() == AST::Typ::Kind::Data) {
-      auto as_data = std::static_pointer_cast<AST::Typ::TypData>(expr->type());
-      if (as_data->data == AST::Typ::Data::Int) {
-        return ptr->type();
-      }
+    if (expr->type()->kind() == AST::Typ::Kind::Int) {
+      return ptr->type();
     }
 
     return type_unsupported_binary_op(op, ptr, expr);
@@ -175,27 +144,15 @@ struct Driver {
     case AST::Expr::OpBinary::Div:
     case AST::Expr::OpBinary::Mod: {
       if (lhs->type()->kind() == rhs->type()->kind()) {
-        if (lhs->type()->kind() == AST::Typ::Kind::Data) {
-          auto as_data = std::static_pointer_cast<AST::Typ::TypData>(lhs->type());
-
-          switch (as_data->data) {
-
-          case AST::Typ::Data::Int:
-          case AST::Typ::Data::Char: {
-            return lhs->type();
-          }
-
-          case AST::Typ::Data::Void: {
-            return type_unsupported_binary_op(op, lhs, rhs);
-          } break;
-          }
-
-        }
-
-        else {
+        if (lhs->type()->kind() == AST::Typ::Kind::Int) {
+          return lhs->type();
+        } else if (lhs->type()->kind() == AST::Typ::Kind::Char) {
+          return lhs->type();
+        } else if (lhs->type()->kind() == AST::Typ::Kind::Void) {
+          return type_unsupported_binary_op(op, lhs, rhs);
+        } else {
           return type_unsupported_binary_op(op, lhs, rhs);
         }
-
       }
 
       else if (lhs->type()->kind() == AST::Typ::Kind::Pointer) {
@@ -207,9 +164,9 @@ struct Driver {
       }
 
       else {
-        throw std::logic_error("todo");
-      }
 
+        throw std::logic_error(std::format("todo: type resolution: {} {}", lhs->type()->to_string(0), rhs->type()->to_string(0)));
+      }
     } break;
 
     case AST::Expr::OpBinary::Eq:
@@ -220,13 +177,13 @@ struct Driver {
     case AST::Expr::OpBinary::Geq: {
       type_ensure_match(lhs, rhs);
 
-      return type_data_handle(AST::Typ::Data::Int);
+      return this->pk_Int();
     } break;
 
     case AST::Expr::OpBinary::And:
     case AST::Expr::OpBinary::Or: {
 
-      return type_data_handle(AST::Typ::Data::Int);
+      return this->pk_Int();
     } break;
     }
   }
@@ -239,7 +196,9 @@ struct Driver {
 
   // pk typ
 
-  AST::TypHandle pk_Data(AST::Typ::Data data);
+  AST::TypHandle pk_Int();
+
+  AST::TypHandle pk_Char();
 
   AST::TypHandle pk_Void();
 

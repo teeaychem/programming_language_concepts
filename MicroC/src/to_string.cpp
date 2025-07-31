@@ -20,15 +20,23 @@ size_t const INDENT_SIZE = 2;
 
 // Types
 
-std::string AST::Typ::TypData::to_string(size_t indent) const {
-  return std::format("{}", data);
+std::string AST::Typ::TypInt::to_string(size_t indent) const {
+  return "int";
+}
+
+std::string AST::Typ::TypChar::to_string(size_t indent) const {
+  return "char";
+}
+
+std::string AST::Typ::TypVoid::to_string(size_t indent) const {
+  return "void";
 }
 
 std::string AST::Typ::TypIndex::to_string(size_t indent) const {
   if (this->size.has_value()) {
-    return std::format("{}[{}]", this->typ->to_string(indent), size.value());
+    return std::format("{}[{}]", this->destination->to_string(indent), size.value());
   } else {
-    return std::format("{}[]", this->typ->to_string(indent));
+    return std::format("{}[]", this->destination->to_string(indent));
   }
 }
 
