@@ -151,9 +151,11 @@ AST::TypHandle Driver::pk_Index(AST::TypHandle typ, std::optional<std::int64_t> 
   return std::make_shared<AST::Typ::TypIndex>(std::move(type_index));
 }
 
-AST::TypHandle Driver::pk_Ptr(AST::TypHandle of) {
-  AST::Typ::TypPointer type_pointer(std::move(of));
-  return std::make_shared<AST::Typ::TypPointer>(std::move(type_pointer));
+AST::TypHandle Driver::pk_Ptr(AST::TypHandle typ) {
+  AST::Typ::TypIndex type_index(std::move(typ), std::nullopt);
+  return std::make_shared<AST::Typ::TypIndex>(std::move(type_index));
+  // AST::Typ::TypPointer type_pointer(std::move(of));
+  // return std::make_shared<AST::Typ::TypPointer>(std::move(type_pointer));
 }
 
 // pk Dec

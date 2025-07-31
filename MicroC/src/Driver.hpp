@@ -155,11 +155,11 @@ struct Driver {
         }
       }
 
-      else if (lhs->type()->kind() == AST::Typ::Kind::Pointer) {
+      else if (lhs->type()->kind() == AST::Typ::Kind::Array) {
         return type_resolution_prim2_ptr_expr(op, lhs, rhs);
       }
 
-      else if (rhs->type()->kind() == AST::Typ::Kind::Pointer) {
+      else if (rhs->type()->kind() == AST::Typ::Kind::Array) {
         return type_resolution_prim2_ptr_expr(op, rhs, lhs);
       }
 
