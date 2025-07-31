@@ -132,7 +132,7 @@ struct Driver {
   }
 
   void type_ensure_match(AST::ExprHandle lhs, AST::ExprHandle rhs) {
-    if (lhs->typ->kind() != rhs->typ->kind()) {
+    if (lhs->type()->kind() != rhs->type()->kind()) {
       throw std::logic_error("Conflicting types");
     }
   }
@@ -144,10 +144,10 @@ struct Driver {
   }
 
   AST::TypHandle type_resolution_prim2_ptr_expr(AST::Expr::OpBinary op, AST::ExprHandle ptr, AST::ExprHandle expr) {
-    if (expr->typ->kind() == AST::Typ::Kind::Data) {
+    if (expr->type()->kind() == AST::Typ::Kind::Data) {
       auto as_data = std::static_pointer_cast<AST::Typ::TypData>(expr->type());
       if (as_data->data == AST::Typ::Data::Int) {
-        return ptr->typ;
+        return ptr->type();
       }
     }
 
@@ -174,7 +174,7 @@ struct Driver {
     case AST::Expr::OpBinary::Mul:
     case AST::Expr::OpBinary::Div:
     case AST::Expr::OpBinary::Mod: {
-      if (lhs->typ->kind() == rhs->typ->kind()) {
+      if (lhs->type()->kind() == rhs->type()->kind()) {
         if (lhs->type()->kind() == AST::Typ::Kind::Data) {
           auto as_data = std::static_pointer_cast<AST::Typ::TypData>(lhs->type());
 
@@ -198,11 +198,11 @@ struct Driver {
 
       }
 
-      else if (lhs->typ->kind() == AST::Typ::Kind::Pointer) {
+      else if (lhs->type()->kind() == AST::Typ::Kind::Pointer) {
         return type_resolution_prim2_ptr_expr(op, lhs, rhs);
       }
 
-      else if (rhs->typ->kind() == AST::Typ::Kind::Pointer) {
+      else if (rhs->type()->kind() == AST::Typ::Kind::Pointer) {
         return type_resolution_prim2_ptr_expr(op, rhs, lhs);
       }
 

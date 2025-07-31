@@ -57,19 +57,22 @@ typedef std::map<std::string, AST::TypHandle> Env; // Vars have declared type, f
 
 namespace AST {
 
+// Node kinds
 enum class Kind {
-  Access,
   Expr,
   Stmt,
   Dec,
 };
 
 struct NodeT {
-  virtual llvm::Value *codegen(LLVMBundle &hdl) const = 0;
+  // The kind of node.
+  virtual AST::Kind kind_node() const = 0;
 
-  virtual AST::Kind kind_abstract() const = 0;
+  // Generates LLVM IR and returns the resulting LLVM value.
+  virtual llvm::Value *codegen(LLVMBundle &bundle) const = 0;
+
+  // A string representation of the node, indented to `indent`.
   virtual std::string to_string(size_t indent) const = 0;
-  //
 
   virtual ~NodeT() = default;
 };
@@ -82,7 +85,18 @@ struct NodeT {
 namespace AST {
 
 namespace Expr {
-// struct Assign;
+
+// Expression node kinds
+enum class Kind {
+  Call,
+  CstI,
+  Index,
+  Prim1,
+  Prim2,
+  Var,
+};
+
+// Forward declaration of expression nodes
 struct Call;
 struct CstI;
 struct Index;
@@ -90,6 +104,7 @@ struct Prim1;
 struct Prim2;
 struct Var;
 
+// Permitted unary operations
 enum class OpUnary {
   AddressOf,
   Dereference,
@@ -97,6 +112,7 @@ enum class OpUnary {
   Negation,
 };
 
+// Permitted binary operations
 enum class OpBinary {
   Assign,
   AssignAdd,
@@ -119,36 +135,38 @@ enum class OpBinary {
   Or
 };
 
-enum class Kind {
-  // Assign,
-  Call,
-  CstI,
-  Index,
-  Prim1,
-  Prim2,
-  Var,
-};
 } // namespace Expr
 
 struct ExprT : NodeT {
+
+protected:
+  // Each expression node is typed, and should be initialised with its type.
   TypHandle typ{nullptr};
 
-  AST::Kind kind_abstract() const override { return AST::Kind::Expr; }
-  virtual Expr::Kind kind() const = 0;
+public:
+  AST::Kind kind_node() const override { return AST::Kind::Expr; }
+
+  // Returns the type of an expression.
   AST::TypHandle type() const {
     if (!this->typ) {
       throw std::logic_error(std::format("No type for {}", this->to_string(0)));
     }
     return this->typ;
   };
-  llvm::Value *codegen_eval_true(LLVMBundle &hdl) const;
-  llvm::Value *codegen_eval_false(LLVMBundle &hdl) const;
+
+  // LLVM IR codegen which returns true if this expression evaluates to true and false otherwise.
+  llvm::Value *codegen_eval_true(LLVMBundle &bundle) const;
+  // LLVM IR codegen which returns false if this expression evaluates to true and false otherwise.
+  llvm::Value *codegen_eval_false(LLVMBundle &bundle) const;
+
+  virtual Expr::Kind kind() const = 0;
 };
 
 // Statements
 
 namespace Stmt {
 
+// Statement node kinds
 enum class Kind {
   Block,
   Declaration,
@@ -158,6 +176,7 @@ enum class Kind {
   While
 };
 
+// Forward declaration of statement nodes
 struct Block;
 struct Declaration;
 struct Expr;
@@ -167,7 +186,7 @@ struct While;
 } // namespace Stmt
 
 struct StmtT : NodeT {
-  AST::Kind kind_abstract() const override { return AST::Kind::Stmt; }
+  AST::Kind kind_node() const override { return AST::Kind::Stmt; }
   virtual Stmt::Kind kind() const = 0;
   virtual bool returns() const = 0;
   virtual size_t early_returns() const = 0;
@@ -189,7 +208,7 @@ struct Prototype;
 } // namespace Dec
 
 struct DecT : NodeT {
-  AST::Kind kind_abstract() const override { return AST::Kind::Dec; }
+  AST::Kind kind_node() const override { return AST::Kind::Dec; }
   virtual Dec::Kind kind() const = 0;
   virtual AST::TypHandle type() const = 0;
   virtual std::string name() const = 0;
