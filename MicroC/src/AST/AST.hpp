@@ -15,38 +15,42 @@ namespace Typ {
 
 enum class Kind {
   Array,   // An array.
-  Data,    // Some instance of Data (further specified).
+  Int,     // An integer.
+  Char,    // A character.
+  Void,    // Unspecified, and requires completion to be a usable type.
   Pointer, // A pointer.
 };
 
-enum class Data {
-  Int,  // An integer.
-  Char, // A character.
-  Void, // Unspecified, and requires completion to be a usable type.
-};
-
 struct TypIndex;
-struct TypData;
+struct TypInt;
+struct TypChar;
+struct TypVoid;
 struct TypPointer;
 
 } // namespace Typ
 
+struct TypT;
+typedef std::shared_ptr<TypT> TypHandle;
+
 struct TypT {
   // Generate the representation of this type.
   virtual llvm::Type *llvm(LLVMBundle &hdl) const = 0;
+
   // The kind of this type, corresponding to a struct.
   virtual Typ::Kind kind() const = 0;
+
   // String representation.
   virtual std::string to_string(size_t indent) const = 0;
+
   // Dereference this type, may panic if dereference is not possible.
   virtual std::shared_ptr<TypT> deref() const = 0;
+
   // Completes the type, may throw if already complete.
-  virtual void complete_data_unsafe(AST::Typ::Data d_typ) = 0;
+  virtual TypHandle complete_data(TypHandle d_typ) = 0;
 
   virtual ~TypT() = default;
 };
 
-typedef std::shared_ptr<TypT> TypHandle;
 typedef std::shared_ptr<Typ::TypIndex> TypIndexHandle;
 
 } // namespace AST

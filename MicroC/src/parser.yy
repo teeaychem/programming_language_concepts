@@ -99,7 +99,7 @@
 %nterm <std::vector<AST::ExprHandle>> Exprs
 %nterm <std::vector<AST::ExprHandle>> ExprsNE
 
-%nterm <AST::Typ::Data> DataType
+%nterm <AST::TypHandle> DataType
 
 %nterm <AST::PrototypeHandle> FnPrototype
 
@@ -126,8 +126,8 @@ AtomicConst:
 
 
 DataType:
-    INT   { $$ = AST::Typ::Data::Int;  }
-  | CHAR  { $$ = AST::Typ::Data::Char; }
+    INT   { $$ = driver.pk_Int();  }
+  | CHAR  { $$ = driver.pk_Char(); }
 ;
 
 
@@ -186,7 +186,7 @@ FnPrototype:
     }
   | DataType NAME LPAR Paramdecs RPAR  {
       driver.add_to_env($4);
-      auto p = driver.pk_Prototype(driver.pk_Data($1), $2, $4);
+      auto p = driver.pk_Prototype($1, $2, $4);
       $$ = p;
     }
 ;
@@ -266,7 +266,7 @@ Topdec:
 
 
 Vardec:
-    DataType Vardesc  { $2.second->complete_data_unsafe($1); $$ = $2; }
+    DataType Vardesc  { $$ = std::make_pair($2.first, $2.second->complete_data($1)); }
 ;
 
 

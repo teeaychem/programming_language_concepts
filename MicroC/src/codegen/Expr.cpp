@@ -280,19 +280,19 @@ Value *AST::Expr::Prim2::codegen(LLVMBundle &bundle) const {
     return OpBinaryCodegen::builder_assign(bundle, this->lhs, this->rhs);
   } break;
   case OpBinary::AssignAdd: {
-    throw std::logic_error("todo");
+    throw std::logic_error("todo: +=");
   } break;
   case OpBinary::AssignSub: {
-    throw std::logic_error("todo");
+    throw std::logic_error("todo: -=");
   } break;
   case OpBinary::AssignMul: {
-    throw std::logic_error("todo");
+    throw std::logic_error("todo: *=");
   } break;
   case OpBinary::AssignDiv: {
-    throw std::logic_error("todo");
+    throw std::logic_error("todo: /=");
   } break;
   case OpBinary::AssignMod: {
-    throw std::logic_error("todo");
+    throw std::logic_error("todo: %=");
   } break;
   case OpBinary::Add: {
     return OpBinaryCodegen::builder_add(bundle, this->lhs, this->rhs);

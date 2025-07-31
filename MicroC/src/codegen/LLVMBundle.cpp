@@ -18,13 +18,24 @@ llvm::Value *LLVMBundle::ensure_loaded(AST::TypHandle typ, llvm::Value *value) {
     return value;
   } break;
 
-  case AST::Typ::Kind::Data: {
-
+  case AST::Typ::Kind::Int: {
     if (value->getType()->isPointerTy()) {
       return this->builder.CreateLoad(typ->llvm(*this), value);
     } else {
       return value;
     }
+  }
+
+  case AST::Typ::Kind::Char: {
+    if (value->getType()->isPointerTy()) {
+      return this->builder.CreateLoad(typ->llvm(*this), value);
+    } else {
+      return value;
+    }
+  }
+
+  case AST::Typ::Kind::Void: {
+    return value;
 
   } break;
 
