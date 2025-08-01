@@ -45,7 +45,7 @@ std::string AST::Typ::Ptr::to_string(size_t indent) const {
 // Dec
 
 std::string AST::Dec::Fn::to_string(size_t indent) const {
-  return std::format("{} {}", this->prototype->to_string(0), this->body->to_string(indent));
+  return std::format("{} {}", this->prototype->to_string(), this->body->to_string(indent));
 }
 
 std::string AST::Dec::Prototype::to_string(size_t indent) const {

@@ -33,7 +33,7 @@ public:
   std::string name() const override { return this->id; };
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
-  std::string to_string(size_t indent) const override;
+  std::string to_string(size_t indent = 0) const override;
 };
 
 // Prototype
@@ -57,7 +57,7 @@ public:
   TypHandle return_type() const { return r_typ; };
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
-  std::string to_string(size_t indent) const override;
+  std::string to_string(size_t indent = 0) const override;
 };
 
 // Fn
@@ -76,7 +76,7 @@ struct Fn : DecT {
   TypHandle return_type() const { return prototype->return_type(); };
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
-  std::string to_string(size_t indent) const override;
+  std::string to_string(size_t indent = 0) const override;
 };
 
 } // namespace Dec

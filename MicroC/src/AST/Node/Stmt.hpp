@@ -23,7 +23,7 @@ struct Block : StmtT {
   size_t early_returns() const override { return this->block.early_returns; };
   size_t pass_throughs() const override { return this->block.pass_throughs; };
 
-  std::string to_string(size_t indent) const override;
+  std::string to_string(size_t indent = 0) const override;
   llvm::Value *codegen(LLVMBundle &hdl) const override;
 };
 
@@ -40,7 +40,7 @@ struct Declaration : StmtT {
   size_t early_returns() const override { return 0; };
   size_t pass_throughs() const override { return 0; };
 
-  std::string to_string(size_t indent) const override;
+  std::string to_string(size_t indent = 0) const override;
   llvm::Value *codegen(LLVMBundle &hdl) const override;
 };
 
@@ -57,7 +57,7 @@ struct Expr : StmtT {
   size_t early_returns() const override { return 0; };
   size_t pass_throughs() const override { return 0; };
 
-  std::string to_string(size_t indent) const override;
+  std::string to_string(size_t indent = 0) const override;
   llvm::Value *codegen(LLVMBundle &hdl) const override;
 };
 
@@ -78,7 +78,7 @@ struct If : StmtT {
   size_t early_returns() const override { return this->stmt_then->early_returns() + this->stmt_else->early_returns(); };
   size_t pass_throughs() const override { return this->stmt_then->pass_throughs() + this->stmt_else->pass_throughs(); };
 
-  std::string to_string(size_t indent) const override;
+  std::string to_string(size_t indent = 0) const override;
   llvm::Value *codegen(LLVMBundle &hdl) const override;
 };
 
@@ -95,7 +95,7 @@ struct Return : StmtT {
   size_t early_returns() const override { return 0; };
   size_t pass_throughs() const override { return 0; };
 
-  std::string to_string(size_t indent) const override;
+  std::string to_string(size_t indent = 0) const override;
   llvm::Value *codegen(LLVMBundle &hdl) const override;
 };
 
@@ -114,7 +114,7 @@ struct While : StmtT {
   size_t early_returns() const override { return this->body->early_returns(); };
   size_t pass_throughs() const override { return this->body->pass_throughs(); };
 
-  std::string to_string(size_t indent) const override;
+  std::string to_string(size_t indent = 0) const override;
   llvm::Value *codegen(LLVMBundle &hdl) const override;
 };
 

@@ -41,7 +41,7 @@ std::string Driver::prg_string() {
   std::stringstream prg_ss{};
   prg_ss << "\n\n";
   for (auto &dec : prg) {
-    prg_ss << dec->to_string(0);
+    prg_ss << dec->to_string();
     prg_ss << "\n\n";
   }
 

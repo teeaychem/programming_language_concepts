@@ -29,7 +29,7 @@ struct Call : ExprT {
   }
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
-  std::string to_string(size_t indent) const override;
+  std::string to_string(size_t indent = 0) const override;
 };
 
 // CstI
@@ -44,7 +44,7 @@ struct CstI : ExprT {
   Expr::Kind kind() const override { return Expr::Kind::CstI; }
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
-  std::string to_string(size_t indent) const override;
+  std::string to_string(size_t indent = 0) const override;
 };
 
 // Index
@@ -62,7 +62,7 @@ struct Index : ExprT {
   Expr::Kind kind() const override { return Expr::Kind::Index; }
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
-  std::string to_string(size_t indent) const override;
+  std::string to_string(size_t indent = 0) const override;
 };
 
 // Prim1
@@ -80,7 +80,7 @@ struct Prim1 : ExprT {
   Expr::Kind kind() const override { return Expr::Kind::Prim1; }
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
-  std::string to_string(size_t indent) const override;
+  std::string to_string(size_t indent = 0) const override;
 };
 
 // Prim2
@@ -100,7 +100,7 @@ struct Prim2 : ExprT {
   Expr::Kind kind() const override { return Expr::Kind::Prim2; }
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
-  std::string to_string(size_t indent) const override;
+  std::string to_string(size_t indent = 0) const override;
 };
 
 struct Var : ExprT {
@@ -113,7 +113,7 @@ struct Var : ExprT {
   Expr::Kind kind() const override { return Expr::Kind::Var; }
 
   llvm::Value *codegen(LLVMBundle &hdl) const override;
-  std::string to_string(size_t indent) const override;
+  std::string to_string(size_t indent = 0) const override;
 };
 
 } // namespace Expr
