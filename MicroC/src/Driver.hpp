@@ -116,7 +116,7 @@ struct Driver {
   }
 
   AST::TypHandle type_resolution_prim2_ptr_expr(AST::Expr::OpBinary op, AST::ExprHandle ptr, AST::ExprHandle expr) {
-    if (expr->type()->kind() == AST::Typ::Kind::Int) {
+    if (expr->evals_to(AST::Typ::Kind::Int)) {
       return ptr->type();
     }
 
@@ -144,22 +144,22 @@ struct Driver {
     case AST::Expr::OpBinary::Div:
     case AST::Expr::OpBinary::Mod: {
       if (lhs->type()->kind() == rhs->type()->kind()) {
-        if (lhs->type()->kind() == AST::Typ::Kind::Int) {
+        if (lhs->evals_to(AST::Typ::Kind::Int)) {
           return lhs->type();
-        } else if (lhs->type()->kind() == AST::Typ::Kind::Char) {
+        } else if (lhs->evals_to(AST::Typ::Kind::Char)) {
           return lhs->type();
-        } else if (lhs->type()->kind() == AST::Typ::Kind::Void) {
+        } else if (lhs->evals_to(AST::Typ::Kind::Void)) {
           return type_unsupported_binary_op(op, lhs, rhs);
         } else {
           return type_unsupported_binary_op(op, lhs, rhs);
         }
       }
 
-      else if (lhs->type()->kind() == AST::Typ::Kind::Ptr) {
+      else if (lhs->evals_to(AST::Typ::Kind::Ptr)) {
         return type_resolution_prim2_ptr_expr(op, lhs, rhs);
       }
 
-      else if (rhs->type()->kind() == AST::Typ::Kind::Ptr) {
+      else if (rhs->evals_to(AST::Typ::Kind::Ptr)) {
         return type_resolution_prim2_ptr_expr(op, rhs, lhs);
       }
 

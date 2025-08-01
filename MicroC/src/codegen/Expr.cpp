@@ -164,11 +164,11 @@ llvm::Value *builder_add(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 
   case AST::Typ::Kind::Ptr: {
 
-    if (lhs_type->kind() == AST::Typ::Kind::Ptr && rhs_type->kind() == AST::Typ::Kind::Int) {
+    if (expr->lhs->evals_to(AST::Typ::Kind::Ptr) && expr->rhs->evals_to(AST::Typ::Kind::Int)) {
       return builder_ptr_add(bundle, expr->lhs, expr->rhs);
     }
 
-    else if (rhs_type->kind() == AST::Typ::Kind::Ptr && lhs_type->kind() == AST::Typ::Kind::Int) {
+    else if (expr->lhs->evals_to(AST::Typ::Kind::Int) && expr->rhs->evals_to(AST::Typ::Kind::Ptr)) {
       return builder_ptr_add(bundle, expr->rhs, expr->lhs);
     }
 
@@ -223,11 +223,11 @@ llvm::Value *builder_sub(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 
   case AST::Typ::Kind::Ptr: {
 
-    if (lhs_type->kind() == AST::Typ::Kind::Ptr && rhs_type->kind() == AST::Typ::Kind::Int) {
+    if (expr->lhs->evals_to(AST::Typ::Kind::Ptr) && expr->rhs->evals_to(AST::Typ::Kind::Int)) {
       return builder_ptr_sub(bundle, expr->lhs, expr->rhs);
     }
 
-    else if (rhs_type->kind() == AST::Typ::Kind::Ptr && lhs_type->kind() == AST::Typ::Kind::Int) {
+    else if (expr->lhs->evals_to(AST::Typ::Kind::Int) && expr->rhs->evals_to(AST::Typ::Kind::Ptr)) {
       return builder_ptr_sub(bundle, expr->rhs, expr->lhs);
     }
 
