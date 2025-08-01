@@ -1,3 +1,4 @@
+#include <iostream>
 #include <memory>
 #include <stdexcept>
 #include <vector>
@@ -141,10 +142,20 @@ llvm::Value *builder_assign(LLVMBundle &bundle, AST::ExprHandle destination, AST
   return value_val;
 }
 
-llvm::Value *builder_add(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
+// Codegen for ptr + int
+llvm::Value *builder_ptr_add(LLVMBundle &bundle, AST::ExprHandle ptr, AST::ExprHandle val) {
 
-  llvm::Value *lhs_val = expr->lhs->codegen(bundle);
-  llvm::Value *rhs_val = expr->rhs->codegen(bundle);
+  auto ptr_typ = ptr->type()->deref()->llvm(bundle);
+  auto ptr_elem = bundle.access_if(val, val->codegen(bundle));
+
+  auto ptr_sub = bundle.builder.CreateGEP(ptr_typ,
+                                          ptr->codegen(bundle),
+                                          ArrayRef<Value *>(ptr_elem));
+
+  return ptr_sub;
+}
+
+llvm::Value *builder_add(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 
   auto lhs_type = expr->lhs->type();
   auto rhs_type = expr->rhs->type();
@@ -154,19 +165,11 @@ llvm::Value *builder_add(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
   case AST::Typ::Kind::Ptr: {
 
     if (lhs_type->kind() == AST::Typ::Kind::Ptr && rhs_type->kind() == AST::Typ::Kind::Int) {
-
-      rhs_val = bundle.access_if(expr->rhs, rhs_val);
-      auto ptr = bundle.builder.CreateGEP(lhs_type->deref()->llvm(bundle), lhs_val, ArrayRef<Value *>(rhs_val));
-      return ptr;
-
+      return builder_ptr_add(bundle, expr->lhs, expr->rhs);
     }
 
     else if (rhs_type->kind() == AST::Typ::Kind::Ptr && lhs_type->kind() == AST::Typ::Kind::Int) {
-
-      lhs_val = bundle.access_if(expr->lhs, lhs_val);
-      auto ptr = bundle.builder.CreateGEP(rhs_type->deref()->llvm(bundle), rhs_val, ArrayRef<Value *>(lhs_val));
-      return ptr;
-
+      return builder_ptr_add(bundle, expr->rhs, expr->lhs);
     }
 
     else {
@@ -175,6 +178,9 @@ llvm::Value *builder_add(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
   }
 
   case AST::Typ::Kind::Int: {
+
+    llvm::Value *lhs_val = expr->lhs->codegen(bundle);
+    llvm::Value *rhs_val = expr->rhs->codegen(bundle);
 
     lhs_val = bundle.access_if(expr->lhs, lhs_val);
     rhs_val = bundle.access_if(expr->rhs, rhs_val);
@@ -193,15 +199,63 @@ llvm::Value *builder_add(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
   }
 }
 
+// Codegen for ptr - int
+llvm::Value *builder_ptr_sub(LLVMBundle &bundle, AST::ExprHandle ptr, AST::ExprHandle val) {
+
+  auto val_value = bundle.access_if(val, val->codegen(bundle));
+
+  auto ptr_typ = ptr->type()->deref()->llvm(bundle);
+  auto ptr_elem = bundle.builder.CreateNeg(val_value);
+
+  auto ptr_sub = bundle.builder.CreateGEP(ptr_typ,
+                                          ptr->codegen(bundle),
+                                          ArrayRef<Value *>(ptr_elem));
+
+  return ptr_sub;
+}
+
 llvm::Value *builder_sub(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 
-  llvm::Value *lhs_val = expr->lhs->codegen(bundle);
-  llvm::Value *rhs_val = expr->rhs->codegen(bundle);
+  auto lhs_type = expr->lhs->type();
+  auto rhs_type = expr->rhs->type();
 
-  lhs_val = bundle.access_if(expr->lhs, lhs_val);
-  rhs_val = bundle.access_if(expr->rhs, rhs_val);
+  switch (expr->type()->kind()) {
 
-  return bundle.builder.CreateSub(lhs_val, rhs_val, "op.sub");
+  case AST::Typ::Kind::Ptr: {
+
+    if (lhs_type->kind() == AST::Typ::Kind::Ptr && rhs_type->kind() == AST::Typ::Kind::Int) {
+      return builder_ptr_sub(bundle, expr->lhs, expr->rhs);
+    }
+
+    else if (rhs_type->kind() == AST::Typ::Kind::Ptr && lhs_type->kind() == AST::Typ::Kind::Int) {
+      return builder_ptr_sub(bundle, expr->rhs, expr->lhs);
+    }
+
+    else {
+      throw std::logic_error("Incompatible targets for pointer arithmetic");
+    }
+  }
+
+  case AST::Typ::Kind::Int: {
+
+    llvm::Value *lhs_val = expr->lhs->codegen(bundle);
+    llvm::Value *rhs_val = expr->rhs->codegen(bundle);
+
+    lhs_val = bundle.access_if(expr->lhs, lhs_val);
+    rhs_val = bundle.access_if(expr->rhs, rhs_val);
+
+    return bundle.builder.CreateSub(lhs_val, rhs_val, "op.sub");
+
+  } break;
+
+  case AST::Typ::Kind::Char: {
+    throw std::logic_error("Unsupported op");
+  } break;
+
+  case AST::Typ::Kind::Void: {
+    throw std::logic_error("Unsupported op");
+  } break;
+  }
 }
 
 llvm::Value *builder_mul(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
