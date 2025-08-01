@@ -2,14 +2,14 @@
 #include "AST/AST.hpp"
 #include "AST/Node/Expr.hpp"
 
-llvm::Value *LLVMBundle::access_if(AST::ExprHandle expr, llvm::Value *value) {
+llvm::Value *LLVMBundle::access(AST::ExprHandle expr, llvm::Value *value) {
 
   if (expr == nullptr) {
     throw std::logic_error("Unable to load without type information");
   }
 
   if (value == nullptr) {
-    throw std::logic_error("Unable to load without type information");
+    throw std::logic_error("Unable to load without value information");
   }
 
   if (expr->kind() == AST::Expr::Kind::Var) {
@@ -36,4 +36,8 @@ llvm::Value *LLVMBundle::access_if(AST::ExprHandle expr, llvm::Value *value) {
   }
 
   return value;
+}
+
+llvm::Value *LLVMBundle::access(AST::ExprHandle expr) {
+  return this->access(expr, expr->codegen(*this));
 }
