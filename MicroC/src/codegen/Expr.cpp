@@ -89,14 +89,14 @@ Value *AST::Expr::Prim1::codegen(LLVMBundle &bundle) const {
     llvm::Value *expr_val = expr->codegen(bundle);
     expr_val = bundle.access_if(expr, expr_val);
 
-    return bundle.builder.CreateMul(llvm::ConstantInt::get(expr_val->getType(), -1), expr_val, "sub");
+    return bundle.builder.CreateNeg(expr_val, "op.sub");
   } break;
 
   case OpUnary::Negation: {
     llvm::Value *expr_val = expr->codegen(bundle);
     expr_val = bundle.access_if(expr, expr_val);
 
-    return bundle.builder.CreateNot(expr_val);
+    return bundle.builder.CreateNot(expr_val, "op.neg");
   } break;
   }
 }
