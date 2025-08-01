@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
@@ -35,7 +36,12 @@ Value *AST::Expr::Call::codegen(LLVMBundle &bundle) const {
   std::vector<Value *> arg_values{};
 
   if (callee_f == nullptr) {
-    throw std::logic_error(std::format("Call to unknown function: {}", this->name));
+    auto it = bundle.foundation_fn_map.find(this->name);
+    if (it != bundle.foundation_fn_map.end()) {
+      callee_f = it->second->codegen(bundle);
+    } else {
+      throw std::logic_error(std::format("Call to unknown function: {}", this->name));
+    }
   } else if (callee_f->arg_size() != this->arguments.size()) {
     throw std::logic_error(std::format("Argument size mismatch."));
   }

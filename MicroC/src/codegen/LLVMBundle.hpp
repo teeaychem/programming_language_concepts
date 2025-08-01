@@ -10,12 +10,26 @@
 
 #include "AST/AST.hpp"
 
+// A primative function, linked to a module (somehow)
+struct FnPrimative {
+  // The name of the function, used in both source and IR
+  std::string name;
+
+  // The return type of the function
+  AST::TypHandle return_type;
+
+  // LLVM IR codegen for the function.
+  virtual llvm::Function *codegen(LLVMBundle &bundle) const = 0;
+
+  virtual int64_t global_map_addr() const = 0;
+};
+
 typedef llvm::Function *OpFoundation;
-typedef std::map<const std::string, OpFoundation> OpsFoundationMap;
+typedef std::map<const std::string, std::shared_ptr<FnPrimative>> OpPrimativeMap;
 
 struct LLVMBundle;
 
-void extend_ops_foundation(LLVMBundle &bundle, OpsFoundationMap &op_map);
+void extend_ops_foundation(LLVMBundle &bundle);
 
 struct LLVMEnv {
   std::map<std::string, llvm::Value *> vars{};
@@ -34,7 +48,7 @@ struct LLVMBundle {
   llvm::Value *return_alloca{nullptr};
 
   // Maps to fn builders
-  OpsFoundationMap foundation_fn_map{};
+  OpPrimativeMap foundation_fn_map{};
 
   // Utils
   llvm::Value *access(AST::ExprHandle expr, llvm::Value *value);
@@ -45,7 +59,7 @@ struct LLVMBundle {
         module(std::make_unique<llvm::Module>("microC", *context)),
         builder(llvm::IRBuilder<>(*context)) {
 
-    extend_ops_foundation(*this, this->foundation_fn_map);
+    extend_ops_foundation(*this);
   };
 };
 

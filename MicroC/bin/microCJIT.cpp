@@ -26,15 +26,6 @@
 #include <llvm/IR/GlobalVariable.h>
 
 // External `foundation` fns
-extern "C" {
-void printi(int64_t i) {
-  printf("%lld ", i);
-}
-
-void println() {
-  printf("\n");
-}
-}
 
 int main(int argc, char *argv[]) {
   llvm::InitializeNativeTarget();
@@ -92,8 +83,12 @@ int main(int argc, char *argv[]) {
                                                 .setErrorStr(&err_str)
                                                 .create();
 
-  execution_engine->addGlobalMapping("printi", (int64_t)(printi));
-  execution_engine->addGlobalMapping("println", (int64_t)(println));
+  // std::cout << "Extending global mapping... " << "\n";
+  // for (auto &elem : driver.llvm.foundation_fn_map) {
+  //   auto fn_ptr = elem.second;
+  //   std::cout << "\tAdded: " << fn_ptr->name << "\n";
+  //   execution_engine->addGlobalMapping(fn_ptr->name, fn_ptr->global_map_addr());
+  // }
 
   if (!execution_engine) {
     std::cout << "Failed to construct execution engine: " << err_str << "\n";
