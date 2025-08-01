@@ -20,6 +20,11 @@ int Driver::parse(const std::string &file) {
   // Ensure a fresh env.
   assert(this->env.empty());
 
+  for (auto &foundation_elem : this->llvm.foundation_fn_map) {
+    auto primative_fn = foundation_elem.second;
+    this->env[primative_fn->name] = primative_fn->return_type;
+  }
+
   src_file = file;
   location.initialize(&src_file);
   int res;
@@ -191,6 +196,10 @@ AST::PrototypeHandle Driver::pk_Prototype(AST::TypHandle r_typ, std::string var,
 AST::ExprHandle Driver::pk_ExprCall(std::string name, std::vector<AST::ExprHandle> params) {
 
   auto r_typ = this->env[name];
+  if (!r_typ) {
+    throw std::logic_error(std::format("Creation of call without a return type: {}", name));
+  }
+
   AST::Expr::Call call(std::move(r_typ), std::move(name), std::move(params));
 
   return std::make_shared<AST::Expr::Call>(std::move(call));
