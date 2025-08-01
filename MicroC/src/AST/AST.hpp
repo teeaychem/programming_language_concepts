@@ -38,7 +38,7 @@ struct TypT {
   virtual Typ::Kind kind() const = 0;
 
   // String representation.
-  virtual std::string to_string(size_t indent) const = 0;
+  virtual std::string to_string(size_t indent = 0) const = 0;
 
   // Dereference this type, may panic if dereference is not possible.
   virtual std::shared_ptr<TypT> deref() const = 0;
@@ -74,7 +74,7 @@ struct NodeT {
   virtual llvm::Value *codegen(LLVMBundle &bundle) const = 0;
 
   // A string representation of the node, indented to `indent`.
-  virtual std::string to_string(size_t indent) const = 0;
+  virtual std::string to_string(size_t indent = 0) const = 0;
 
   virtual ~NodeT() = default;
 };
@@ -151,7 +151,7 @@ public:
   // Returns the type of an expression.
   AST::TypHandle type() const {
     if (!this->typ) {
-      throw std::logic_error(std::format("No type for {}", this->to_string(0)));
+      throw std::logic_error(std::format("No type for {}", this->to_string()));
     }
     return this->typ;
   };

@@ -116,7 +116,10 @@ Value *AST::ExprT::codegen_eval_false(LLVMBundle &bundle) const {
 namespace OpBinaryCodegen {
 
 void throw_unsupported(const AST::Expr::Prim2 *expr) {
-  throw std::logic_error(std::format("Cannot perform '{}' on types '{}' and '{}'", expr->op, expr->lhs->type()->to_string(0), expr->rhs->type()->to_string(0)));
+  throw std::logic_error(std::format("Cannot perform '{}' on types '{}' and '{}'",
+                                     expr->op,
+                                     expr->lhs->type()->to_string(),
+                                     expr->rhs->type()->to_string()));
 }
 
 llvm::Value *builder_assign(LLVMBundle &bundle, AST::ExprHandle destination, AST::ExprHandle value) {

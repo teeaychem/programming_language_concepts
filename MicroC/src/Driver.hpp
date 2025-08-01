@@ -105,14 +105,21 @@ struct Driver {
 
   void type_ensure_match(AST::ExprHandle lhs, AST::ExprHandle rhs) {
     if (lhs->type()->kind() != rhs->type()->kind()) {
-      throw std::logic_error("Conflicting types");
+      throw std::logic_error(std::format("Conflicting types for {}: {} and {}: {}",
+                                         lhs->to_string(),
+                                         lhs->type()->to_string(),
+                                         rhs->to_string(),
+                                         rhs->type()->to_string()));
     }
   }
 
   // Throws an error detailing an unsupported operation `op` on `lhs` and `rhs`.
   // A TypHandle is 'returned' in order to help lint failure to return a value in control paths which call this method.
   AST::TypHandle type_unsupported_binary_op(AST::Expr::OpBinary op, AST::ExprHandle lhs, AST::ExprHandle rhs) {
-    throw std::logic_error(std::format("Unsupported operation {} on {} and {}", op, lhs->type()->to_string(0), rhs->type()->to_string(0)));
+    throw std::logic_error(std::format("Unsupported operation {} on {} and {}",
+                                       op,
+                                       lhs->type()->to_string(),
+                                       rhs->type()->to_string()));
   }
 
   AST::TypHandle type_resolution_prim2_ptr_expr(AST::Expr::OpBinary op, AST::ExprHandle ptr, AST::ExprHandle expr) {
@@ -165,7 +172,9 @@ struct Driver {
 
       else {
 
-        throw std::logic_error(std::format("todo: type resolution: {} {}", lhs->type()->to_string(0), rhs->type()->to_string(0)));
+        throw std::logic_error(std::format("todo: type resolution: {} {}",
+                                           lhs->type()->to_string(),
+                                           rhs->type()->to_string()));
       }
     } break;
 
