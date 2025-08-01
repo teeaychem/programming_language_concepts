@@ -118,8 +118,7 @@ Value *AST::Stmt::Return::codegen(LLVMBundle &hdl) const {
 
   if (this->value.has_value()) {
 
-    Value *return_value = this->value.value()->codegen(hdl);
-    return_value = hdl.access_if(this->value.value(), return_value);
+    auto return_value = hdl.access(this->value.value());
 
     if (hdl.return_alloca) {
       hdl.builder.CreateStore(return_value, hdl.return_alloca);
