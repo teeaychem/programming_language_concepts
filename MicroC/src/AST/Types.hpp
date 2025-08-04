@@ -18,8 +18,9 @@ struct Int : TypT {
 
   Int() {};
 
-  std::string to_string(size_t indent) const override;
-  TypHandle deref() const override { throw std::logic_error("deref called on an int"); }
+  std::string to_string(size_t indent = 0) const override;
+
+  TypHandle deref() const override { throw std::logic_error(std::format("deref called on an int")); }
 
   TypHandle complete_data(TypHandle data) override { throw std::logic_error("Complete into int."); }
 
@@ -38,7 +39,7 @@ struct Char : TypT {
 
   Char() {};
 
-  std::string to_string(size_t indent) const override;
+  std::string to_string(size_t indent = 0) const override;
   TypHandle deref() const override { throw std::logic_error("deref called on a char"); }
 
   TypHandle complete_data(TypHandle data) override { throw std::logic_error("Complete into char."); }
@@ -58,9 +59,9 @@ struct Void : TypT {
 
   Void() {};
 
-  std::string to_string(size_t indent) const override;
+  std::string to_string(size_t indent = 0) const override;
 
-  TypHandle deref() const override { throw std::logic_error("deref() called on TypVoid"); }
+  TypHandle deref() const override { throw std::logic_error("deref() called on void"); }
 
   TypHandle complete_data(TypHandle data) override { return data; }
 
@@ -90,7 +91,7 @@ public:
       : _pointee(std::move(typ)),
         _area(area) {}
 
-  std::string to_string(size_t indent) const override;
+  std::string to_string(size_t indent = 0) const override;
 
   TypHandle pointee_type() const { return _pointee; }
   std::optional<std::size_t> area() const { return _area; }

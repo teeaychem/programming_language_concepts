@@ -22,8 +22,8 @@ using namespace llvm;
 // Nodes
 
 Value *AST::Expr::Var::codegen(LLVMBundle &bundle) const {
-  auto it = bundle.env.vars.find(this->var);
-  if (it == bundle.env.vars.end()) {
+  auto it = bundle.env_llvm.vars.find(this->var);
+  if (it == bundle.env_llvm.vars.end()) {
     throw std::logic_error(std::format("Missing variable: {}", this->var));
   }
 
@@ -31,21 +31,34 @@ Value *AST::Expr::Var::codegen(LLVMBundle &bundle) const {
 }
 
 Value *AST::Expr::Call::codegen(LLVMBundle &bundle) const {
-  Function *callee_f = bundle.module->getFunction(this->name);
 
-  std::vector<Value *> arg_values{};
+  Function *callee_f = bundle.module->getFunction(this->name);
 
   if (callee_f == nullptr) {
     auto it = bundle.foundation_fn_map.find(this->name);
     if (it != bundle.foundation_fn_map.end()) {
       callee_f = it->second->codegen(bundle);
     } else {
-      throw std::logic_error(std::format("Call to unknown function: {}", this->name));
+      throw std::logic_error(std::format("Call to unknown fn: {}", this->name));
     }
   } else if (callee_f->arg_size() != this->arguments.size()) {
-    throw std::logic_error(std::format("Argument size mismatch."));
+    throw std::logic_error(std::format("Call to {} requires {} arguments, received {}.",
+                                       this->name, callee_f->arg_size(), this->arguments.size()));
   }
 
+  std::cout << "Finding... " << this->name << "\n";
+  auto fn_ast = bundle.env_ast.fns.find(this->name);
+  if (fn_ast != bundle.env_ast.fns.end()) {
+    std::cout << "in ast: " << fn_ast->second->to_string();
+  } else {
+    auto fn_foundation = bundle.foundation_fn_map.find(this->name);
+    if (fn_foundation != bundle.foundation_fn_map.end()) {
+      std::cout << " foundational: " << fn_foundation->second->return_type->to_string();
+    }
+  }
+  std::cout << "\n";
+
+  std::vector<Value *> arg_values{};
   for (auto &arg : this->arguments) {
     arg_values.push_back(bundle.access(arg));
   }

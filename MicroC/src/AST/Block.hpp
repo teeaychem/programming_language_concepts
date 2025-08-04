@@ -27,7 +27,7 @@ struct Block {
 
   std::vector<AST::StmtHandle> statements{};
 
-  Env shadowed_vars{}; // (Temporary) storage of shadowed variables
+  NameTypeMap shadowed_vars{}; // (Temporary) storage of shadowed variables
 
   size_t early_returns{0}; // How many paths originating in the block *lead* to a return statment
   size_t pass_throughs{0}; // How many paths originating in the block *do not* lead to a return statment
@@ -39,14 +39,14 @@ struct Block {
 
   // Add a declaration, using `env` to determine which variables are in scope.
   // And, mutates `env` in accordance with the declaration.
-  void push_DecVar(Env &env, AST::StmtDeclarationHandle const &dec_var);
+  void push_DecVar(EnvAST &env, AST::StmtDeclarationHandle const &dec_var);
 
   // Add a statement.
   void push_Stmt(AST::StmtHandle const &stmt);
 
   // To be called after the final declaration / statement has been added to the block.
   // Of note, restores `env` to its state prior to processing the block.
-  void finalize(Env &env);
+  void finalize(EnvAST &env);
 };
 
 } // namespace AST

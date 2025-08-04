@@ -33,7 +33,7 @@ Value *AST::Stmt::Block::codegen(LLVMBundle &hdl) const {
   }
 
   for (auto &shadow_dec : block.shadow_vars) {
-    auto x = std::make_pair(shadow_dec->declaration->name(), hdl.env.vars[shadow_dec->declaration->name()]);
+    auto x = std::make_pair(shadow_dec->declaration->name(), hdl.env_llvm.vars[shadow_dec->declaration->name()]);
     shadowed_values.push_back(x);
 
     shadow_dec->codegen(hdl);
@@ -49,12 +49,12 @@ Value *AST::Stmt::Block::codegen(LLVMBundle &hdl) const {
 
   // Unshadow shadowed vars
   for (auto &shadowed_var : shadowed_values) {
-    hdl.env.vars[shadowed_var.first] = shadowed_var.second;
+    hdl.env_llvm.vars[shadowed_var.first] = shadowed_var.second;
   }
 
   // Clear fresh vars from scope
   for (auto &fresh_var : block.fresh_vars) {
-    hdl.env.vars.erase(fresh_var->declaration->name());
+    hdl.env_llvm.vars.erase(fresh_var->declaration->name());
   }
 
   return ConstantInt::get(Type::getInt64Ty(*hdl.context), 0);

@@ -114,7 +114,7 @@ program:
 
 
 Block:
-    LBRACE StmtOrDecSeq RBRACE  { $2.finalize(driver.env); $$ = driver.pk_StmtBlock(std::move($2)); }
+    LBRACE StmtOrDecSeq RBRACE  { $2.finalize(driver.llvm.env_ast); $$ = driver.pk_StmtBlock(std::move($2)); }
 ;
 
 
@@ -243,7 +243,7 @@ StmtOrDecSeq:
   | StmtOrDecSeq Vardec SEMI  {
       auto dec = driver.pk_DecVar(AST::Dec::Scope::Local, $2.second, $2.first);
       auto s = driver.pk_StmtDeclaration(dec);
-      $1.push_DecVar(driver.env, s);
+      $1.push_DecVar(driver.llvm.env_ast, s);
       $$ = $1;                                                                  }
 ;
 
