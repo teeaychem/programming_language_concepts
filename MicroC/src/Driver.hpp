@@ -20,10 +20,6 @@ YY_DECL; // Declare the prototype for bison
 struct Driver {
   std::vector<AST::StmtDeclarationHandle> prg{};
 
-  // Fn / Prototype / Variable to type mapping maintained during parsing.
-  // Empty before and after parsing.
-  Env env{};
-
   // A bundle of things useful for LLVM codegen.
   LLVMBundle llvm{};
 
@@ -62,14 +58,14 @@ struct Driver {
 
   void add_to_env(AST::ParamVec &params) {
     for (auto &param : params) {
-      this->env[param.first] = param.second;
+      this->llvm.env_ast.vars[param.first] = param.second;
     }
   }
 
   void fn_finalise(AST::DecFnHandle fn) {
     // TODO: Shadowing of global variables...
     for (auto &param : fn->prototype->params) {
-      this->env.erase(param.first);
+      this->llvm.env_ast.vars.erase(param.first);
     }
   }
 
@@ -90,7 +86,23 @@ struct Driver {
     } break;
 
     case AST::Expr::OpUnary::Dereference: {
-      return expr->type()->deref();
+      if (expr->evals_to(AST::Typ::Kind::Ptr)) {
+        return expr->type();
+      }
+
+      // else if (expr->evals_to(AST::Typ::Kind::Int)) {
+      //   // May be required by microC examples...
+      //   return expr->eval_type();
+      // }
+
+      else {
+        std::cout << "Deref panic..." << "\n"
+                  << "Expr: " << expr->to_string() << "\n"
+                  << "Type: " << expr->type()->to_string() << "\n";
+
+        throw std::logic_error("Deref panic");
+      }
+
     } break;
 
     case AST::Expr::OpUnary::Sub: {
@@ -103,7 +115,29 @@ struct Driver {
     }
   }
 
+  void type_ensure_assignment(AST::ExprHandle lhs, AST::ExprHandle rhs) {
+    if (lhs->evals_to(rhs->type()->kind())) {
+      return;
+    }
+
+    if (lhs->type()->deref()->kind() == rhs->type()->kind()) {
+      return;
+    }
+
+    else {
+      throw std::logic_error(std::format("Conflicting types for {}: {} and {}: {}",
+                                         lhs->to_string(),
+                                         lhs->type()->to_string(),
+                                         rhs->to_string(),
+                                         rhs->type()->to_string()));
+    }
+  }
+
   void type_ensure_match(AST::ExprHandle lhs, AST::ExprHandle rhs) {
+    if (lhs->evals_to(rhs->type()->kind())) {
+      return;
+    }
+
     if (lhs->type()->kind() != rhs->type()->kind()) {
       throw std::logic_error(std::format("Conflicting types for {}: {} and {}: {}",
                                          lhs->to_string(),
@@ -140,7 +174,7 @@ struct Driver {
     case AST::Expr::OpBinary::AssignMul:
     case AST::Expr::OpBinary::AssignDiv:
     case AST::Expr::OpBinary::AssignMod: {
-      type_ensure_match(lhs, rhs);
+      type_ensure_assignment(lhs, rhs);
 
       return lhs->type();
     } break;

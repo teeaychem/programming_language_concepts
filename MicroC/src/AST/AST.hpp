@@ -53,7 +53,11 @@ typedef std::shared_ptr<Typ::Ptr> TypPtrHandle;
 
 } // namespace AST
 
-typedef std::map<std::string, AST::TypHandle> Env; // Vars have declared type, fns have return type.
+typedef std::map<std::string, AST::TypHandle> NameTypeMap; // Vars have declared type, fns have return type.
+struct EnvAST {
+  std::map<std::string, AST::TypHandle> fns{};
+  NameTypeMap vars{};
+};
 
 // Nodes
 

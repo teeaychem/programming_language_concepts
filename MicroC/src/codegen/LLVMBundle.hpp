@@ -24,14 +24,11 @@ struct FnPrimative {
   virtual int64_t global_map_addr() const = 0;
 };
 
-typedef llvm::Function *OpFoundation;
 typedef std::map<const std::string, std::shared_ptr<FnPrimative>> OpPrimativeMap;
-
-struct LLVMBundle;
 
 void extend_ops_foundation(LLVMBundle &bundle);
 
-struct LLVMEnv {
+struct EnvLLVM {
   std::map<std::string, llvm::Value *> vars{};
   std::map<std::string, llvm::Function *> fns{};
 };
@@ -42,7 +39,11 @@ struct LLVMBundle {
   std::unique_ptr<llvm::Module> module;
   llvm::IRBuilder<> builder;
 
-  LLVMEnv env{};
+  EnvLLVM env_llvm{};
+
+  // Fn / Prototype / Variable to type mapping maintained during parsing.
+  // Empty before, keep after parsing.
+  EnvAST env_ast{};
 
   llvm::BasicBlock *return_block{nullptr};
   llvm::Value *return_alloca{nullptr};

@@ -22,7 +22,7 @@ int Driver::parse(const std::string &file) {
 
   for (auto &foundation_elem : this->llvm.foundation_fn_map) {
     auto primative_fn = foundation_elem.second;
-    this->env[primative_fn->name] = primative_fn->return_type;
+    this->llvm.env_ast.fns[primative_fn->name] = primative_fn->return_type;
   }
 
   src_file = file;
@@ -36,8 +36,7 @@ int Driver::parse(const std::string &file) {
     scan_end();
   }
 
-  // Clear the env as it holds no actionable information.
-  this->env.clear();
+  // Do not clear the env as it contains fns and globals
 
   return res;
 }
@@ -64,20 +63,20 @@ void Driver::push_dec(AST::StmtDeclarationHandle stmt) {
   switch (stmt->declaration->kind()) {
 
   case AST::Dec::Kind::Var: {
-    this->env[stmt->declaration->name()] = stmt->declaration->type();
+    this->llvm.env_ast.vars[stmt->declaration->name()] = stmt->declaration->type();
   } break;
 
   case AST::Dec::Kind::Fn: {
     auto as_fn = std::static_pointer_cast<AST::Dec::Fn>(stmt->declaration);
-    if (!this->env.contains(as_fn->name())) {
+    if (!this->llvm.env_ast.fns.contains(as_fn->name())) {
       // throw std::logic_error(std::format("Missing prototype for {}", as_fn->name()));
-      this->env[as_fn->name()] = as_fn->return_type();
+      this->llvm.env_ast.fns[as_fn->name()] = as_fn->return_type();
     }
   } break;
 
   case AST::Dec::Kind::Prototype: {
     auto as_pt = std::static_pointer_cast<AST::Dec::Prototype>(stmt->declaration);
-    this->env[as_pt->name()] = as_pt->return_type();
+    this->llvm.env_ast.fns[as_pt->name()] = as_pt->return_type();
   } break;
   }
 
@@ -166,7 +165,7 @@ AST::TypHandle Driver::pk_Ptr(AST::TypHandle typ) {
 AST::DecVarHandle Driver::pk_DecVar(AST::Dec::Scope scope, AST::TypHandle typ, std::string var) {
 
   if (scope == AST::Dec::Scope::Global) {
-    if (this->env.find(var) != this->env.end()) {
+    if (this->llvm.env_ast.vars.find(var) != this->llvm.env_ast.vars.end()) {
       throw std::logic_error(std::format("Redeclaration of global: {}", var));
     }
   }
@@ -183,7 +182,7 @@ AST::DecFnHandle Driver::pk_DecFn(AST::PrototypeHandle prototype, AST::StmtBlock
 
 AST::PrototypeHandle Driver::pk_Prototype(AST::TypHandle r_typ, std::string var, AST::ParamVec params) {
 
-  if (this->env.find(var) != this->env.end()) {
+  if (this->llvm.env_ast.fns.find(var) != this->llvm.env_ast.fns.end()) {
     throw std::logic_error(std::format("Existing use of: '{}' unable to declare function.", var));
   }
 
@@ -195,7 +194,7 @@ AST::PrototypeHandle Driver::pk_Prototype(AST::TypHandle r_typ, std::string var,
 
 AST::ExprHandle Driver::pk_ExprCall(std::string name, std::vector<AST::ExprHandle> params) {
 
-  auto r_typ = this->env[name];
+  auto r_typ = this->llvm.env_ast.fns[name];
   if (!r_typ) {
     throw std::logic_error(std::format("Creation of call without a return type: {}", name));
   }
@@ -246,10 +245,10 @@ AST::ExprHandle Driver::pk_ExprPrim2(AST::Expr::OpBinary op, AST::ExprHandle lhs
 }
 
 AST::ExprHandle Driver::pk_ExprVar(std::string var) {
-  if (this->env.find(var) == this->env.end()) {
+  if (this->llvm.env_ast.vars.find(var) == this->llvm.env_ast.vars.end()) {
     throw std::logic_error(std::format("Unknown variable: {}", var));
   }
-  auto typ = this->env[var];
+  auto typ = this->llvm.env_ast.vars[var];
   AST::Expr::Var access(std::move(typ), std::move(var));
   return std::make_shared<AST::Expr::Var>(std::move(access));
 }

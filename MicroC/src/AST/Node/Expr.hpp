@@ -55,8 +55,7 @@ struct Index : ExprT {
 
   Index(ExprHandle expr, ExprHandle index) : access(expr),
                                              index(index) {
-    // Dereference the expression being accessed
-    this->typ = this->access->type()->deref();
+    this->typ = this->access->type();
   }
 
   Expr::Kind kind() const override { return Expr::Kind::Index; }

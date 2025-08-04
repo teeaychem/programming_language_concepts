@@ -25,6 +25,7 @@ struct PrintI : FnPrimative {
   }
 
   llvm::Function *codegen(LLVMBundle &bundle) const override {
+    // TODO: Unify
     auto MC_INT = (llvm::Type *)llvm::Type::getInt64Ty(*bundle.context);
 
     auto typ = llvm::FunctionType::get(llvm::PointerType::getUnqual(MC_INT), llvm::ArrayRef(MC_INT), false);

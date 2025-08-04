@@ -5,12 +5,12 @@
 #include "AST/Node/Dec.hpp"
 #include "AST/Node/Stmt.hpp"
 
-void AST::Block::push_DecVar(Env &env, AST::StmtDeclarationHandle const &dec_var) {
+void AST::Block::push_DecVar(EnvAST &env, AST::StmtDeclarationHandle const &dec_var) {
   std::string var{dec_var->declaration->name()};
 
-  auto shadowed = env.find(var);
+  auto shadowed = env.vars.find(var);
 
-  if (shadowed != env.end()) {
+  if (shadowed != env.vars.end()) {
     this->shadow_vars.push_back(dec_var);
 
     this->shadowed_vars.insert(*shadowed);
@@ -18,7 +18,7 @@ void AST::Block::push_DecVar(Env &env, AST::StmtDeclarationHandle const &dec_var
     this->fresh_vars.push_back(dec_var);
   }
 
-  env[var] = dec_var->declaration->type();
+  env.vars[var] = dec_var->declaration->type();
 }
 
 void AST::Block::push_Stmt(AST::StmtHandle const &stmt) {
@@ -75,15 +75,15 @@ void AST::Block::push_Stmt(AST::StmtHandle const &stmt) {
   this->statements.push_back(stmt);
 }
 
-void AST::Block::finalize(Env &env) {
+void AST::Block::finalize(EnvAST &env) {
   // Restore shadowed variables to `env`
   for (auto &shadowed : this->shadowed_vars) {
-    env[shadowed.first] = shadowed.second;
+    env.vars[shadowed.first] = shadowed.second;
   }
 
   // Remove fresh variables from `env`
   for (auto &fresh : this->fresh_vars) {
-    env.erase(fresh->declaration->name());
+    env.vars.erase(fresh->declaration->name());
   }
 
   if (!this->returns) {
