@@ -266,7 +266,7 @@ Topdec:
 
 
 Vardec:
-    DataType Vardesc  { $$ = std::make_pair($2.first, $2.second->complete_data($1)); }
+    DataType Vardesc  { $$ = std::make_pair($2.first, $2.second->complete_with($1)); }
 ;
 
 

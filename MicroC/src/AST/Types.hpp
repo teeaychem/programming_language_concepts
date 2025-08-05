@@ -11,26 +11,20 @@ namespace AST {
 
 namespace Typ {
 
-// TypData
+struct Bool : TypT {
+  Typ::Kind kind() const override { return Typ::Kind::Bool; }
 
-struct Int : TypT {
-  Typ::Kind kind() const override { return Typ::Kind::Int; }
-
-  Int() {};
+  Bool() {};
 
   std::string to_string(size_t indent = 0) const override;
+  TypHandle deref() const override { throw std::logic_error("deref called on a bool"); }
 
-  TypHandle deref() const override { throw std::logic_error(std::format("deref called on an int")); }
+  TypHandle complete_with(TypHandle data) override { throw std::logic_error("Complete into bool"); }
 
-  TypHandle complete_data(TypHandle data) override { throw std::logic_error("Complete into int."); }
+  llvm::Type *llvm(LLVMBundle &hdl) const override { return llvm::Type::getInt1Ty(*hdl.context); }
 
-  llvm::Type *
-  llvm(LLVMBundle &hdl) const override { return llvm::Type::getInt64Ty(*hdl.context); }
-
-  // The default value for a type, used during declarations, etc.
-  // Throws on void type.
   llvm::Constant *defaultgen(LLVMBundle &hdl) const {
-    return llvm::ConstantInt::get(llvm::Type::getInt64Ty(*hdl.context), 0);
+    return llvm::ConstantInt::get(this->llvm(hdl), 0);
   }
 };
 
@@ -42,38 +36,32 @@ struct Char : TypT {
   std::string to_string(size_t indent = 0) const override;
   TypHandle deref() const override { throw std::logic_error("deref called on a char"); }
 
-  TypHandle complete_data(TypHandle data) override { throw std::logic_error("Complete into char."); }
+  TypHandle complete_with(TypHandle data) override { throw std::logic_error("Complete into char."); }
 
-  llvm::Type *
-  llvm(LLVMBundle &hdl) const override { return llvm::Type::getInt8Ty(*hdl.context); }
+  llvm::Type *llvm(LLVMBundle &hdl) const override { return llvm::Type::getInt8Ty(*hdl.context); }
 
   // The default value for a type, used during declarations, etc.
   // Throws on void type.
   llvm::Constant *defaultgen(LLVMBundle &hdl) const {
-    return llvm::ConstantInt::get(llvm::Type::getInt8Ty(*hdl.context), 0);
+    return llvm::ConstantInt::get(this->llvm(hdl), 0);
   }
 };
 
-struct Void : TypT {
-  Typ::Kind kind() const override { return Typ::Kind::Void; }
+struct Int : TypT {
+  Typ::Kind kind() const override { return Typ::Kind::Int; }
 
-  Void() {};
+  Int() {};
 
   std::string to_string(size_t indent = 0) const override;
 
-  TypHandle deref() const override { throw std::logic_error("deref() called on void"); }
+  TypHandle deref() const override { throw std::logic_error(std::format("deref called on an int")); }
 
-  TypHandle complete_data(TypHandle data) override { return data; }
+  TypHandle complete_with(TypHandle data) override { throw std::logic_error("Complete into int."); }
 
-  llvm::Type *llvm(LLVMBundle &hdl) const override {
+  llvm::Type *llvm(LLVMBundle &hdl) const override { return llvm::Type::getInt64Ty(*hdl.context); }
 
-    return llvm::Type::getVoidTy(*hdl.context);
-  }
-
-  llvm::Constant *defaultgen(LLVMBundle &hdl) const { throw std::logic_error("Declaration of void type"); }
+  llvm::Constant *defaultgen(LLVMBundle &hdl) const { return llvm::ConstantInt::get(this->llvm(hdl), 0); }
 };
-
-// TypIndex
 
 struct Ptr : TypT {
   Typ::Kind kind() const override { return Typ::Kind::Ptr; }
@@ -96,13 +84,23 @@ public:
   TypHandle pointee_type() const { return _pointee; }
   std::optional<std::size_t> area() const { return _area; }
 
-  TypHandle complete_data(TypHandle data) override {
+  TypHandle complete_with(TypHandle data) override {
 
     switch (this->_pointee->kind()) {
 
-    case Kind::Int:
-    case Kind::Char: {
-      throw std::logic_error("Idx to data");
+    case Kind::Bool:
+    case Kind::Char:
+    case Kind::Int: {
+      throw std::logic_error("Idx to data type");
+    } break;
+
+    case Kind::Ptr: {
+      auto fresh_destination = this->_pointee->complete_with(data);
+      auto fresh_pointer = Ptr(fresh_destination, std::nullopt);
+      auto fresh_handle = std::make_shared<AST::Typ::Ptr>(fresh_pointer);
+
+      this->_pointee = fresh_destination;
+      return fresh_destination;
     } break;
 
     case Kind::Void: {
@@ -111,15 +109,6 @@ public:
 
       this->_pointee = fresh_handle;
       return fresh_handle;
-    } break;
-
-    case Kind::Ptr: {
-      auto fresh_destination = this->_pointee->complete_data(data);
-      auto fresh_pointer = Ptr(fresh_destination, std::nullopt);
-      auto fresh_handle = std::make_shared<AST::Typ::Ptr>(fresh_pointer);
-
-      this->_pointee = fresh_destination;
-      return fresh_destination;
     } break;
     }
   }
@@ -136,10 +125,27 @@ public:
   }
 };
 
+struct Void : TypT {
+  Typ::Kind kind() const override { return Typ::Kind::Void; }
+
+  Void() {};
+
+  std::string to_string(size_t indent = 0) const override;
+
+  TypHandle deref() const override { throw std::logic_error("deref() called on void"); }
+
+  TypHandle complete_with(TypHandle data) override { return data; }
+
+  llvm::Type *llvm(LLVMBundle &hdl) const override { return llvm::Type::getVoidTy(*hdl.context); }
+
+  llvm::Constant *defaultgen(LLVMBundle &hdl) const { throw std::logic_error("Declaration of void type"); }
+};
+
 // pk typ
-inline AST::TypHandle pk_Int() {
-  AST::Typ::Int type_int{};
-  return std::make_shared<AST::Typ::Int>(std::move(type_int));
+
+inline AST::TypHandle pk_Bool() {
+  AST::Typ::Bool typ_bool{};
+  return std::make_shared<AST::Typ::Bool>(std::move(typ_bool));
 };
 
 inline AST::TypHandle pk_Char() {
@@ -147,19 +153,19 @@ inline AST::TypHandle pk_Char() {
   return std::make_shared<AST::Typ::Char>(std::move(type_char));
 };
 
-inline AST::TypHandle pk_Void() {
-  AST::Typ::Void type_void{};
-  return std::make_shared<AST::Typ::Void>(std::move(type_void));
-}
+inline AST::TypHandle pk_Int() {
+  AST::Typ::Int type_int{};
+  return std::make_shared<AST::Typ::Int>(std::move(type_int));
+};
 
-inline AST::TypHandle pk_Ptr(AST::TypHandle typ, std::optional<std::int64_t> area) {
+inline AST::TypHandle pk_Ptr(AST::TypHandle typ, std::optional<std::int64_t> area = std::nullopt) {
   AST::Typ::Ptr type_index(std::move(typ), std::move(area));
   return std::make_shared<AST::Typ::Ptr>(std::move(type_index));
 }
 
-inline AST::TypHandle pk_Ptr(AST::TypHandle typ) {
-  AST::Typ::Ptr type_index(std::move(typ), std::nullopt);
-  return std::make_shared<AST::Typ::Ptr>(std::move(type_index));
+inline AST::TypHandle pk_Void() {
+  AST::Typ::Void type_void{};
+  return std::make_shared<AST::Typ::Void>(std::move(type_void));
 }
 
 } // namespace Typ

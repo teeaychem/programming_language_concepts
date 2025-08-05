@@ -14,15 +14,17 @@ namespace AST {
 namespace Typ {
 
 enum class Kind {
-  Ptr,  // An array.
-  Int,  // An integer.
+  Bool,
   Char, // A character.
+  Int,  // An integer.
+  Ptr,  // An array.
   Void, // Unspecified, and requires completion to be a usable type.
 };
 
-struct Ptr;
-struct Int;
+struct Bool;
 struct Char;
+struct Int;
+struct Ptr;
 struct Void;
 
 } // namespace Typ
@@ -44,7 +46,7 @@ struct TypT {
   virtual std::shared_ptr<TypT> deref() const = 0;
 
   // Completes the type, may throw if already complete.
-  virtual TypHandle complete_data(TypHandle d_typ) = 0;
+  virtual TypHandle complete_with(TypHandle d_typ) = 0;
 
   virtual ~TypT() = default;
 };
