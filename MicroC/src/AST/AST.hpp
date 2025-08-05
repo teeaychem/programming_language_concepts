@@ -89,6 +89,7 @@ namespace Expr {
 // Expression node kinds
 enum class Kind {
   Call,
+  Cast,
   CstI,
   Index,
   Prim1,
@@ -98,6 +99,7 @@ enum class Kind {
 
 // Forward declaration of expression nodes
 struct Call;
+struct Cast;
 struct CstI;
 struct Index;
 struct Prim1;

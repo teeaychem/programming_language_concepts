@@ -88,21 +88,11 @@ struct Driver {
     case AST::Expr::OpUnary::Dereference: {
       if (expr->is_of_type(AST::Typ::Kind::Ptr)) {
         return expr->type();
+      } else {
+        throw std::logic_error(std::format("Deref panic... {} {}",
+                                           expr->to_string(),
+                                           expr->type()->to_string()));
       }
-
-      // else if (expr->evals_to(AST::Typ::Kind::Int)) {
-      //   // May be required by microC examples...
-      //   return expr->eval_type();
-      // }
-
-      else {
-        std::cout << "Deref panic..." << "\n"
-                  << "Expr: " << expr->to_string() << "\n"
-                  << "Type: " << expr->type()->to_string() << "\n";
-
-        throw std::logic_error("Deref panic");
-      }
-
     } break;
 
     case AST::Expr::OpUnary::Sub: {
@@ -250,6 +240,8 @@ struct Driver {
   AST::ExprHandle pk_ExprCall(std::string name, std::vector<AST::ExprHandle> params);
   AST::ExprHandle pk_ExprCall(std::string name, AST::ExprHandle param);
   AST::ExprHandle pk_ExprCall(std::string name);
+
+  AST::ExprHandle pk_ExprCast(AST::ExprHandle expr, AST::TypHandle to);
 
   AST::ExprHandle pk_ExprCstI(std::int64_t i);
 

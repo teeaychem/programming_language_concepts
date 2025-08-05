@@ -55,7 +55,6 @@ struct LLVMBundle {
   OpPrimativeMap foundation_fn_map{};
 
   // Utils
-  llvm::Value *access(AST::ExprHandle expr, llvm::Value *value);
   llvm::Value *access(AST::ExprHandle expr);
 
   LLVMBundle()

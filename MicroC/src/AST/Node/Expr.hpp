@@ -34,6 +34,21 @@ struct Call : ExprT {
 
 // CstI
 
+struct Cast : ExprT {
+  ExprHandle expr;
+
+  Cast(ExprHandle expr, TypHandle to) : expr(expr) {
+    this->typ = to;
+  }
+
+  Expr::Kind kind() const override { return Expr::Kind::Cast; }
+
+  llvm::Value *codegen(LLVMBundle &hdl) const override;
+  std::string to_string(size_t indent = 0) const override;
+};
+
+// CstI
+
 struct CstI : ExprT {
   int64_t i;
 
