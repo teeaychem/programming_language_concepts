@@ -1,11 +1,13 @@
 #pragma once
 
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
 
 #include "AST/AST.hpp"
 #include "AST/Node/Dec.hpp"
+#include "AST/Node/Expr.hpp"
 
 #include "AST/Fmt.hpp"
 #include "AST/Types.hpp"
@@ -106,11 +108,16 @@ struct Driver {
   }
 
   void type_ensure_assignment(AST::ExprHandle lhs, AST::ExprHandle rhs) {
-    if (lhs->is_of_type(rhs->type()->kind())) {
-      return;
+
+    // TODO: Unify this pattern, it likely appears elsewhere
+    auto rhs_type = rhs->type();
+    if (rhs->kind() == AST::Expr::Kind::Index) {
+      auto as_index = std::static_pointer_cast<AST::Expr::Index>(rhs);
+      rhs_type = as_index->target->type()->deref();
     }
 
-    if (lhs->type()->deref()->kind() == rhs->type()->kind()) {
+    if ((lhs->is_of_type(rhs_type->kind())) //
+        || (lhs->is_of_type(AST::Typ::Kind::Ptr) && lhs->type()->deref()->kind() == rhs_type->kind())) {
       return;
     }
 
@@ -119,11 +126,12 @@ struct Driver {
                                          lhs->to_string(),
                                          lhs->type()->to_string(),
                                          rhs->to_string(),
-                                         rhs->type()->to_string()));
+                                         rhs_type->to_string()));
     }
   }
 
-  void type_ensure_match(AST::ExprHandle lhs, AST::ExprHandle rhs) {
+  void
+  type_ensure_match(AST::ExprHandle lhs, AST::ExprHandle rhs) {
     if (lhs->is_of_type(rhs->type()->kind())) {
       return;
     }
