@@ -53,12 +53,6 @@ typedef std::shared_ptr<Typ::Ptr> TypPtrHandle;
 
 } // namespace AST
 
-typedef std::map<std::string, AST::TypHandle> NameTypeMap; // Vars have declared type, fns have return type.
-struct EnvAST {
-  std::map<std::string, AST::TypHandle> fns{};
-  NameTypeMap vars{};
-};
-
 // Nodes
 
 namespace AST {
@@ -247,5 +241,13 @@ typedef std::shared_ptr<AST::Stmt::Declaration> StmtDeclarationHandle;
 
 typedef std::vector<std::pair<std::string, TypHandle>> ParamVec;
 typedef std::vector<std::variant<StmtHandle, DecHandle>> BlockVec;
+
+// Env
+
+typedef std::map<std::string, AST::TypHandle> NameTypeMap; // Vars have declared type, fns have return type.
+struct EnvAST {
+  std::map<std::string, AST::PrototypeHandle> fns{};
+  NameTypeMap vars{};
+};
 
 } // namespace AST
