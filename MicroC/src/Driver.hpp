@@ -82,7 +82,7 @@ struct Driver {
     switch (op) {
 
     case AST::Expr::OpUnary::AddressOf: {
-      return this->pk_Ptr(expr->type());
+      return AST::Typ::pk_Ptr(expr->type());
     } break;
 
     case AST::Expr::OpUnary::Dereference: {
@@ -220,13 +220,13 @@ struct Driver {
     case AST::Expr::OpBinary::Geq: {
       type_ensure_match(lhs, rhs);
 
-      return this->pk_Int();
+      return AST::Typ::pk_Int();
     } break;
 
     case AST::Expr::OpBinary::And:
     case AST::Expr::OpBinary::Or: {
 
-      return this->pk_Int();
+      return AST::Typ::pk_Int();
     } break;
     }
   }
@@ -236,18 +236,6 @@ struct Driver {
   // Methods for creating nodes.
   // Esp. used during parsing.
   // `pk` stands for `pointer_make`, as each method returns a (shared) pointer to the node created.
-
-  // pk typ
-
-  AST::TypHandle pk_Int();
-
-  AST::TypHandle pk_Char();
-
-  AST::TypHandle pk_Void();
-
-  AST::TypHandle pk_Ptr(AST::TypHandle typ, std::optional<std::int64_t> size);
-
-  AST::TypHandle pk_Ptr(AST::TypHandle of);
 
   // pk Dec
 
