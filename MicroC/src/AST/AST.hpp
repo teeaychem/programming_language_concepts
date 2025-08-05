@@ -159,7 +159,7 @@ public:
   // LLVM IR codegen which returns false if this expression evaluates to true and false otherwise.
   llvm::Value *codegen_eval_false(LLVMBundle &bundle) const;
 
-  bool evals_to(AST::Typ::Kind type) const { return this->typ->kind() == type; };
+  bool is_of_type(AST::Typ::Kind type) const { return this->typ->kind() == type; };
 
   virtual Expr::Kind kind() const = 0;
 };

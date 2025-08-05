@@ -86,7 +86,7 @@ struct Driver {
     } break;
 
     case AST::Expr::OpUnary::Dereference: {
-      if (expr->evals_to(AST::Typ::Kind::Ptr)) {
+      if (expr->is_of_type(AST::Typ::Kind::Ptr)) {
         return expr->type();
       }
 
@@ -116,7 +116,7 @@ struct Driver {
   }
 
   void type_ensure_assignment(AST::ExprHandle lhs, AST::ExprHandle rhs) {
-    if (lhs->evals_to(rhs->type()->kind())) {
+    if (lhs->is_of_type(rhs->type()->kind())) {
       return;
     }
 
@@ -134,7 +134,7 @@ struct Driver {
   }
 
   void type_ensure_match(AST::ExprHandle lhs, AST::ExprHandle rhs) {
-    if (lhs->evals_to(rhs->type()->kind())) {
+    if (lhs->is_of_type(rhs->type()->kind())) {
       return;
     }
 
@@ -157,7 +157,7 @@ struct Driver {
   }
 
   AST::TypHandle type_resolution_prim2_ptr_expr(AST::Expr::OpBinary op, AST::ExprHandle ptr, AST::ExprHandle expr) {
-    if (expr->evals_to(AST::Typ::Kind::Int)) {
+    if (expr->is_of_type(AST::Typ::Kind::Int)) {
       return ptr->type();
     }
 
@@ -185,22 +185,22 @@ struct Driver {
     case AST::Expr::OpBinary::Div:
     case AST::Expr::OpBinary::Mod: {
       if (lhs->type()->kind() == rhs->type()->kind()) {
-        if (lhs->evals_to(AST::Typ::Kind::Int)) {
+        if (lhs->is_of_type(AST::Typ::Kind::Int)) {
           return lhs->type();
-        } else if (lhs->evals_to(AST::Typ::Kind::Char)) {
+        } else if (lhs->is_of_type(AST::Typ::Kind::Char)) {
           return lhs->type();
-        } else if (lhs->evals_to(AST::Typ::Kind::Void)) {
+        } else if (lhs->is_of_type(AST::Typ::Kind::Void)) {
           return type_unsupported_binary_op(op, lhs, rhs);
         } else {
           return type_unsupported_binary_op(op, lhs, rhs);
         }
       }
 
-      else if (lhs->evals_to(AST::Typ::Kind::Ptr)) {
+      else if (lhs->is_of_type(AST::Typ::Kind::Ptr)) {
         return type_resolution_prim2_ptr_expr(op, lhs, rhs);
       }
 
-      else if (rhs->evals_to(AST::Typ::Kind::Ptr)) {
+      else if (rhs->is_of_type(AST::Typ::Kind::Ptr)) {
         return type_resolution_prim2_ptr_expr(op, rhs, lhs);
       }
 

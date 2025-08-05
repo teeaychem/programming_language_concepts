@@ -174,11 +174,11 @@ llvm::Value *builder_add(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 
   case AST::Typ::Kind::Ptr: {
 
-    if (expr->lhs->evals_to(AST::Typ::Kind::Ptr) && expr->rhs->evals_to(AST::Typ::Kind::Int)) {
+    if (expr->lhs->is_of_type(AST::Typ::Kind::Ptr) && expr->rhs->is_of_type(AST::Typ::Kind::Int)) {
       return builder_ptr_add(bundle, expr->lhs, expr->rhs);
     }
 
-    else if (expr->lhs->evals_to(AST::Typ::Kind::Int) && expr->rhs->evals_to(AST::Typ::Kind::Ptr)) {
+    else if (expr->lhs->is_of_type(AST::Typ::Kind::Int) && expr->rhs->is_of_type(AST::Typ::Kind::Ptr)) {
       return builder_ptr_add(bundle, expr->rhs, expr->lhs);
     }
 
@@ -228,11 +228,11 @@ llvm::Value *builder_sub(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 
   case AST::Typ::Kind::Ptr: {
 
-    if (expr->lhs->evals_to(AST::Typ::Kind::Ptr) && expr->rhs->evals_to(AST::Typ::Kind::Int)) {
+    if (expr->lhs->is_of_type(AST::Typ::Kind::Ptr) && expr->rhs->is_of_type(AST::Typ::Kind::Int)) {
       return builder_ptr_sub(bundle, expr->lhs, expr->rhs);
     }
 
-    else if (expr->lhs->evals_to(AST::Typ::Kind::Int) && expr->rhs->evals_to(AST::Typ::Kind::Ptr)) {
+    else if (expr->lhs->is_of_type(AST::Typ::Kind::Int) && expr->rhs->is_of_type(AST::Typ::Kind::Ptr)) {
       return builder_ptr_sub(bundle, expr->rhs, expr->lhs);
     }
 
@@ -262,7 +262,7 @@ llvm::Value *builder_sub(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 
 llvm::Value *builder_mul(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 
-  if (!expr->lhs->evals_to(AST::Typ::Kind::Int) || !expr->rhs->evals_to(AST::Typ::Kind::Int)) {
+  if (!expr->lhs->is_of_type(AST::Typ::Kind::Int) || !expr->rhs->is_of_type(AST::Typ::Kind::Int)) {
     throw_unsupported(expr);
   }
 
@@ -273,7 +273,7 @@ llvm::Value *builder_mul(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 }
 
 llvm::Value *builder_div(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-  if (!expr->lhs->evals_to(AST::Typ::Kind::Int) || !expr->rhs->evals_to(AST::Typ::Kind::Int)) {
+  if (!expr->lhs->is_of_type(AST::Typ::Kind::Int) || !expr->rhs->is_of_type(AST::Typ::Kind::Int)) {
     throw_unsupported(expr);
   }
 
@@ -284,7 +284,7 @@ llvm::Value *builder_div(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 }
 
 llvm::Value *builder_mod(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-  if (!expr->lhs->evals_to(AST::Typ::Kind::Int) || !expr->rhs->evals_to(AST::Typ::Kind::Int)) {
+  if (!expr->lhs->is_of_type(AST::Typ::Kind::Int) || !expr->rhs->is_of_type(AST::Typ::Kind::Int)) {
     throw_unsupported(expr);
   }
 
@@ -295,7 +295,7 @@ llvm::Value *builder_mod(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 }
 
 llvm::Value *builder_eq(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-  if (!expr->lhs->evals_to(expr->rhs->type()->kind())) {
+  if (!expr->lhs->is_of_type(expr->rhs->type()->kind())) {
     throw_unsupported(expr);
   }
 
@@ -306,7 +306,7 @@ llvm::Value *builder_eq(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 }
 
 llvm::Value *builder_ne(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-  if (!expr->lhs->evals_to(expr->rhs->type()->kind())) {
+  if (!expr->lhs->is_of_type(expr->rhs->type()->kind())) {
     throw_unsupported(expr);
   }
 
@@ -317,7 +317,7 @@ llvm::Value *builder_ne(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 }
 
 llvm::Value *builder_gt(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-  if (!expr->lhs->evals_to(expr->rhs->type()->kind())) {
+  if (!expr->lhs->is_of_type(expr->rhs->type()->kind())) {
     throw_unsupported(expr);
   }
 
@@ -328,7 +328,7 @@ llvm::Value *builder_gt(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 }
 
 llvm::Value *builder_lt(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-  if (!expr->lhs->evals_to(expr->rhs->type()->kind())) {
+  if (!expr->lhs->is_of_type(expr->rhs->type()->kind())) {
     throw_unsupported(expr);
   }
 
@@ -339,7 +339,7 @@ llvm::Value *builder_lt(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 }
 
 llvm::Value *builder_geq(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-  if (!expr->lhs->evals_to(expr->rhs->type()->kind())) {
+  if (!expr->lhs->is_of_type(expr->rhs->type()->kind())) {
     throw_unsupported(expr);
   }
 
@@ -350,7 +350,7 @@ llvm::Value *builder_geq(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 }
 
 llvm::Value *builder_leq(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-  if (!expr->lhs->evals_to(expr->rhs->type()->kind())) {
+  if (!expr->lhs->is_of_type(expr->rhs->type()->kind())) {
     throw_unsupported(expr);
   }
 
