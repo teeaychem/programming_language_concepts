@@ -12,6 +12,7 @@
 
 #include "AST/AST.hpp"
 #include "AST/Fmt.hpp"
+#include "AST/Node/Dec.hpp"
 #include "AST/Node/Expr.hpp"
 #include "AST/Types.hpp"
 

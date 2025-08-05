@@ -18,6 +18,9 @@ struct FnPrimative {
   // The return type of the function
   AST::TypHandle return_type;
 
+  // Arguments
+  AST::ParamVec args;
+
   // LLVM IR codegen for the function.
   virtual llvm::Function *codegen(LLVMBundle &bundle) const = 0;
 
@@ -43,7 +46,7 @@ struct LLVMBundle {
 
   // Fn / Prototype / Variable to type mapping maintained during parsing.
   // Empty before, keep after parsing.
-  EnvAST env_ast{};
+  AST::EnvAST env_ast{};
 
   llvm::BasicBlock *return_block{nullptr};
   llvm::Value *return_alloca{nullptr};

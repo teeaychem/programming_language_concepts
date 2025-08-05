@@ -1,3 +1,4 @@
+#include <memory>
 #include <sstream>
 
 #include "Driver.hpp"
@@ -22,7 +23,12 @@ int Driver::parse(const std::string &file) {
 
   for (auto &foundation_elem : this->llvm.foundation_fn_map) {
     auto primative_fn = foundation_elem.second;
-    this->llvm.env_ast.fns[primative_fn->name] = primative_fn->return_type;
+
+    // TODO: Revise
+    AST::Dec::Prototype proto(primative_fn->return_type, primative_fn->name, primative_fn->args);
+    AST::PrototypeHandle handle = std::make_shared<AST::Dec::Prototype>(proto);
+
+    this->llvm.env_ast.fns[primative_fn->name] = handle;
   }
 
   src_file = file;
@@ -70,13 +76,13 @@ void Driver::push_dec(AST::StmtDeclarationHandle stmt) {
     auto as_fn = std::static_pointer_cast<AST::Dec::Fn>(stmt->declaration);
     if (!this->llvm.env_ast.fns.contains(as_fn->name())) {
       // throw std::logic_error(std::format("Missing prototype for {}", as_fn->name()));
-      this->llvm.env_ast.fns[as_fn->name()] = as_fn->return_type();
+      this->llvm.env_ast.fns[as_fn->name()] = as_fn->prototype;
     }
   } break;
 
   case AST::Dec::Kind::Prototype: {
     auto as_pt = std::static_pointer_cast<AST::Dec::Prototype>(stmt->declaration);
-    this->llvm.env_ast.fns[as_pt->name()] = as_pt->return_type();
+    this->llvm.env_ast.fns[as_pt->name()] = as_pt;
   } break;
   }
 
@@ -183,7 +189,7 @@ AST::DecFnHandle Driver::pk_DecFn(AST::PrototypeHandle prototype, AST::StmtBlock
 AST::PrototypeHandle Driver::pk_Prototype(AST::TypHandle r_typ, std::string var, AST::ParamVec params) {
 
   if (this->llvm.env_ast.fns.find(var) != this->llvm.env_ast.fns.end()) {
-    throw std::logic_error(std::format("Existing use of: '{}' unable to declare function.", var));
+    throw std::logic_error(std::format("Existing prototype for: {}.", var));
   }
 
   AST::Dec::Prototype prototype(std::move(r_typ), var, std::move(params));
@@ -194,7 +200,7 @@ AST::PrototypeHandle Driver::pk_Prototype(AST::TypHandle r_typ, std::string var,
 
 AST::ExprHandle Driver::pk_ExprCall(std::string name, std::vector<AST::ExprHandle> params) {
 
-  auto r_typ = this->llvm.env_ast.fns[name];
+  auto r_typ = this->llvm.env_ast.fns[name]->return_type();
   if (!r_typ) {
     throw std::logic_error(std::format("Creation of call without a return type: {}", name));
   }
