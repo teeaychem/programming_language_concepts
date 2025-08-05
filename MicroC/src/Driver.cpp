@@ -176,7 +176,7 @@ AST::ExprHandle Driver::pk_ExprCall(std::string name, std::vector<AST::ExprHandl
 
   auto prototype_find = this->llvm.env_ast.fns.find(name);
   if (prototype_find == this->llvm.env_ast.fns.end()) {
-    throw std::logic_error(std::format("Creation of call without a prototype: {}", name));
+    throw std::logic_error(std::format("Call without prototype: {}", name));
   }
   auto prototype = prototype_find->second;
 
@@ -196,7 +196,6 @@ AST::ExprHandle Driver::pk_ExprCall(std::string name, std::vector<AST::ExprHandl
       if (args[i]->kind() == AST::Expr::Kind::Index) {
         auto as_index = std::static_pointer_cast<AST::Expr::Index>(args[i]);
         if (as_index->target->type()->deref()->kind() != arg_prototype->kind()) {
-          std::cout << as_index->target->type()->to_string() << " ";
           cast_required = true;
         }
       } else {
@@ -204,9 +203,6 @@ AST::ExprHandle Driver::pk_ExprCall(std::string name, std::vector<AST::ExprHandl
       }
 
       if (cast_required) {
-        std::cout << "\t" << args[i]->to_string()
-                  << "\t" << args[i]->type()->to_string()
-                  << "\t" << arg_prototype->to_string() << "\n";
         auto cast = pk_ExprCast(args[i], arg_prototype);
         args[i] = cast;
       }

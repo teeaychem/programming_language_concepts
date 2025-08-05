@@ -3,7 +3,7 @@
 #include "AST/Node/Expr.hpp"
 #include <memory>
 
-llvm::Value *LLVMBundle::access(AST::ExprHandle expr) {
+llvm::Value *LLVMBundle::access(AST::ExprT const *expr) {
 
   auto value = expr->codegen(*this);
 
@@ -30,12 +30,12 @@ llvm::Value *LLVMBundle::access(AST::ExprHandle expr) {
   } break;
 
   case AST::Expr::Kind::Index: {
-    auto as_index = std::static_pointer_cast<AST::Expr::Index>(expr);
+    auto as_index = (AST::Expr::Index *)(expr);
     return this->builder.CreateLoad(as_index->target->type()->deref()->llvm(*this), value);
   } break;
 
   case AST::Expr::Kind::Prim1: {
-    auto as_prim1 = std::static_pointer_cast<AST::Expr::Prim1>(expr);
+    auto as_prim1 = (AST::Expr::Prim1 *)(expr);
 
     switch (as_prim1->op) {
     case AST::Expr::OpUnary::AddressOf:
