@@ -171,9 +171,9 @@ Value *AST::Dec::Prototype::codegen(LLVMBundle &hdl) const {
   std::vector<llvm::Type *> parameter_types{};
 
   { // Generate the parameter types
-    parameter_types.reserve(this->params.size());
+    parameter_types.reserve(this->args.size());
 
-    for (auto &p : this->params) {
+    for (auto &p : this->args) {
       parameter_types.push_back(p.second->llvm(hdl));
     }
   }
@@ -209,7 +209,7 @@ Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) const {
     size_t name_idx{0};
     for (auto &arg : fn->args()) {
 
-      auto &base_name = this->prototype->params[name_idx++].first;
+      auto &base_name = this->prototype->args[name_idx++].first;
 
       arg.setName(base_name);
 

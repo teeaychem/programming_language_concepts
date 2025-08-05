@@ -56,7 +56,7 @@ struct Driver {
 
   // etc
 
-  void add_to_env(AST::ParamVec &params) {
+  void add_to_env(AST::ArgVec &params) {
     for (auto &param : params) {
       this->llvm.env_ast.vars[param.first] = param.second;
     }
@@ -64,7 +64,7 @@ struct Driver {
 
   void fn_finalise(AST::DecFnHandle fn) {
     // TODO: Shadowing of global variables...
-    for (auto &param : fn->prototype->params) {
+    for (auto &param : fn->prototype->args) {
       this->llvm.env_ast.vars.erase(param.first);
     }
   }
@@ -242,7 +242,7 @@ struct Driver {
 
   AST::DecFnHandle pk_DecFn(AST::PrototypeHandle prototype, AST::StmtBlockHandle body);
 
-  AST::PrototypeHandle pk_Prototype(AST::TypHandle r_typ, std::string var, AST::ParamVec params);
+  AST::PrototypeHandle pk_Prototype(AST::TypHandle r_typ, std::string var, AST::ArgVec params);
 
   // pk Expr
 

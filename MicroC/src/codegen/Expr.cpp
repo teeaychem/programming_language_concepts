@@ -1,6 +1,3 @@
-#include <iostream>
-#include <memory>
-#include <stdexcept>
 #include <vector>
 
 #include "llvm/IR/Constants.h"
@@ -11,7 +8,6 @@
 
 #include "AST/AST.hpp"
 #include "AST/Fmt.hpp"
-#include "AST/Node/Dec.hpp"
 #include "AST/Node/Expr.hpp"
 
 #include "LLVMBundle.hpp"
@@ -44,13 +40,6 @@ Value *AST::Expr::Call::codegen(LLVMBundle &bundle) const {
     throw std::logic_error(std::format("Call to {} requires {} arguments, received {}.",
                                        this->name, callee_f->arg_size(), this->arguments.size()));
   }
-
-  std::cout << "Finding... " << this->name << "\n";
-  auto fn_ast = bundle.env_ast.fns.find(this->name);
-  if (fn_ast != bundle.env_ast.fns.end()) {
-    std::cout << "in ast: " << fn_ast->second->to_string();
-  }
-  std::cout << "\n";
 
   std::vector<Value *> arg_values{};
   for (auto &arg : this->arguments) {
@@ -121,12 +110,12 @@ Value *AST::Expr::CstI::codegen(LLVMBundle &bundle) const {
 }
 
 Value *AST::Expr::Index::codegen(LLVMBundle &bundle) const {
-  Value *value = this->access->codegen(bundle);
+  Value *value = this->target->codegen(bundle);
 
   // TODO: Improve
   assert(value->getType()->isPointerTy());
 
-  Type *typ = this->access->type()->llvm(bundle);
+  Type *typ = this->target->type()->llvm(bundle);
   Value *index = this->index->codegen(bundle);
 
   auto ptr = bundle.builder.CreateGEP(typ, value, ArrayRef<Value *>(index));

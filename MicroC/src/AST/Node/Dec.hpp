@@ -44,12 +44,12 @@ private:
   std::string id;
 
 public:
-  ParamVec params;
+  ArgVec args;
 
-  Prototype(TypHandle r_typ, std::string name, ParamVec params)
+  Prototype(TypHandle r_typ, std::string name, ArgVec params)
       : r_typ(std::move(r_typ)),
         id(name),
-        params(std::move(params)) {}
+        args(std::move(params)) {}
 
   Dec::Kind kind() const override { return Dec::Kind::Fn; }
   TypHandle type() const override { return r_typ; };

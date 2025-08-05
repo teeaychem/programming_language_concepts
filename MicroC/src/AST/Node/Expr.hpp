@@ -65,12 +65,12 @@ struct CstI : ExprT {
 // Index
 
 struct Index : ExprT {
-  ExprHandle access;
+  ExprHandle target;
   ExprHandle index;
 
-  Index(ExprHandle expr, ExprHandle index) : access(expr),
+  Index(ExprHandle expr, ExprHandle index) : target(expr),
                                              index(index) {
-    this->typ = this->access->type();
+    this->typ = this->target->type();
   }
 
   Expr::Kind kind() const override { return Expr::Kind::Index; }

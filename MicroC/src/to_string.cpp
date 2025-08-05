@@ -48,8 +48,8 @@ std::string AST::Dec::Prototype::to_string(size_t indent) const {
 
   fn_ss << std::format("{} {} (", r_typ->to_string(indent), this->id);
 
-  if (!params.empty()) {
-    for (auto &p : params) {
+  if (!args.empty()) {
+    for (auto &p : args) {
       fn_ss << std::format("{} {}, ", p.second->to_string(indent), p.first);
     }
     fn_ss.seekp(-2, std::ios_base::end);
@@ -99,7 +99,7 @@ std::string AST::Expr::CstI::to_string(size_t indent) const {
 }
 
 std::string AST::Expr::Index::to_string(size_t indent) const {
-  return std::format("{}[{}]", this->access->to_string(indent), this->index->to_string(indent));
+  return std::format("{}[{}]", this->target->to_string(indent), this->index->to_string(indent));
 }
 
 std::string AST::Expr::Prim1::to_string(size_t indent) const {
