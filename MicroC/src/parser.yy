@@ -126,8 +126,8 @@ AtomicConst:
 
 
 DataType:
-    INT   { $$ = driver.pk_Int();  }
-  | CHAR  { $$ = driver.pk_Char(); }
+    INT   { $$ = AST::Typ::pk_Int();  }
+  | CHAR  { $$ = AST::Typ::pk_Char(); }
 ;
 
 
@@ -181,7 +181,7 @@ Expr:
 FnPrototype:
     VOID NAME LPAR Paramdecs RPAR      {
       driver.add_to_env($4);
-      auto p = driver.pk_Prototype(driver.pk_Void(), $2, $4);
+      auto p = driver.pk_Prototype(AST::Typ::pk_Void(), $2, $4);
       $$ = p;
     }
   | DataType NAME LPAR Paramdecs RPAR  {
@@ -271,11 +271,11 @@ Vardec:
 
 
 Vardesc:
-    NAME                          { $$ = std::make_pair($1, driver.pk_Void());                               }
-  | STAR Vardesc                  { $$ = std::make_pair($2.first, driver.pk_Ptr($2.second));                 }
+    NAME                          { $$ = std::make_pair($1, AST::Typ::pk_Void());                               }
+  | STAR Vardesc                  { $$ = std::make_pair($2.first, AST::Typ::pk_Ptr($2.second));                 }
   | LPAR Vardesc RPAR             { $$ = $2;                                                                    }
-  | Vardesc LBRACK RBRACK         { $$ = std::make_pair($1.first, driver.pk_Ptr($1.second, std::nullopt)); }
-  | Vardesc LBRACK CSTINT RBRACK  { $$ = std::make_pair($1.first, driver.pk_Ptr($1.second, $3));           }
+  | Vardesc LBRACK RBRACK         { $$ = std::make_pair($1.first, AST::Typ::pk_Ptr($1.second, std::nullopt)); }
+  | Vardesc LBRACK CSTINT RBRACK  { $$ = std::make_pair($1.first, AST::Typ::pk_Ptr($1.second, $3));           }
 ;
 
 

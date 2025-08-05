@@ -140,32 +140,6 @@ AST::Expr::OpUnary Driver::to_unary_op(std::string op) {
 
 // TODO: Clean up moves, as these were implemented without much thought.
 
-// pk typ
-AST::TypHandle Driver::pk_Int() {
-  AST::Typ::Int type_int{};
-  return std::make_shared<AST::Typ::Int>(std::move(type_int));
-};
-
-AST::TypHandle Driver::pk_Char() {
-  AST::Typ::Char type_char{};
-  return std::make_shared<AST::Typ::Char>(std::move(type_char));
-};
-
-AST::TypHandle Driver::pk_Void() {
-  AST::Typ::Void type_void{};
-  return std::make_shared<AST::Typ::Void>(std::move(type_void));
-}
-
-AST::TypHandle Driver::pk_Ptr(AST::TypHandle typ, std::optional<std::int64_t> area) {
-  AST::Typ::Ptr type_index(std::move(typ), std::move(area));
-  return std::make_shared<AST::Typ::Ptr>(std::move(type_index));
-}
-
-AST::TypHandle Driver::pk_Ptr(AST::TypHandle typ) {
-  AST::Typ::Ptr type_index(std::move(typ), std::nullopt);
-  return std::make_shared<AST::Typ::Ptr>(std::move(type_index));
-}
-
 // pk Dec
 
 AST::DecVarHandle Driver::pk_DecVar(AST::Dec::Scope scope, AST::TypHandle typ, std::string var) {
@@ -223,7 +197,7 @@ AST::ExprHandle Driver::pk_ExprCall(std::string name) {
 }
 
 AST::ExprHandle Driver::pk_ExprCstI(std::int64_t i) {
-  auto typ = this->pk_Int();
+  auto typ = AST::Typ::pk_Int();
   AST::Expr::CstI csti(std::move(typ), i);
 
   return std::make_shared<AST::Expr::CstI>(std::move(csti));
