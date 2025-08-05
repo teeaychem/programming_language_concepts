@@ -110,13 +110,11 @@ Value *AST::Expr::CstI::codegen(LLVMBundle &bundle) const {
 }
 
 Value *AST::Expr::Index::codegen(LLVMBundle &bundle) const {
+  // FIXME: Check access for all expressions
   Value *value = this->target->codegen(bundle);
 
-  // TODO: Improve
-  assert(value->getType()->isPointerTy());
-
   Type *typ = this->target->type()->llvm(bundle);
-  Value *index = this->index->codegen(bundle);
+  Value *index = bundle.access(this->index.get());
 
   auto ptr = bundle.builder.CreateGEP(typ, value, ArrayRef<Value *>(index));
 
