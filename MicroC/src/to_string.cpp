@@ -19,18 +19,11 @@ size_t const INDENT_SIZE = 2;
 // Support
 
 // Types
+std::string AST::Typ::Bool::to_string(size_t indent) const { return "bool"; }
 
-std::string AST::Typ::Int::to_string(size_t indent) const {
-  return "int";
-}
+std::string AST::Typ::Char::to_string(size_t indent) const { return "char"; }
 
-std::string AST::Typ::Char::to_string(size_t indent) const {
-  return "char";
-}
-
-std::string AST::Typ::Void::to_string(size_t indent) const {
-  return "void";
-}
+std::string AST::Typ::Int::to_string(size_t indent) const { return "int"; }
 
 std::string AST::Typ::Ptr::to_string(size_t indent) const {
   if (this->area().has_value()) {
@@ -39,6 +32,8 @@ std::string AST::Typ::Ptr::to_string(size_t indent) const {
     return std::format("*{}", this->pointee_type()->to_string(indent));
   }
 }
+
+std::string AST::Typ::Void::to_string(size_t indent) const { return "void"; }
 
 // Nodes
 

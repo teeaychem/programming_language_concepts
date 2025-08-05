@@ -1,4 +1,3 @@
-#include <cstdio>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
@@ -14,7 +13,6 @@
 #include "AST/Fmt.hpp"
 #include "AST/Node/Dec.hpp"
 #include "AST/Node/Expr.hpp"
-#include "AST/Types.hpp"
 
 #include "LLVMBundle.hpp"
 
@@ -66,31 +64,50 @@ Value *AST::Expr::Cast::codegen(LLVMBundle &bundle) const {
 
   switch (this->type()->kind()) {
 
+  case Typ::Kind::Bool: {
+    throw std::logic_error(std::format("Unsupported cast {}", this->to_string()));
+  } break;
+
+  case Typ::Kind::Char: {
+    throw std::logic_error(std::format("Unsupported cast {}", this->to_string()));
+  } break;
+
+  case Typ::Kind::Int: {
+
+    switch (expr->type()->kind()) {
+
+    case Typ::Kind::Bool: {
+      auto expr_value = this->expr->codegen(bundle);
+      auto cast = bundle.builder.CreateIntCast(expr_value, this->type()->llvm(bundle), false);
+      return cast;
+    } break;
+
+    case Typ::Kind::Char:
+    case Typ::Kind::Int: {
+      throw std::logic_error(std::format("Unsupported cast {}", this->to_string()));
+    } break;
+
+    case Typ::Kind::Ptr: {
+      auto ptr_value = this->expr->codegen(bundle);
+      auto cast = bundle.builder.CreatePtrToInt(ptr_value, this->type()->llvm(bundle));
+      return cast;
+    } break;
+
+    case Typ::Kind::Void: {
+      throw std::logic_error(std::format("Unsupported cast {}", this->to_string()));
+    } break;
+    }
+
+  } break;
+
   case Typ::Kind::Ptr: {
     if (this->expr->is_of_type(AST::Typ::Kind::Int)) {
-      std::cout << "\nCreateIntToPtr\n";
       auto int_value = this->expr->codegen(bundle);
       auto cast = bundle.builder.CreateIntToPtr(int_value, this->type()->llvm(bundle));
       return cast;
     } else {
       throw std::logic_error(std::format("Unsupported cast {}", this->to_string()));
     }
-  } break;
-
-  case Typ::Kind::Int: {
-    if (this->expr->is_of_type(AST::Typ::Kind::Ptr)) {
-      std::cout << "\nCreatePtrToInt\n";
-      auto ptr_value = this->expr->codegen(bundle);
-      auto cast = bundle.builder.CreatePtrToInt(ptr_value, this->type()->llvm(bundle));
-      return cast;
-    } else {
-      throw std::logic_error(std::format("Unsupported cast {}", this->to_string()));
-    }
-
-  } break;
-
-  case Typ::Kind::Char: {
-    throw std::logic_error(std::format("Unsupported cast {}", this->to_string()));
   } break;
 
   case Typ::Kind::Void: {
@@ -199,10 +216,24 @@ llvm::Value *builder_ptr_add(LLVMBundle &bundle, AST::ExprHandle ptr, AST::ExprH
 
 llvm::Value *builder_add(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 
-  auto lhs_type = expr->lhs->type();
-  auto rhs_type = expr->rhs->type();
-
   switch (expr->type()->kind()) {
+
+  case AST::Typ::Kind::Bool: {
+    throw std::logic_error("Unsupported op");
+  } break;
+
+  case AST::Typ::Kind::Char: {
+    throw std::logic_error("Unsupported op");
+  } break;
+
+  case AST::Typ::Kind::Int: {
+
+    auto lhs_val = bundle.access(expr->lhs);
+    auto rhs_val = bundle.access(expr->rhs);
+
+    return bundle.builder.CreateAdd(lhs_val, rhs_val, "op.add");
+
+  } break;
 
   case AST::Typ::Kind::Ptr: {
 
@@ -218,19 +249,6 @@ llvm::Value *builder_add(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
       throw std::logic_error("Incompatible targets for pointer arithmetic");
     }
   }
-
-  case AST::Typ::Kind::Int: {
-
-    auto lhs_val = bundle.access(expr->lhs);
-    auto rhs_val = bundle.access(expr->rhs);
-
-    return bundle.builder.CreateAdd(lhs_val, rhs_val, "op.add");
-
-  } break;
-
-  case AST::Typ::Kind::Char: {
-    throw std::logic_error("Unsupported op");
-  } break;
 
   case AST::Typ::Kind::Void: {
     throw std::logic_error("Unsupported op");
@@ -253,10 +271,24 @@ llvm::Value *builder_ptr_sub(LLVMBundle &bundle, AST::ExprHandle ptr, AST::ExprH
 
 llvm::Value *builder_sub(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 
-  auto lhs_type = expr->lhs->type();
-  auto rhs_type = expr->rhs->type();
-
   switch (expr->type()->kind()) {
+
+  case AST::Typ::Kind::Bool: {
+    throw std::logic_error("Unsupported op");
+  } break;
+
+  case AST::Typ::Kind::Char: {
+    throw std::logic_error("Unsupported op");
+  } break;
+
+  case AST::Typ::Kind::Int: {
+
+    auto lhs_val = bundle.access(expr->lhs);
+    auto rhs_val = bundle.access(expr->rhs);
+
+    return bundle.builder.CreateSub(lhs_val, rhs_val, "op.sub");
+
+  } break;
 
   case AST::Typ::Kind::Ptr: {
 
@@ -272,19 +304,6 @@ llvm::Value *builder_sub(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
       throw std::logic_error("Incompatible targets for pointer arithmetic");
     }
   }
-
-  case AST::Typ::Kind::Int: {
-
-    auto lhs_val = bundle.access(expr->lhs);
-    auto rhs_val = bundle.access(expr->rhs);
-
-    return bundle.builder.CreateSub(lhs_val, rhs_val, "op.sub");
-
-  } break;
-
-  case AST::Typ::Kind::Char: {
-    throw std::logic_error("Unsupported op");
-  } break;
 
   case AST::Typ::Kind::Void: {
     throw std::logic_error("Unsupported op");

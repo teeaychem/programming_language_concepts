@@ -96,11 +96,11 @@ struct Driver {
     } break;
 
     case AST::Expr::OpUnary::Sub: {
-      return expr->type();
+      return AST::Typ::pk_Int();
     } break;
 
     case AST::Expr::OpUnary::Negation: {
-      return expr->type();
+      return AST::Typ::pk_Bool();
     } break;
     }
   }
@@ -166,7 +166,7 @@ struct Driver {
     case AST::Expr::OpBinary::AssignMod: {
       type_ensure_assignment(lhs, rhs);
 
-      return lhs->type();
+      return rhs->type();
     } break;
 
     case AST::Expr::OpBinary::Add:
@@ -175,15 +175,24 @@ struct Driver {
     case AST::Expr::OpBinary::Div:
     case AST::Expr::OpBinary::Mod: {
       if (lhs->type()->kind() == rhs->type()->kind()) {
-        if (lhs->is_of_type(AST::Typ::Kind::Int)) {
-          return lhs->type();
-        } else if (lhs->is_of_type(AST::Typ::Kind::Char)) {
-          return lhs->type();
-        } else if (lhs->is_of_type(AST::Typ::Kind::Void)) {
+
+        switch (lhs->type()->kind()) {
+
+        case AST::Typ::Kind::Bool:
+        case AST::Typ::Kind::Char: {
           return type_unsupported_binary_op(op, lhs, rhs);
-        } else {
+        } break;
+
+        case AST::Typ::Kind::Int: {
+          return AST::Typ::pk_Int();
+        } break;
+
+        case AST::Typ::Kind::Ptr:
+        case AST::Typ::Kind::Void: {
           return type_unsupported_binary_op(op, lhs, rhs);
+        } break;
         }
+
       }
 
       else if (lhs->is_of_type(AST::Typ::Kind::Ptr)) {
@@ -210,13 +219,13 @@ struct Driver {
     case AST::Expr::OpBinary::Geq: {
       type_ensure_match(lhs, rhs);
 
-      return AST::Typ::pk_Int();
+      return AST::Typ::pk_Bool();
     } break;
 
     case AST::Expr::OpBinary::And:
     case AST::Expr::OpBinary::Or: {
 
-      return AST::Typ::pk_Int();
+      return AST::Typ::pk_Bool();
     } break;
     }
   }
