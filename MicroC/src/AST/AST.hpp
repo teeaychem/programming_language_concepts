@@ -48,6 +48,10 @@ struct TypT {
   // Completes the type, may throw if already complete.
   virtual TypHandle complete_with(TypHandle d_typ) = 0;
 
+  virtual llvm::Constant *defaultgen(LLVMBundle &hdl) const {
+    return llvm::Constant::getNullValue(this->llvm(hdl));
+  };
+
   virtual ~TypT() = default;
 };
 

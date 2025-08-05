@@ -20,10 +20,6 @@ struct Bool : TypT {
   TypHandle complete_with(TypHandle data) override { throw std::logic_error("Complete into bool"); }
 
   llvm::Type *llvm(LLVMBundle &hdl) const override { return llvm::Type::getInt1Ty(*hdl.context); }
-
-  llvm::Constant *defaultgen(LLVMBundle &hdl) const {
-    return llvm::ConstantInt::get(this->llvm(hdl), 0);
-  }
 };
 
 struct Char : TypT {
@@ -37,12 +33,6 @@ struct Char : TypT {
   TypHandle complete_with(TypHandle data) override { throw std::logic_error("Complete into char."); }
 
   llvm::Type *llvm(LLVMBundle &hdl) const override { return llvm::Type::getInt8Ty(*hdl.context); }
-
-  // The default value for a type, used during declarations, etc.
-  // Throws on void type.
-  llvm::Constant *defaultgen(LLVMBundle &hdl) const {
-    return llvm::ConstantInt::get(this->llvm(hdl), 0);
-  }
 };
 
 struct Int : TypT {
@@ -57,8 +47,6 @@ struct Int : TypT {
   TypHandle complete_with(TypHandle data) override { throw std::logic_error("Complete into int."); }
 
   llvm::Type *llvm(LLVMBundle &hdl) const override { return llvm::Type::getInt64Ty(*hdl.context); }
-
-  llvm::Constant *defaultgen(LLVMBundle &hdl) const { return llvm::ConstantInt::get(this->llvm(hdl), 0); }
 };
 
 struct Ptr : TypT {
@@ -135,8 +123,6 @@ struct Void : TypT {
   TypHandle complete_with(TypHandle data) override { return data; }
 
   llvm::Type *llvm(LLVMBundle &hdl) const override { return llvm::Type::getVoidTy(*hdl.context); }
-
-  llvm::Constant *defaultgen(LLVMBundle &hdl) const { throw std::logic_error("Declaration of void type"); }
 };
 
 // pk typ

@@ -43,7 +43,7 @@ Value *AST::Expr::Call::codegen(LLVMBundle &bundle) const {
 
   std::vector<Value *> arg_values{};
   for (auto &arg : this->arguments) {
-    arg_values.push_back(bundle.access(arg));
+    arg_values.push_back(bundle.access(arg.get()));
   }
 
   return bundle.builder.CreateCall(callee_f, arg_values, std::format("{}", this->name));
@@ -136,11 +136,11 @@ Value *AST::Expr::Prim1::codegen(LLVMBundle &bundle) const {
   } break;
 
   case OpUnary::Sub: {
-    return bundle.builder.CreateNeg(bundle.access(expr), "op.neg");
+    return bundle.builder.CreateNeg(bundle.access(expr.get()), "op.neg");
   } break;
 
   case OpUnary::Negation: {
-    return bundle.builder.CreateNot(bundle.access(expr), "op.not");
+    return bundle.builder.CreateNot(bundle.access(expr.get()), "op.not");
   } break;
   }
 }
@@ -148,24 +148,26 @@ Value *AST::Expr::Prim1::codegen(LLVMBundle &bundle) const {
 // Support
 
 Value *AST::ExprT::codegen_eval_true(LLVMBundle &bundle) const {
-  Value *evaluation = this->codegen(bundle);
+
+  Value *evaluation = bundle.access(this);
 
   if (evaluation->getType()->isIntegerTy(1)) {
     return evaluation;
   } else {
-    Value *zero = ConstantInt::get(this->type()->llvm(bundle), 0);
-    return bundle.builder.CreateCmp(ICmpInst::ICMP_NE, evaluation, zero, "op.neq");
+    Value *zero = this->type()->defaultgen(bundle);
+    return bundle.builder.CreateCmp(ICmpInst::ICMP_NE, evaluation, zero, "op.eval_true");
   }
 }
 
 Value *AST::ExprT::codegen_eval_false(LLVMBundle &bundle) const {
-  Value *evaluation = this->codegen(bundle);
+
+  Value *evaluation = bundle.access(this);
 
   if (evaluation->getType()->isIntegerTy(1)) {
     return evaluation;
   } else {
-    Value *zero = ConstantInt::get(this->type()->llvm(bundle), 0);
-    return bundle.builder.CreateCmp(ICmpInst::ICMP_EQ, evaluation, zero, "op.eq");
+    Value *zero = this->type()->defaultgen(bundle);
+    return bundle.builder.CreateCmp(ICmpInst::ICMP_EQ, evaluation, zero, "op.eval_false");
   }
 }
 
@@ -184,7 +186,7 @@ llvm::Value *builder_assign(LLVMBundle &bundle, AST::ExprHandle destination, AST
 
   llvm::Value *destination_val = destination->codegen(bundle);
 
-  auto value_val = bundle.access(value);
+  auto value_val = bundle.access(value.get());
 
   bundle.builder.CreateStore(value_val, destination_val, "op.assign");
 
@@ -198,7 +200,7 @@ llvm::Value *builder_ptr_add(LLVMBundle &bundle, AST::ExprHandle ptr, AST::ExprH
 
   auto ptr_sub = bundle.builder.CreateGEP(ptr_typ,
                                           ptr->codegen(bundle),
-                                          ArrayRef<Value *>(bundle.access(val)));
+                                          ArrayRef<Value *>(bundle.access(val.get())));
 
   return ptr_sub;
 }
@@ -217,8 +219,8 @@ llvm::Value *builder_add(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 
   case AST::Typ::Kind::Int: {
 
-    auto lhs_val = bundle.access(expr->lhs);
-    auto rhs_val = bundle.access(expr->rhs);
+    auto lhs_val = bundle.access(expr->lhs.get());
+    auto rhs_val = bundle.access(expr->rhs.get());
 
     return bundle.builder.CreateAdd(lhs_val, rhs_val, "op.add");
 
@@ -249,7 +251,7 @@ llvm::Value *builder_add(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 llvm::Value *builder_ptr_sub(LLVMBundle &bundle, AST::ExprHandle ptr, AST::ExprHandle val) {
 
   auto ptr_typ = ptr->type()->deref()->llvm(bundle);
-  auto ptr_elem = bundle.builder.CreateNeg(bundle.access(val));
+  auto ptr_elem = bundle.builder.CreateNeg(bundle.access(val.get()));
 
   auto ptr_sub = bundle.builder.CreateGEP(ptr_typ,
                                           ptr->codegen(bundle),
@@ -272,8 +274,8 @@ llvm::Value *builder_sub(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 
   case AST::Typ::Kind::Int: {
 
-    auto lhs_val = bundle.access(expr->lhs);
-    auto rhs_val = bundle.access(expr->rhs);
+    auto lhs_val = bundle.access(expr->lhs.get());
+    auto rhs_val = bundle.access(expr->rhs.get());
 
     return bundle.builder.CreateSub(lhs_val, rhs_val, "op.sub");
 
@@ -306,8 +308,8 @@ llvm::Value *builder_mul(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
     throw_unsupported(expr);
   }
 
-  auto lhs_val = bundle.access(expr->lhs);
-  auto rhs_val = bundle.access(expr->rhs);
+  auto lhs_val = bundle.access(expr->lhs.get());
+  auto rhs_val = bundle.access(expr->rhs.get());
 
   return bundle.builder.CreateMul(lhs_val, rhs_val, "op.mul");
 }
@@ -317,8 +319,8 @@ llvm::Value *builder_div(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
     throw_unsupported(expr);
   }
 
-  auto lhs_val = bundle.access(expr->lhs);
-  auto rhs_val = bundle.access(expr->rhs);
+  auto lhs_val = bundle.access(expr->lhs.get());
+  auto rhs_val = bundle.access(expr->rhs.get());
 
   return bundle.builder.CreateSDiv(lhs_val, rhs_val, "op.div");
 }
@@ -328,8 +330,8 @@ llvm::Value *builder_mod(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
     throw_unsupported(expr);
   }
 
-  auto lhs_val = bundle.access(expr->lhs);
-  auto rhs_val = bundle.access(expr->rhs);
+  auto lhs_val = bundle.access(expr->lhs.get());
+  auto rhs_val = bundle.access(expr->rhs.get());
 
   return bundle.builder.CreateSRem(lhs_val, rhs_val, "op.mod");
 }
@@ -339,8 +341,8 @@ llvm::Value *builder_eq(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
     throw_unsupported(expr);
   }
 
-  auto lhs_val = bundle.access(expr->lhs);
-  auto rhs_val = bundle.access(expr->rhs);
+  auto lhs_val = bundle.access(expr->lhs.get());
+  auto rhs_val = bundle.access(expr->rhs.get());
 
   return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_EQ, lhs_val, rhs_val, "op.eq");
 }
@@ -350,8 +352,8 @@ llvm::Value *builder_ne(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
     throw_unsupported(expr);
   }
 
-  auto lhs_val = bundle.access(expr->lhs);
-  auto rhs_val = bundle.access(expr->rhs);
+  auto lhs_val = bundle.access(expr->lhs.get());
+  auto rhs_val = bundle.access(expr->rhs.get());
 
   return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_NE, lhs_val, rhs_val, "op.neq");
 }
@@ -361,8 +363,8 @@ llvm::Value *builder_gt(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
     throw_unsupported(expr);
   }
 
-  auto lhs_val = bundle.access(expr->lhs);
-  auto rhs_val = bundle.access(expr->rhs);
+  auto lhs_val = bundle.access(expr->lhs.get());
+  auto rhs_val = bundle.access(expr->rhs.get());
 
   return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SGT, lhs_val, rhs_val, "op.gt");
 }
@@ -372,8 +374,8 @@ llvm::Value *builder_lt(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
     throw_unsupported(expr);
   }
 
-  auto lhs_val = bundle.access(expr->lhs);
-  auto rhs_val = bundle.access(expr->rhs);
+  auto lhs_val = bundle.access(expr->lhs.get());
+  auto rhs_val = bundle.access(expr->rhs.get());
 
   return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SLT, lhs_val, rhs_val, "op.lt");
 }
@@ -383,8 +385,8 @@ llvm::Value *builder_geq(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
     throw_unsupported(expr);
   }
 
-  auto lhs_val = bundle.access(expr->lhs);
-  auto rhs_val = bundle.access(expr->rhs);
+  auto lhs_val = bundle.access(expr->lhs.get());
+  auto rhs_val = bundle.access(expr->rhs.get());
 
   return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SGE, lhs_val, rhs_val, "op.geq");
 }
@@ -394,23 +396,23 @@ llvm::Value *builder_leq(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
     throw_unsupported(expr);
   }
 
-  auto lhs_val = bundle.access(expr->lhs);
-  auto rhs_val = bundle.access(expr->rhs);
+  auto lhs_val = bundle.access(expr->lhs.get());
+  auto rhs_val = bundle.access(expr->rhs.get());
 
   return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SLE, lhs_val, rhs_val, "op.leq");
 }
 
 llvm::Value *builder_and(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 
-  auto lhs_val = bundle.access(expr->lhs);
-  auto rhs_val = bundle.access(expr->rhs);
+  auto lhs_val = bundle.access(expr->lhs.get());
+  auto rhs_val = bundle.access(expr->rhs.get());
 
   return bundle.builder.CreateAnd(lhs_val, rhs_val, "op.and");
 }
 
 llvm::Value *builder_or(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-  auto lhs_val = bundle.access(expr->lhs);
-  auto rhs_val = bundle.access(expr->rhs);
+  auto lhs_val = bundle.access(expr->lhs.get());
+  auto rhs_val = bundle.access(expr->rhs.get());
 
   return bundle.builder.CreateOr(lhs_val, rhs_val, "op.or");
 }
