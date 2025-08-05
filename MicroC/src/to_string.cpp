@@ -94,6 +94,11 @@ std::string AST::Expr::Call::to_string(size_t indent) const {
 
   return call_str;
 }
+
+std::string AST::Expr::Cast::to_string(size_t indent) const {
+  return std::format("({}){}", this->typ->to_string(), this->expr->to_string());
+}
+
 std::string AST::Expr::CstI::to_string(size_t indent) const {
   return std::format("{}", i);
 }

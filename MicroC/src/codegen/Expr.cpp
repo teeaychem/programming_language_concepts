@@ -51,11 +51,6 @@ Value *AST::Expr::Call::codegen(LLVMBundle &bundle) const {
   auto fn_ast = bundle.env_ast.fns.find(this->name);
   if (fn_ast != bundle.env_ast.fns.end()) {
     std::cout << "in ast: " << fn_ast->second->to_string();
-  } else {
-    auto fn_foundation = bundle.foundation_fn_map.find(this->name);
-    if (fn_foundation != bundle.foundation_fn_map.end()) {
-      std::cout << " foundational: " << fn_foundation->second->return_type->to_string();
-    }
   }
   std::cout << "\n";
 
@@ -65,6 +60,43 @@ Value *AST::Expr::Call::codegen(LLVMBundle &bundle) const {
   }
 
   return bundle.builder.CreateCall(callee_f, arg_values);
+}
+
+Value *AST::Expr::Cast::codegen(LLVMBundle &bundle) const {
+
+  switch (this->type()->kind()) {
+
+  case Typ::Kind::Ptr: {
+    if (this->expr->is_of_type(AST::Typ::Kind::Int)) {
+      std::cout << "\nCreateIntToPtr\n";
+      auto int_value = this->expr->codegen(bundle);
+      auto cast = bundle.builder.CreateIntToPtr(int_value, this->type()->llvm(bundle));
+      return cast;
+    } else {
+      throw std::logic_error(std::format("Unsupported cast {}", this->to_string()));
+    }
+  } break;
+
+  case Typ::Kind::Int: {
+    if (this->expr->is_of_type(AST::Typ::Kind::Ptr)) {
+      std::cout << "\nCreatePtrToInt\n";
+      auto ptr_value = this->expr->codegen(bundle);
+      auto cast = bundle.builder.CreatePtrToInt(ptr_value, this->type()->llvm(bundle));
+      return cast;
+    } else {
+      throw std::logic_error(std::format("Unsupported cast {}", this->to_string()));
+    }
+
+  } break;
+
+  case Typ::Kind::Char: {
+    throw std::logic_error(std::format("Unsupported cast {}", this->to_string()));
+  } break;
+
+  case Typ::Kind::Void: {
+    throw std::logic_error(std::format("Unsupported cast {}", this->to_string()));
+  } break;
+  }
 }
 
 Value *AST::Expr::CstI::codegen(LLVMBundle &bundle) const {
@@ -302,7 +334,7 @@ llvm::Value *builder_eq(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
   auto lhs_val = bundle.access(expr->lhs);
   auto rhs_val = bundle.access(expr->rhs);
 
-  return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_EQ, lhs_val, rhs_val);
+  return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_EQ, lhs_val, rhs_val, "op.eq");
 }
 
 llvm::Value *builder_ne(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {

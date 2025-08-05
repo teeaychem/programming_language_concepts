@@ -172,16 +172,41 @@ AST::PrototypeHandle Driver::pk_Prototype(AST::TypHandle r_typ, std::string var,
 
 // pk Expr
 
-AST::ExprHandle Driver::pk_ExprCall(std::string name, std::vector<AST::ExprHandle> params) {
+AST::ExprHandle Driver::pk_ExprCall(std::string name, std::vector<AST::ExprHandle> args) {
 
-  auto r_typ = this->llvm.env_ast.fns[name]->return_type();
-  if (!r_typ) {
-    throw std::logic_error(std::format("Creation of call without a return type: {}", name));
+  auto prototype_find = this->llvm.env_ast.fns.find(name);
+  if (prototype_find == this->llvm.env_ast.fns.end()) {
+    throw std::logic_error(std::format("Creation of call without a prototype: {}", name));
+  }
+  auto prototype = prototype_find->second;
+
+  if (args.size() != prototype->params.size()) {
+    throw std::logic_error(std::format("Call to '{}' expected {} args, found {}",
+                                       name,
+                                       prototype->params.size(),
+                                       args.size()));
   }
 
-  AST::Expr::Call call(std::move(r_typ), std::move(name), std::move(params));
+  for (int i = 0; i < args.size(); ++i) {
+    if (!args[i]->is_of_type(prototype->params[i].second->kind())) {
+      std::cout << "\t" << args[i]->type()->to_string() << "\n"
+                << "\t" << prototype->params[i].second->to_string() << "\n";
+
+      auto cast = pk_ExprCast(args[i], prototype->params[i].second);
+      args[i] = cast;
+
+    }
+  }
+
+  AST::Expr::Call call(std::move(prototype->return_type()), std::move(name), std::move(args));
 
   return std::make_shared<AST::Expr::Call>(std::move(call));
+}
+
+AST::ExprHandle Driver::pk_ExprCast(AST::ExprHandle expr, AST::TypHandle to) {
+
+  AST::Expr::Cast cast(expr, to);
+  return std::make_shared<AST::Expr::Cast>(std::move(cast));
 }
 
 AST::ExprHandle Driver::pk_ExprCall(std::string name, AST::ExprHandle param) {
