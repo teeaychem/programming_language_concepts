@@ -152,7 +152,14 @@ Value *AST::ExprT::codegen_eval_true(LLVMBundle &bundle) const {
   if (evaluation->getType()->isIntegerTy(1)) {
     return evaluation;
   } else {
+
     Value *zero = this->type()->defaultgen(bundle);
+
+    // FIXME: More deref hacks
+    if (this->kind() == AST::Expr::Kind::Index) {
+      zero = this->type()->deref()->defaultgen(bundle);
+    }
+
     return bundle.builder.CreateCmp(ICmpInst::ICMP_NE, evaluation, zero, "op.eval_true");
   }
 }
@@ -401,16 +408,15 @@ llvm::Value *builder_leq(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 }
 
 llvm::Value *builder_and(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-
-  auto lhs_val = bundle.access(expr->lhs.get());
-  auto rhs_val = bundle.access(expr->rhs.get());
+  auto lhs_val = expr->lhs->codegen_eval_true(bundle);
+  auto rhs_val = expr->rhs->codegen_eval_true(bundle);
 
   return bundle.builder.CreateAnd(lhs_val, rhs_val, "op.and");
 }
 
 llvm::Value *builder_or(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-  auto lhs_val = bundle.access(expr->lhs.get());
-  auto rhs_val = bundle.access(expr->rhs.get());
+  auto lhs_val = expr->lhs->codegen_eval_true(bundle);
+  auto rhs_val = expr->rhs->codegen_eval_true(bundle);
 
   return bundle.builder.CreateOr(lhs_val, rhs_val, "op.or");
 }
