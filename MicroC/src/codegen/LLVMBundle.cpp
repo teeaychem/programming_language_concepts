@@ -1,6 +1,7 @@
 #include "LLVMBundle.hpp"
 #include "AST/AST.hpp"
 #include "AST/Node/Expr.hpp"
+#include <memory>
 
 llvm::Value *LLVMBundle::access(AST::ExprHandle expr) {
 
@@ -29,7 +30,8 @@ llvm::Value *LLVMBundle::access(AST::ExprHandle expr) {
   } break;
 
   case AST::Expr::Kind::Index: {
-    return this->builder.CreateLoad(expr->type()->llvm(*this), value);
+    auto as_index = std::static_pointer_cast<AST::Expr::Index>(expr);
+    return this->builder.CreateLoad(as_index->target->type()->deref()->llvm(*this), value);
   } break;
 
   case AST::Expr::Kind::Prim1: {

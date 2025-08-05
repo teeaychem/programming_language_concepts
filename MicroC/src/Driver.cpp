@@ -160,7 +160,7 @@ AST::DecFnHandle Driver::pk_DecFn(AST::PrototypeHandle prototype, AST::StmtBlock
   return std::make_shared<AST::Dec::Fn>(std::move(fn));
 }
 
-AST::PrototypeHandle Driver::pk_Prototype(AST::TypHandle r_typ, std::string var, AST::ParamVec params) {
+AST::PrototypeHandle Driver::pk_Prototype(AST::TypHandle r_typ, std::string var, AST::ArgVec params) {
 
   if (this->llvm.env_ast.fns.find(var) != this->llvm.env_ast.fns.end()) {
     throw std::logic_error(std::format("Existing prototype for: {}.", var));
@@ -180,21 +180,36 @@ AST::ExprHandle Driver::pk_ExprCall(std::string name, std::vector<AST::ExprHandl
   }
   auto prototype = prototype_find->second;
 
-  if (args.size() != prototype->params.size()) {
+  if (args.size() != prototype->args.size()) {
     throw std::logic_error(std::format("Call to '{}' expected {} args, found {}",
                                        name,
-                                       prototype->params.size(),
+                                       prototype->args.size(),
                                        args.size()));
   }
 
   for (int i = 0; i < args.size(); ++i) {
-    if (!args[i]->is_of_type(prototype->params[i].second->kind())) {
-      std::cout << "\t" << args[i]->type()->to_string() << "\n"
-                << "\t" << prototype->params[i].second->to_string() << "\n";
 
-      auto cast = pk_ExprCast(args[i], prototype->params[i].second);
-      args[i] = cast;
+    bool cast_required = false;
+    auto arg_prototype = prototype->args[i].second;
 
+    if (!args[i]->is_of_type(arg_prototype->kind())) {
+      if (args[i]->kind() == AST::Expr::Kind::Index) {
+        auto as_index = std::static_pointer_cast<AST::Expr::Index>(args[i]);
+        if (as_index->target->type()->deref()->kind() != arg_prototype->kind()) {
+          std::cout << as_index->target->type()->to_string() << " ";
+          cast_required = true;
+        }
+      } else {
+        cast_required = true;
+      }
+
+      if (cast_required) {
+        std::cout << "\t" << args[i]->to_string()
+                  << "\t" << args[i]->type()->to_string()
+                  << "\t" << arg_prototype->to_string() << "\n";
+        auto cast = pk_ExprCast(args[i], arg_prototype);
+        args[i] = cast;
+      }
     }
   }
 
