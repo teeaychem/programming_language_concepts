@@ -14,7 +14,7 @@ namespace AST {
 namespace Typ {
 
 enum class Kind {
-  Bool,
+  Bool, // A boolean.
   Char, // A character.
   Int,  // An integer.
   Ptr,  // An array.
