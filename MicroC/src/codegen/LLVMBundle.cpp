@@ -41,7 +41,10 @@ std::pair<llvm::Value *, AST::TypHandle> LLVMBundle::access(AST::ExprT const *ex
     auto as_prim1 = (AST::Expr::Prim1 *)(expr);
 
     switch (as_prim1->op) {
+
     case AST::Expr::OpUnary::AddressOf: {
+      // The access action in this case is *withholding* of a load.
+      // And, so, returning the address of the expression.
       return {value, expr->type()};
     } break;
 
@@ -65,6 +68,42 @@ std::pair<llvm::Value *, AST::TypHandle> LLVMBundle::access(AST::ExprT const *ex
   } break;
 
   case AST::Expr::Kind::Var: {
+    switch (expr->type_kind()) {
+
+    case AST::Typ::Kind::Bool:
+    case AST::Typ::Kind::Char:
+    case AST::Typ::Kind::Int: {
+      auto type = expr->type();
+      auto llvm = this->builder.CreateLoad(type->llvm(*this), value);
+
+      return {llvm, type};
+    } break;
+
+    case AST::Typ::Kind::Ptr: {
+
+      auto ptr_typ = std::static_pointer_cast<AST::Typ::Ptr>(expr->type());
+
+      llvm::Value *llvm;
+      auto type = ptr_typ;
+
+      if (ptr_typ->area().has_value()) {
+
+        // auto llvm = hdl.builder.CreateLoad(typ, alloca);
+        llvm::Value *MC_INT = llvm::ConstantInt::get(llvm::Type::getInt64Ty(*this->context), 0);
+        llvm = this->builder.CreateInBoundsGEP(type->llvm(*this), value, llvm::ArrayRef(MC_INT), "decay");
+
+      } else {
+        llvm = this->builder.CreateLoad(type->llvm(*this), value);
+      }
+
+      return {llvm, type};
+
+    } break;
+    case AST::Typ::Kind::Void: {
+      throw std::logic_error("Access to void");
+    } break;
+    }
+
     auto type = expr->type();
     auto llvm = this->builder.CreateLoad(type->llvm(*this), value);
 

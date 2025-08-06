@@ -214,7 +214,7 @@ Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) const {
 
       auto &base_name = this->prototype->args[name_idx].first;
       auto &base_type = this->prototype->args[name_idx].second;
-      name_idx++;
+      name_idx += 1;
 
       auto it = hdl.env_llvm.vars.find(base_name);
       if (it != hdl.env_llvm.vars.end()) {
@@ -225,38 +225,21 @@ Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) const {
 
       arg.setName(base_name);
 
-      switch (base_type->kind()) {
+      AllocaInst *alloca = hdl.builder.CreateAlloca(arg.getType(), nullptr, std::format("{}.local", base_name));
+      hdl.builder.CreateStore(&arg, alloca);
+      hdl.env_llvm.vars[base_name] = alloca;
+    }
 
-      // Fn local alloca for primative types
-      case Typ::Kind::Bool:
-      case Typ::Kind::Char:
-      case Typ::Kind::Int: {
-        AllocaInst *alloca = hdl.builder.CreateAlloca(arg.getType(), nullptr, base_name);
-        hdl.builder.CreateStore(&arg, alloca);
-        hdl.env_llvm.vars[base_name] = alloca;
-      } break;
-
-      // Transparent bindings for pointers
-      case Typ::Kind::Ptr: {
-        hdl.env_llvm.vars[base_name] = &arg;
-      } break;
-
-      case Typ::Kind::Void: {
-        throw std::logic_error("Argument with void type");
-      } break;
+    // Return setup
+    if (this->body->block.scoped_return) {
+      if (!return_type->isVoidTy()) {
+        AllocaInst *r_alloca = hdl.builder.CreateAlloca(return_type, nullptr, "ret.val");
+        hdl.return_alloca = r_alloca;
       }
-    }
-  }
 
-  // Return setup
-  if (this->body->block.scoped_return) {
-    if (!return_type->isVoidTy()) {
-      AllocaInst *r_alloca = hdl.builder.CreateAlloca(return_type, nullptr, "ret.val");
-      hdl.return_alloca = r_alloca;
+      auto return_block = BasicBlock::Create(*hdl.context, "return");
+      hdl.return_block = return_block;
     }
-
-    auto return_block = BasicBlock::Create(*hdl.context, "return");
-    hdl.return_block = return_block;
   }
 
   hdl.builder.SetInsertPoint(fn_body);
