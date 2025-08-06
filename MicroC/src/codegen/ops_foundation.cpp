@@ -29,7 +29,7 @@ struct PrintI : FnPrimative {
     // TODO: Unify
     auto MC_INT = (llvm::Type *)llvm::Type::getInt64Ty(*bundle.context);
 
-    auto typ = llvm::FunctionType::get(llvm::PointerType::getUnqual(MC_INT), llvm::ArrayRef(MC_INT), false);
+    auto typ = llvm::FunctionType::get(llvm::Type::getVoidTy(*bundle.context), llvm::ArrayRef(MC_INT), false);
 
     auto fn = llvm::Function::Create(typ, llvm::Function::ExternalLinkage, this->name, bundle.module.get());
     fn->setCallingConv(llvm::CallingConv::C);
@@ -56,7 +56,7 @@ struct PrintLn : FnPrimative {
   }
 
   llvm::Function *codegen(LLVMBundle &bundle) const override {
-    auto typ = llvm::FunctionType::get(llvm::PointerType::getUnqual(llvm::Type::getVoidTy(*bundle.context)), false);
+    auto typ = llvm::FunctionType::get(llvm::Type::getVoidTy(*bundle.context), false);
 
     auto fn = llvm::Function::Create(typ, llvm::Function::ExternalLinkage, "println", bundle.module.get());
     fn->setCallingConv(llvm::CallingConv::C);
