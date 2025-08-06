@@ -88,7 +88,7 @@ struct Driver {
     } break;
 
     case AST::Expr::OpUnary::Dereference: {
-      if (expr->is_of_type(AST::Typ::Kind::Ptr)) {
+      if (expr->has_type_kind(AST::Typ::Kind::Ptr)) {
         return expr->type();
       } else {
         throw std::logic_error(std::format("Deref panic... {} {}",
@@ -116,8 +116,8 @@ struct Driver {
       rhs_type = as_index->target->type()->deref();
     }
 
-    if ((lhs->is_of_type(rhs_type->kind())) //
-        || (lhs->is_of_type(AST::Typ::Kind::Ptr) && lhs->type()->deref()->kind() == rhs_type->kind())) {
+    if ((lhs->has_type_kind(rhs_type->kind())) //
+        || (lhs->has_type_kind(AST::Typ::Kind::Ptr) && lhs->type()->deref()->kind() == rhs_type->kind())) {
       return;
     }
 
@@ -130,13 +130,12 @@ struct Driver {
     }
   }
 
-  void
-  type_ensure_match(AST::ExprHandle lhs, AST::ExprHandle rhs) {
-    if (lhs->is_of_type(rhs->type()->kind())) {
+  void type_ensure_match(AST::ExprHandle lhs, AST::ExprHandle rhs) {
+    if (lhs->has_type_kind(rhs->type_kind())) {
       return;
     }
 
-    if (lhs->type()->kind() != rhs->type()->kind()) {
+    if (lhs->type_kind() != rhs->type_kind()) {
       throw std::logic_error(std::format("Conflicting types for {}: {} and {}: {}",
                                          lhs->to_string(),
                                          lhs->type()->to_string(),
@@ -155,7 +154,7 @@ struct Driver {
   }
 
   AST::TypHandle type_resolution_prim2_ptr_expr(AST::Expr::OpBinary op, AST::ExprHandle ptr, AST::ExprHandle expr) {
-    if (expr->is_of_type(AST::Typ::Kind::Int)) {
+    if (expr->has_type_kind(AST::Typ::Kind::Int)) {
       return ptr->type();
     }
 
@@ -182,9 +181,9 @@ struct Driver {
     case AST::Expr::OpBinary::Mul:
     case AST::Expr::OpBinary::Div:
     case AST::Expr::OpBinary::Mod: {
-      if (lhs->type()->kind() == rhs->type()->kind()) {
+      if (lhs->type_kind() == rhs->type_kind()) {
 
-        switch (lhs->type()->kind()) {
+        switch (lhs->type_kind()) {
 
         case AST::Typ::Kind::Bool:
         case AST::Typ::Kind::Char: {
@@ -203,11 +202,11 @@ struct Driver {
 
       }
 
-      else if (lhs->is_of_type(AST::Typ::Kind::Ptr)) {
+      else if (lhs->has_type_kind(AST::Typ::Kind::Ptr)) {
         return type_resolution_prim2_ptr_expr(op, lhs, rhs);
       }
 
-      else if (rhs->is_of_type(AST::Typ::Kind::Ptr)) {
+      else if (rhs->has_type_kind(AST::Typ::Kind::Ptr)) {
         return type_resolution_prim2_ptr_expr(op, rhs, lhs);
       }
 
