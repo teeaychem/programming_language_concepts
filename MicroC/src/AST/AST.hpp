@@ -162,12 +162,14 @@ public:
     return this->typ;
   };
 
+  AST::Typ::Kind type_kind() const { return this->type()->kind(); }
+
   // LLVM IR codegen which returns true if this expression evaluates to true and false otherwise.
   llvm::Value *codegen_eval_true(LLVMBundle &bundle) const;
   // LLVM IR codegen which returns false if this expression evaluates to true and false otherwise.
   llvm::Value *codegen_eval_false(LLVMBundle &bundle) const;
 
-  bool is_of_type(AST::Typ::Kind type) const { return this->typ->kind() == type; };
+  bool has_type_kind(AST::Typ::Kind type) const { return this->typ->kind() == type; };
 
   virtual Expr::Kind kind() const = 0;
 };

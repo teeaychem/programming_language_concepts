@@ -192,7 +192,7 @@ AST::ExprHandle Driver::pk_ExprCall(std::string name, std::vector<AST::ExprHandl
     bool cast_required = false;
     auto arg_prototype = prototype->args[i].second;
 
-    if (!args[i]->is_of_type(arg_prototype->kind())) {
+    if (!args[i]->has_type_kind(arg_prototype->kind())) {
       if (args[i]->kind() == AST::Expr::Kind::Index) {
         auto as_index = std::static_pointer_cast<AST::Expr::Index>(args[i]);
         if (as_index->target->type()->deref()->kind() != arg_prototype->kind()) {
