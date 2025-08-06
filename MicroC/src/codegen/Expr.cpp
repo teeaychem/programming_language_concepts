@@ -46,7 +46,8 @@ Value *AST::Expr::Call::codegen(LLVMBundle &bundle) const {
     arg_values.push_back(bundle.access(arg.get()));
   }
 
-  return bundle.builder.CreateCall(callee_f, arg_values, std::format("{}", this->name));
+  // Named instructions cannot provide void values
+  return bundle.builder.CreateCall(callee_f, arg_values);
 }
 
 Value *AST::Expr::Cast::codegen(LLVMBundle &bundle) const {
