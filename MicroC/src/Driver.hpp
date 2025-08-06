@@ -22,6 +22,9 @@ YY_DECL; // Declare the prototype for bison
 struct Driver {
   std::vector<AST::StmtDeclarationHandle> prg{};
 
+  // Temporary storage for shadowed globals during parsing
+  AST::NameTypeMap shadow_cache{};
+
   // A bundle of things useful for LLVM codegen.
   LLVMBundle llvm{};
 
@@ -58,9 +61,14 @@ struct Driver {
 
   // etc
 
-  void add_to_env(AST::ArgVec &params) {
-    for (auto &param : params) {
-      this->llvm.env_ast.vars[param.first] = param.second;
+  void add_to_env(AST::ArgVec &args) {
+    for (auto &arg : args) {
+      auto existing_global = this->llvm.env_ast.vars.find(arg.first);
+      if (existing_global != this->llvm.env_ast.vars.end()) {
+        this->shadow_cache[existing_global->first] = existing_global->second;
+      }
+
+      this->llvm.env_ast.vars[arg.first] = arg.second;
     }
   }
 
@@ -69,6 +77,12 @@ struct Driver {
     for (auto &param : fn->prototype->args) {
       this->llvm.env_ast.vars.erase(param.first);
     }
+
+    for (auto &shadowed : this->shadow_cache) {
+      this->llvm.env_ast.vars[shadowed.first] = shadowed.second;
+    }
+
+    this->shadow_cache.clear();
   }
 
   // representation
@@ -84,7 +98,7 @@ struct Driver {
     switch (op) {
 
     case AST::Expr::OpUnary::AddressOf: {
-      return AST::Typ::pk_Ptr(expr->type());
+      return AST::Typ::pk_Ptr(expr->type(), std::nullopt);
     } break;
 
     case AST::Expr::OpUnary::Dereference: {

@@ -266,9 +266,9 @@ Vardec:
 
 
 Vardesc:
-    NAME                          { $$ = std::make_pair($1, AST::Typ::pk_Void());                               }
-  | STAR Vardesc                  { $$ = std::make_pair($2.first, AST::Typ::pk_Ptr($2.second));                 }
-  | LPAR Vardesc RPAR             { $$ = $2;                                                                    }
+    NAME                          { $$ = std::make_pair($1, AST::Typ::pk_Void());                             }
+  | STAR Vardesc                  { $$ = std::make_pair($2.first, AST::Typ::pk_Ptr($2.second, std::nullopt)); }
+  | LPAR Vardesc RPAR             { $$ = $2;                                                                  }
   | Vardesc LBRACK RBRACK         { $$ = std::make_pair($1.first, AST::Typ::pk_Ptr($1.second, std::nullopt)); }
   | Vardesc LBRACK CSTINT RBRACK  { $$ = std::make_pair($1.first, AST::Typ::pk_Ptr($1.second, $3));           }
 ;

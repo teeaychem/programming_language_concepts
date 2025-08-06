@@ -132,6 +132,10 @@ AST::DecVarHandle Driver::pk_DecVar(AST::Dec::Scope scope, AST::TypHandle typ, s
       throw std::logic_error(std::format("Redeclaration of global: {}", var));
     }
 
+    if (typ->kind() == AST::Typ::Kind::Ptr) {
+      auto as_ptr = std::static_pointer_cast<AST::Typ::Ptr>(typ);
+    }
+
     this->llvm.env_ast.vars[var] = typ;
   }
 
@@ -149,13 +153,13 @@ AST::DecFnHandle Driver::pk_DecFn(AST::PrototypeHandle prototype, AST::StmtBlock
   return std::make_shared<AST::Dec::Fn>(std::move(fn));
 }
 
-AST::PrototypeHandle Driver::pk_Prototype(AST::TypHandle r_typ, std::string var, AST::ArgVec params) {
+AST::PrototypeHandle Driver::pk_Prototype(AST::TypHandle r_typ, std::string var, AST::ArgVec args) {
 
   if (this->llvm.env_ast.fns.find(var) != this->llvm.env_ast.fns.end()) {
     throw std::logic_error(std::format("Existing prototype for: {}.", var));
   }
 
-  AST::Dec::Prototype prototype(std::move(r_typ), var, std::move(params));
+  AST::Dec::Prototype prototype(std::move(r_typ), var, std::move(args));
 
   auto pt_ptr = std::make_shared<AST::Dec::Prototype>(std::move(prototype));
 
@@ -247,10 +251,13 @@ AST::ExprHandle Driver::pk_ExprPrim2(AST::Expr::OpBinary op, AST::ExprHandle lhs
 }
 
 AST::ExprHandle Driver::pk_ExprVar(std::string var) {
-  if (this->llvm.env_ast.vars.find(var) == this->llvm.env_ast.vars.end()) {
+  auto env_var = this->llvm.env_ast.vars.find(var);
+
+  if (env_var == this->llvm.env_ast.vars.end()) {
     throw std::logic_error(std::format("Unknown variable: {}", var));
   }
-  auto typ = this->llvm.env_ast.vars[var];
+
+  auto typ = env_var->second;
   AST::Expr::Var access(std::move(typ), std::move(var));
   return std::make_shared<AST::Expr::Var>(std::move(access));
 }
