@@ -157,6 +157,9 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) const {
     throw std::logic_error("Creation of variable with void type");
 
   } break;
+  case Typ::Kind::Bool: {
+    throw std::logic_error("Creation of variable with bool type");
+  } break;
   }
 }
 
