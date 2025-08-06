@@ -212,22 +212,39 @@ Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) const {
     size_t name_idx{0};
     for (auto &arg : fn->args()) {
 
-      auto &base_name = this->prototype->args[name_idx++].first;
-
-      arg.setName(base_name);
-
-      AllocaInst *alloca = hdl.builder.CreateAlloca(arg.getType(), nullptr, base_name);
-
-      hdl.builder.CreateStore(&arg, alloca);
+      auto &base_name = this->prototype->args[name_idx].first;
+      auto &base_type = this->prototype->args[name_idx].second;
+      name_idx++;
 
       auto it = hdl.env_llvm.vars.find(base_name);
       if (it != hdl.env_llvm.vars.end()) {
-        shadowed_parameters.push_back(std::make_pair(base_name, alloca));
+        shadowed_parameters.push_back(std::make_pair(base_name, it->second));
       } else {
         fresh_parameters.push_back(base_name);
       }
 
-      hdl.env_llvm.vars[base_name] = alloca;
+      arg.setName(base_name);
+
+      switch (base_type->kind()) {
+
+      // Fn local alloca for primative types
+      case Typ::Kind::Bool:
+      case Typ::Kind::Char:
+      case Typ::Kind::Int: {
+        AllocaInst *alloca = hdl.builder.CreateAlloca(arg.getType(), nullptr, base_name);
+        hdl.builder.CreateStore(&arg, alloca);
+        hdl.env_llvm.vars[base_name] = alloca;
+      } break;
+
+      // Transparent bindings for pointers
+      case Typ::Kind::Ptr: {
+        hdl.env_llvm.vars[base_name] = &arg;
+      } break;
+
+      case Typ::Kind::Void: {
+        throw std::logic_error("Argument with void type");
+      } break;
+      }
     }
   }
 
