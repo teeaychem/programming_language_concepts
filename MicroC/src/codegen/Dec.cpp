@@ -44,8 +44,8 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) const {
 
       case Scope::Local: {
 
-        auto size_value = llvm::ConstantInt::get(llvm::Type::getInt64Ty(*hdl.context), as_index->area().value());
-        auto alloca = hdl.builder.CreateAlloca(typ, size_value, this->name());
+        // auto size_value = llvm::ConstantInt::get(llvm::Type::getInt64Ty(*hdl.context), as_index->area().value());
+        auto alloca = hdl.builder.CreateAlloca(typ, nullptr, this->name());
         hdl.env_llvm.vars[this->name()] = alloca;
 
         return alloca;
@@ -74,7 +74,7 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) const {
       case Scope::Local: {
 
         auto alloca = hdl.builder.CreateAlloca(typ, nullptr, this->name());
-        hdl.builder.CreateStore(default_value, alloca);
+        // hdl.builder.CreateStore(default_value, alloca);
         hdl.env_llvm.vars[this->name()] = alloca;
 
         return alloca;
@@ -106,7 +106,7 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) const {
     case Scope::Local: {
 
       auto alloca = hdl.builder.CreateAlloca(typ, nullptr, this->name());
-      hdl.builder.CreateStore(default_value, alloca);
+      // hdl.builder.CreateStore(default_value, alloca);
       hdl.env_llvm.vars[this->name()] = alloca;
 
     } break;
@@ -135,7 +135,7 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) const {
     case Scope::Local: {
 
       auto alloca = hdl.builder.CreateAlloca(typ, nullptr, this->name());
-      hdl.builder.CreateStore(default_value, alloca);
+      // hdl.builder.CreateStore(default_value, alloca);
       hdl.env_llvm.vars[this->name()] = alloca;
 
     } break;
