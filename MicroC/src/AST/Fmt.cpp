@@ -27,6 +27,37 @@ auto std::formatter<AST::Stmt::Kind>::format(AST::Stmt::Kind c, std::format_cont
   return std::formatter<string_view>::format(name, ctx);
 }
 
+auto std::formatter<AST::Expr::Kind>::format(AST::Expr::Kind c, std::format_context &ctx) const
+    -> std::format_context::iterator {
+  string_view name = "unknown";
+  switch (c) {
+
+  case AST::Expr::Kind::Call: {
+    name = "call";
+  } break;
+  case AST::Expr::Kind::Cast: {
+    name = "cast";
+  } break;
+  case AST::Expr::Kind::CstI: {
+    name = "csti";
+  } break;
+  case AST::Expr::Kind::Index: {
+    name = "index";
+  } break;
+  case AST::Expr::Kind::Prim1: {
+    name = "prim1";
+  } break;
+  case AST::Expr::Kind::Prim2: {
+    name = "prim2";
+  } break;
+  case AST::Expr::Kind::Var: {
+    name = "var";
+  } break;
+  }
+
+  return std::formatter<string_view>::format(name, ctx);
+}
+
 auto std::formatter<AST::Expr::OpUnary>::format(AST::Expr::OpUnary c, std::format_context &ctx) const
     -> std::format_context::iterator {
   string_view name = "unknown";
