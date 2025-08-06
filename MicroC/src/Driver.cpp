@@ -65,27 +65,6 @@ void Driver::print_llvm() {
 }
 
 void Driver::push_dec(AST::StmtDeclarationHandle stmt) {
-
-  switch (stmt->declaration->kind()) {
-
-  case AST::Dec::Kind::Var: {
-    this->llvm.env_ast.vars[stmt->declaration->name()] = stmt->declaration->type();
-  } break;
-
-  case AST::Dec::Kind::Fn: {
-    auto as_fn = std::static_pointer_cast<AST::Dec::Fn>(stmt->declaration);
-    if (!this->llvm.env_ast.fns.contains(as_fn->name())) {
-      // throw std::logic_error(std::format("Missing prototype for {}", as_fn->name()));
-      this->llvm.env_ast.fns[as_fn->name()] = as_fn->prototype;
-    }
-  } break;
-
-  case AST::Dec::Kind::Prototype: {
-    auto as_pt = std::static_pointer_cast<AST::Dec::Prototype>(stmt->declaration);
-    this->llvm.env_ast.fns[as_pt->name()] = as_pt;
-  } break;
-  }
-
   prg.push_back(stmt);
 }
 
@@ -142,12 +121,18 @@ AST::Expr::OpUnary Driver::to_unary_op(std::string op) {
 
 // pk Dec
 
+// Global declarations are added to the AST environment when made.
+// The motivation is recusive fn calls, which require access to the fn prototype.
+// This motivation is extended to vars to form a rule.
+
 AST::DecVarHandle Driver::pk_DecVar(AST::Dec::Scope scope, AST::TypHandle typ, std::string var) {
 
   if (scope == AST::Dec::Scope::Global) {
     if (this->llvm.env_ast.vars.find(var) != this->llvm.env_ast.vars.end()) {
       throw std::logic_error(std::format("Redeclaration of global: {}", var));
     }
+
+    this->llvm.env_ast.vars[var] = typ;
   }
 
   AST::Dec::Var dec(scope, std::move(typ), var);
@@ -155,6 +140,10 @@ AST::DecVarHandle Driver::pk_DecVar(AST::Dec::Scope scope, AST::TypHandle typ, s
 }
 
 AST::DecFnHandle Driver::pk_DecFn(AST::PrototypeHandle prototype, AST::StmtBlockHandle body) {
+
+  if (!this->llvm.env_ast.fns.contains(prototype->name())) {
+    throw std::logic_error(std::format("Missing prototype for {}", prototype->name()));
+  }
 
   AST::Dec::Fn fn(std::move(prototype), std::move(body));
   return std::make_shared<AST::Dec::Fn>(std::move(fn));
@@ -167,7 +156,12 @@ AST::PrototypeHandle Driver::pk_Prototype(AST::TypHandle r_typ, std::string var,
   }
 
   AST::Dec::Prototype prototype(std::move(r_typ), var, std::move(params));
-  return std::make_shared<AST::Dec::Prototype>(std::move(prototype));
+
+  auto pt_ptr = std::make_shared<AST::Dec::Prototype>(std::move(prototype));
+
+  this->llvm.env_ast.fns[var] = pt_ptr;
+
+  return pt_ptr;
 }
 
 // pk Expr

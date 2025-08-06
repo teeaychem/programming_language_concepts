@@ -181,14 +181,10 @@ Expr:
 FnPrototype:
     VOID NAME LPAR Paramdecs RPAR      {
       driver.add_to_env($4);
-      auto p = driver.pk_Prototype(AST::Typ::pk_Void(), $2, $4);
-      $$ = p;
-    }
+      $$ = driver.pk_Prototype(AST::Typ::pk_Void(), $2, $4); }
   | DataType NAME LPAR Paramdecs RPAR  {
       driver.add_to_env($4);
-      auto p = driver.pk_Prototype($1, $2, $4);
-      $$ = p;
-    }
+      $$ = driver.pk_Prototype($1, $2, $4);                  }
 ;
 
 Fndec:
@@ -243,8 +239,7 @@ StmtOrDecSeq:
   | StmtOrDecSeq Vardec SEMI  {
       auto dec = driver.pk_DecVar(AST::Dec::Scope::Local, $2.second, $2.first);
       auto s = driver.pk_StmtDeclaration(dec);
-      $1.push_DecVar(driver.llvm.env_ast, s);
-      $$ = $1;                                                                  }
+      $$ = $1.push_DecVar(driver.llvm.env_ast, s);                              }
 ;
 
 

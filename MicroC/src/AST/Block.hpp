@@ -20,17 +20,29 @@
 namespace AST {
 struct Block {
 
-  bool returns{false};                                   // Whether all branches (including main) lead to a return statement
-  bool scoped_return{false};                             // Whether the main branch leads to a return statement
-  std::vector<AST::StmtDeclarationHandle> fresh_vars{};  // Variables whose name does *not* appear in any larger scope
-  std::vector<AST::StmtDeclarationHandle> shadow_vars{}; // Variables whose name *does* appear in some larger scope
+  // Whether all branches (including main) lead to a return statement
+  bool returns{false};
 
+  // Whether the main branch leads to a return statement
+  bool scoped_return{false};
+
+  // Variables whose name does *not* appear in any enclosing scope
+  std::vector<AST::StmtDeclarationHandle> fresh_vars{};
+
+  // Variables whose name *does* appear in some enclosing scope
+  std::vector<AST::StmtDeclarationHandle> shadow_vars{};
+
+  // All non-declaration statements of the block
   std::vector<AST::StmtHandle> statements{};
 
-  NameTypeMap shadowed_vars{}; // (Temporary) storage of shadowed variables
+  // (Temporary) storage of shadowed variables
+  NameTypeMap shadowed_vars{};
 
-  size_t early_returns{0}; // How many paths originating in the block *lead* to a return statment
-  size_t pass_throughs{0}; // How many paths originating in the block *do not* lead to a return statment
+  // How many paths originating in the block *lead* to a return statment
+  size_t early_returns{0};
+
+  // How many paths originating in the block *do not* lead to a return statment
+  size_t pass_throughs{0};
 
   // Methods
 
@@ -39,14 +51,14 @@ struct Block {
 
   // Add a declaration, using `env` to determine which variables are in scope.
   // And, mutates `env` in accordance with the declaration.
-  void push_DecVar(EnvAST &env, AST::StmtDeclarationHandle const &dec_var);
+  AST::Block push_DecVar(EnvAST &env, AST::StmtDeclarationHandle const &dec_var);
 
   // Add a statement.
-  void push_Stmt(AST::StmtHandle const &stmt);
+  AST::Block push_Stmt(AST::StmtHandle const &stmt);
 
   // To be called after the final declaration / statement has been added to the block.
   // Of note, restores `env` to its state prior to processing the block.
-  void finalize(EnvAST &env);
+  AST::Block finalize(EnvAST &env);
 };
 
 } // namespace AST
