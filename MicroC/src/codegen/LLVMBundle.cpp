@@ -1,7 +1,6 @@
 #include "LLVMBundle.hpp"
 #include "AST/AST.hpp"
 #include "AST/Node/Expr.hpp"
-#include <memory>
 
 std::pair<llvm::Value *, AST::TypHandle> LLVMBundle::access(AST::ExprT const *expr) {
 
@@ -48,7 +47,7 @@ std::pair<llvm::Value *, AST::TypHandle> LLVMBundle::access(AST::ExprT const *ex
 
     case AST::Expr::OpUnary::Dereference: {
 
-      auto type = as_prim1->expr->type();
+      auto type = as_prim1->expr->type()->deref();
       auto llvm = this->builder.CreateLoad(type->llvm(*this), value);
 
       return {llvm, type};
@@ -108,7 +107,7 @@ AST::TypHandle LLVMBundle::access_type(AST::ExprT const *expr) {
     } break;
 
     case AST::Expr::OpUnary::Dereference: {
-      return as_prim1->expr->type();
+      return as_prim1->expr->type()->deref();
     } break;
 
     case AST::Expr::OpUnary::Sub:
