@@ -188,9 +188,7 @@ AST::ExprHandle Driver::pk_ExprCall(std::string name, std::vector<AST::ExprHandl
     if (!args[i]->has_type_kind(arg_prototype->kind())) {
 
       auto arg_access_type = this->llvm.access_type(args[i].get());
-      if (arg_prototype->kind() == arg_access_type->kind()) {
-        args[i] = pk_ExprPrim1(AST::Expr::OpUnary::Dereference, args[i]);
-      } else {
+      if (arg_prototype->kind() != arg_access_type->kind()) {
         auto cast = pk_ExprCast(args[i], arg_prototype);
         args[i] = cast;
       }
