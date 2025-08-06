@@ -46,10 +46,10 @@ private:
 public:
   ArgVec args;
 
-  Prototype(TypHandle r_typ, std::string name, ArgVec params)
+  Prototype(TypHandle r_typ, std::string name, ArgVec args)
       : r_typ(std::move(r_typ)),
         id(name),
-        args(std::move(params)) {}
+        args(std::move(args)) {}
 
   Dec::Kind kind() const override { return Dec::Kind::Fn; }
   TypHandle type() const override { return r_typ; };

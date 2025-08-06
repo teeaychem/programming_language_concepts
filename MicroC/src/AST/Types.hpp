@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+#include <memory>
 #include <string>
 
 #include "AST/AST.hpp"
@@ -63,7 +65,8 @@ private:
 public:
   Ptr(TypHandle typ, std::optional<std::int64_t> area)
       : _pointee(std::move(typ)),
-        _area(area) {}
+        _area(area) {
+  }
 
   std::string to_string(size_t indent = 0) const override;
 
@@ -81,19 +84,22 @@ public:
     } break;
 
     case Kind::Ptr: {
+      auto pointee_ptr = std::static_pointer_cast<AST::Typ::Ptr>(this->_pointee);
+
       auto fresh_destination = this->_pointee->complete_with(data);
-      auto fresh_pointer = Ptr(fresh_destination, std::nullopt);
+      auto fresh_pointer = Ptr(fresh_destination, pointee_ptr->_area);
       auto fresh_handle = std::make_shared<AST::Typ::Ptr>(fresh_pointer);
 
-      this->_pointee = fresh_destination;
+      // this->_pointee = fresh_destination;
       return fresh_destination;
     } break;
 
     case Kind::Void: {
-      auto fresh_pointer = Ptr(data, std::nullopt);
+
+      auto fresh_pointer = Ptr(data, this->_area);
       auto fresh_handle = std::make_shared<AST::Typ::Ptr>(fresh_pointer);
 
-      this->_pointee = fresh_handle;
+      // this->_pointee = fresh_handle;
       return fresh_handle;
     } break;
     }
@@ -142,9 +148,9 @@ inline AST::TypHandle pk_Int() {
   return std::make_shared<AST::Typ::Int>(std::move(type_int));
 };
 
-inline AST::TypHandle pk_Ptr(AST::TypHandle typ, std::optional<std::int64_t> area = std::nullopt) {
-  AST::Typ::Ptr type_index(std::move(typ), std::move(area));
-  return std::make_shared<AST::Typ::Ptr>(std::move(type_index));
+inline AST::TypHandle pk_Ptr(AST::TypHandle typ, std::optional<std::int64_t> area) {
+  AST::Typ::Ptr type_ptr(std::move(typ), area);
+  return std::make_shared<AST::Typ::Ptr>(std::move(type_ptr));
 }
 
 inline AST::TypHandle pk_Void() {

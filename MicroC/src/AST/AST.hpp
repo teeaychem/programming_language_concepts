@@ -2,6 +2,7 @@
 
 #include <format>
 #include <map>
+#include <sstream>
 #include <string>
 
 #include "llvm/IR/DIBuilder.h"
@@ -258,6 +259,19 @@ typedef std::map<std::string, AST::TypHandle> NameTypeMap; // Vars have declared
 struct EnvAST {
   std::map<std::string, AST::PrototypeHandle> fns{};
   NameTypeMap vars{};
+
+  std::string to_string() {
+    std::stringstream ss{};
+    ss << "Env AST:" << "\n";
+    for (auto &var : vars) {
+      ss << "\t" << var.first << " : " << var.second->to_string() << "\n";
+    }
+    for (auto &fn : fns) {
+      ss << "\t" << fn.first << " : " << " ..." << "\n";
+    }
+
+    return ss.str();
+  }
 };
 
 } // namespace AST
