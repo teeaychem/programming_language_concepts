@@ -1,3 +1,4 @@
+#include <iostream>
 #include <vector>
 
 #include "llvm/IR/Constants.h"
@@ -8,7 +9,9 @@
 
 #include "AST/AST.hpp"
 #include "AST/Fmt.hpp"
+#include "AST/Node/Dec.hpp"
 #include "AST/Node/Expr.hpp"
+#include "AST/Node/Stmt.hpp"
 
 #include "LLVMBundle.hpp"
 
@@ -28,6 +31,7 @@ Value *AST::Expr::Var::codegen(LLVMBundle &bundle) const {
 Value *AST::Expr::Call::codegen(LLVMBundle &bundle) const {
 
   Function *callee_f = bundle.module->getFunction(this->name);
+  auto prototype = bundle.env_ast.fns.find(this->name)->second.get();
 
   if (callee_f == nullptr) {
     auto it = bundle.foundation_fn_map.find(this->name);
@@ -42,8 +46,10 @@ Value *AST::Expr::Call::codegen(LLVMBundle &bundle) const {
   }
 
   std::vector<Value *> arg_values{};
-  for (auto &arg : this->arguments) {
-    arg_values.push_back(bundle.access(arg.get()));
+  for (size_t i = 0; i < this->arguments.size(); ++i) {
+
+    auto [access_val, access_typ] = bundle.access(this->arguments[i].get());
+    arg_values.push_back(access_val);
   }
 
   // Named instructions cannot provide void values
@@ -113,11 +119,11 @@ Value *AST::Expr::CstI::codegen(LLVMBundle &bundle) const {
 Value *AST::Expr::Index::codegen(LLVMBundle &bundle) const {
   // FIXME: Check access for all expressions
   Value *value = this->target->codegen(bundle);
-
   Type *typ = this->target->type()->llvm(bundle);
-  Value *index = bundle.access(this->index.get());
 
-  auto ptr = bundle.builder.CreateGEP(typ, value, ArrayRef<Value *>(index));
+  auto [index_val, index_typ] = bundle.access(this->index.get());
+
+  auto ptr = bundle.builder.CreateGEP(typ, value, ArrayRef<Value *>(index_val));
 
   return ptr;
 }
@@ -135,11 +141,13 @@ Value *AST::Expr::Prim1::codegen(LLVMBundle &bundle) const {
   } break;
 
   case OpUnary::Sub: {
-    return bundle.builder.CreateNeg(bundle.access(expr.get()), "op.neg");
+    auto [access_val, access_typ] = bundle.access(expr.get());
+    return bundle.builder.CreateNeg(access_val, "op.neg");
   } break;
 
   case OpUnary::Negation: {
-    return bundle.builder.CreateNot(bundle.access(expr.get()), "op.not");
+    auto [access_val, access_typ] = bundle.access(expr.get());
+    return bundle.builder.CreateNot(access_val, "op.not");
   } break;
   }
 }
@@ -148,32 +156,31 @@ Value *AST::Expr::Prim1::codegen(LLVMBundle &bundle) const {
 
 Value *AST::ExprT::codegen_eval_true(LLVMBundle &bundle) const {
 
-  Value *evaluation = bundle.access(this);
+  auto [access_val, access_typ] = bundle.access(this);
 
-  if (evaluation->getType()->isIntegerTy(1)) {
-    return evaluation;
+  if (access_val->getType()->isIntegerTy(1)) {
+    return access_val;
   } else {
 
     Value *zero = this->type()->defaultgen(bundle);
 
     // FIXME: More deref hacks
-    if (this->kind() == AST::Expr::Kind::Index) {
-      zero = this->type()->deref()->defaultgen(bundle);
-    }
 
-    return bundle.builder.CreateCmp(ICmpInst::ICMP_NE, evaluation, zero, "op.eval_true");
+    zero = access_typ->defaultgen(bundle);
+
+    return bundle.builder.CreateCmp(ICmpInst::ICMP_NE, access_val, zero, "op.eval_true");
   }
 }
 
 Value *AST::ExprT::codegen_eval_false(LLVMBundle &bundle) const {
 
-  Value *evaluation = bundle.access(this);
+  auto [access_val, access_typ] = bundle.access(this);
 
-  if (evaluation->getType()->isIntegerTy(1)) {
-    return evaluation;
+  if (access_val->getType()->isIntegerTy(1)) {
+    return access_val;
   } else {
-    Value *zero = this->type()->defaultgen(bundle);
-    return bundle.builder.CreateCmp(ICmpInst::ICMP_EQ, evaluation, zero, "op.eval_false");
+    Value *zero = access_typ->defaultgen(bundle);
+    return bundle.builder.CreateCmp(ICmpInst::ICMP_EQ, access_val, zero, "op.eval_false");
   }
 }
 
@@ -192,21 +199,23 @@ llvm::Value *builder_assign(LLVMBundle &bundle, AST::ExprHandle destination, AST
 
   llvm::Value *destination_val = destination->codegen(bundle);
 
-  auto value_val = bundle.access(value.get());
+  auto [access_val, access_typ] = bundle.access(value.get());
 
-  bundle.builder.CreateStore(value_val, destination_val, "op.assign");
+  bundle.builder.CreateStore(access_val, destination_val, "op.assign");
 
-  return value_val;
+  return access_val;
 }
 
 // Codegen for ptr + int
 llvm::Value *builder_ptr_add(LLVMBundle &bundle, AST::ExprHandle ptr, AST::ExprHandle val) {
 
-  auto ptr_typ = ptr->type()->deref()->llvm(bundle);
+  auto [access_val, access_typ] = bundle.access(val.get());
+
+  auto ptr_typ = access_typ->llvm(bundle);
 
   auto ptr_sub = bundle.builder.CreateGEP(ptr_typ,
                                           ptr->codegen(bundle),
-                                          ArrayRef<Value *>(bundle.access(val.get())));
+                                          ArrayRef<Value *>(access_val));
 
   return ptr_sub;
 }
@@ -225,8 +234,8 @@ llvm::Value *builder_add(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 
   case AST::Typ::Kind::Int: {
 
-    auto lhs_val = bundle.access(expr->lhs.get());
-    auto rhs_val = bundle.access(expr->rhs.get());
+    auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
+    auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
 
     return bundle.builder.CreateAdd(lhs_val, rhs_val, "op.add");
 
@@ -256,8 +265,10 @@ llvm::Value *builder_add(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 // Codegen for ptr - int
 llvm::Value *builder_ptr_sub(LLVMBundle &bundle, AST::ExprHandle ptr, AST::ExprHandle val) {
 
-  auto ptr_typ = ptr->type()->deref()->llvm(bundle);
-  auto ptr_elem = bundle.builder.CreateNeg(bundle.access(val.get()));
+  auto [access_val, access_typ] = bundle.access(val.get());
+
+  auto ptr_typ = access_typ->llvm(bundle);
+  auto ptr_elem = bundle.builder.CreateNeg(access_val);
 
   auto ptr_sub = bundle.builder.CreateGEP(ptr_typ,
                                           ptr->codegen(bundle),
@@ -280,8 +291,8 @@ llvm::Value *builder_sub(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 
   case AST::Typ::Kind::Int: {
 
-    auto lhs_val = bundle.access(expr->lhs.get());
-    auto rhs_val = bundle.access(expr->rhs.get());
+    auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
+    auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
 
     return bundle.builder.CreateSub(lhs_val, rhs_val, "op.sub");
 
@@ -314,8 +325,8 @@ llvm::Value *builder_mul(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
     throw_unsupported(expr);
   }
 
-  auto lhs_val = bundle.access(expr->lhs.get());
-  auto rhs_val = bundle.access(expr->rhs.get());
+  auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
+  auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
 
   return bundle.builder.CreateMul(lhs_val, rhs_val, "op.mul");
 }
@@ -325,8 +336,8 @@ llvm::Value *builder_div(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
     throw_unsupported(expr);
   }
 
-  auto lhs_val = bundle.access(expr->lhs.get());
-  auto rhs_val = bundle.access(expr->rhs.get());
+  auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
+  auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
 
   return bundle.builder.CreateSDiv(lhs_val, rhs_val, "op.div");
 }
@@ -336,8 +347,8 @@ llvm::Value *builder_mod(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
     throw_unsupported(expr);
   }
 
-  auto lhs_val = bundle.access(expr->lhs.get());
-  auto rhs_val = bundle.access(expr->rhs.get());
+  auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
+  auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
 
   return bundle.builder.CreateSRem(lhs_val, rhs_val, "op.mod");
 }
@@ -347,8 +358,8 @@ llvm::Value *builder_eq(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
     throw_unsupported(expr);
   }
 
-  auto lhs_val = bundle.access(expr->lhs.get());
-  auto rhs_val = bundle.access(expr->rhs.get());
+  auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
+  auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
 
   return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_EQ, lhs_val, rhs_val, "op.eq");
 }
@@ -358,8 +369,8 @@ llvm::Value *builder_ne(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
     throw_unsupported(expr);
   }
 
-  auto lhs_val = bundle.access(expr->lhs.get());
-  auto rhs_val = bundle.access(expr->rhs.get());
+  auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
+  auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
 
   return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_NE, lhs_val, rhs_val, "op.neq");
 }
@@ -369,8 +380,8 @@ llvm::Value *builder_gt(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
     throw_unsupported(expr);
   }
 
-  auto lhs_val = bundle.access(expr->lhs.get());
-  auto rhs_val = bundle.access(expr->rhs.get());
+  auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
+  auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
 
   return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SGT, lhs_val, rhs_val, "op.gt");
 }
@@ -380,8 +391,8 @@ llvm::Value *builder_lt(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
     throw_unsupported(expr);
   }
 
-  auto lhs_val = bundle.access(expr->lhs.get());
-  auto rhs_val = bundle.access(expr->rhs.get());
+  auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
+  auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
 
   return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SLT, lhs_val, rhs_val, "op.lt");
 }
@@ -391,8 +402,8 @@ llvm::Value *builder_geq(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
     throw_unsupported(expr);
   }
 
-  auto lhs_val = bundle.access(expr->lhs.get());
-  auto rhs_val = bundle.access(expr->rhs.get());
+  auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
+  auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
 
   return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SGE, lhs_val, rhs_val, "op.geq");
 }
@@ -402,8 +413,8 @@ llvm::Value *builder_leq(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
     throw_unsupported(expr);
   }
 
-  auto lhs_val = bundle.access(expr->lhs.get());
-  auto rhs_val = bundle.access(expr->rhs.get());
+  auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
+  auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
 
   return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SLE, lhs_val, rhs_val, "op.leq");
 }

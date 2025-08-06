@@ -3,7 +3,7 @@
 #include "AST/Node/Expr.hpp"
 #include <memory>
 
-llvm::Value *LLVMBundle::access(AST::ExprT const *expr) {
+std::pair<llvm::Value *, AST::TypHandle> LLVMBundle::access(AST::ExprT const *expr) {
 
   auto value = expr->codegen(*this);
 
@@ -18,44 +18,112 @@ llvm::Value *LLVMBundle::access(AST::ExprT const *expr) {
   switch (expr->kind()) {
 
   case AST::Expr::Kind::Call: {
-    return value;
+    return {value, expr->type()};
   } break;
 
   case AST::Expr::Kind::Cast: {
-    return value;
+    return {value, expr->type()};
   } break;
 
   case AST::Expr::Kind::CstI: {
-    return value;
+    return {value, expr->type()};
   } break;
 
   case AST::Expr::Kind::Index: {
     auto as_index = (AST::Expr::Index *)(expr);
-    return this->builder.CreateLoad(as_index->target->type()->deref()->llvm(*this), value);
+
+    auto type = as_index->target->type()->deref();
+    auto llvm = this->builder.CreateLoad(type->llvm(*this), value);
+
+    return {llvm, type};
   } break;
 
   case AST::Expr::Kind::Prim1: {
     auto as_prim1 = (AST::Expr::Prim1 *)(expr);
 
     switch (as_prim1->op) {
-    case AST::Expr::OpUnary::AddressOf:
+    case AST::Expr::OpUnary::AddressOf: {
+      return {value, expr->type()};
+    } break;
+
     case AST::Expr::OpUnary::Dereference: {
-      return this->builder.CreateLoad(expr->type()->llvm(*this), value);
+
+      auto type = as_prim1->expr->type();
+      auto llvm = this->builder.CreateLoad(type->llvm(*this), value);
+
+      return {llvm, type};
     } break;
 
     case AST::Expr::OpUnary::Sub:
     case AST::Expr::OpUnary::Negation: {
-      return value;
+      return {value, expr->type()};
     } break;
     }
   } break;
 
   case AST::Expr::Kind::Prim2: {
-    return value;
+    return {value, expr->type()};
   } break;
 
   case AST::Expr::Kind::Var: {
-    return this->builder.CreateLoad(expr->type()->llvm(*this), value);
+    auto type = expr->type();
+    auto llvm = this->builder.CreateLoad(type->llvm(*this), value);
+
+    return {llvm, type};
+  } break;
+  }
+}
+
+AST::TypHandle LLVMBundle::access_type(AST::ExprT const *expr) {
+
+  if (expr == nullptr) {
+    throw std::logic_error("Unable to load without type information");
+  }
+
+  switch (expr->kind()) {
+
+  case AST::Expr::Kind::Call: {
+    return expr->type();
+  } break;
+
+  case AST::Expr::Kind::Cast: {
+    return expr->type();
+  } break;
+
+  case AST::Expr::Kind::CstI: {
+    return expr->type();
+  } break;
+
+  case AST::Expr::Kind::Index: {
+    auto as_index = (AST::Expr::Index *)(expr);
+    return as_index->target->type()->deref();
+  } break;
+
+  case AST::Expr::Kind::Prim1: {
+    auto as_prim1 = (AST::Expr::Prim1 *)(expr);
+
+    switch (as_prim1->op) {
+    case AST::Expr::OpUnary::AddressOf: {
+      return expr->type();
+    } break;
+
+    case AST::Expr::OpUnary::Dereference: {
+      return as_prim1->expr->type();
+    } break;
+
+    case AST::Expr::OpUnary::Sub:
+    case AST::Expr::OpUnary::Negation: {
+      return expr->type();
+    } break;
+    }
+  } break;
+
+  case AST::Expr::Kind::Prim2: {
+    return expr->type();
+  } break;
+
+  case AST::Expr::Kind::Var: {
+    return expr->type();
   } break;
   }
 }
