@@ -133,11 +133,50 @@ Value *AST::Expr::Prim1::codegen(LLVMBundle &bundle) const {
   switch (this->op) {
 
   case OpUnary::AddressOf: {
+
+    // The address of a dereference is obtained by avoiding the dereference.
+    // This is an instance of the general approach to never take the address of an object.
+    // And, instead, as here, avoid moving to the object.
+    if (expr->kind() == AST::Expr::Kind::Prim1) {
+      auto as_prim1 = std::static_pointer_cast<AST::Expr::Prim1>(expr);
+      if (as_prim1->op == AST::Expr::OpUnary::Dereference) {
+        return as_prim1->expr->codegen(bundle);
+      }
+    }
+
     return expr->codegen(bundle);
+
   } break;
 
   case OpUnary::Dereference: {
-    return expr->codegen(bundle);
+
+    auto value = expr->codegen(bundle);
+
+    // Dereference on an address op does nothing.
+    // This is because there is no operation associated with taking the address of an object.
+    // As, in part, no action is performed when accessing the address of an object.
+    // When taking the address, the alloca is returned, which is what deref should return.
+    if (expr->kind() == AST::Expr::Kind::Prim1) {
+      auto as_prim1 = std::static_pointer_cast<AST::Expr::Prim1>(expr);
+      if (as_prim1->op == AST::Expr::OpUnary::AddressOf) {
+        return value;
+      }
+    }
+
+    // Dereference on any other op performs dereference via a load.
+    // Though, in the case of an array
+    assert(this->has_type_kind(AST::Typ::Ptr));
+    auto ptr_typ = std::static_pointer_cast<AST::Typ::Ptr>(this->typ);
+
+    if (ptr_typ->area().has_value()) {
+      llvm::Value *MC_INT = llvm::ConstantInt::get(llvm::Type::getInt64Ty(*bundle.context), 0);
+      value = bundle.builder.CreateInBoundsGEP(this->type()->llvm(bundle), value, llvm::ArrayRef(MC_INT), "decay");
+    } else {
+      value = bundle.builder.CreateLoad(this->expr->type()->llvm(bundle), value);
+    }
+
+    return value;
+
   } break;
 
   case OpUnary::Sub: {
@@ -163,8 +202,6 @@ Value *AST::ExprT::codegen_eval_true(LLVMBundle &bundle) const {
   } else {
 
     Value *zero = this->type()->defaultgen(bundle);
-
-    // FIXME: More deref hacks
 
     zero = access_typ->defaultgen(bundle);
 
@@ -210,24 +247,19 @@ llvm::Value *builder_assign(LLVMBundle &bundle, AST::ExprHandle destination, AST
 llvm::Value *builder_ptr_add(LLVMBundle &bundle, AST::ExprHandle ptr, AST::ExprHandle val) {
 
   auto [access_val, access_typ] = bundle.access(val.get());
-
-  auto ptr_typ = access_typ->llvm(bundle);
-
-  auto ptr_sub = bundle.builder.CreateGEP(ptr_typ,
+  auto ptr_typ = ptr->type()->llvm(bundle);
+  auto ptr_add = bundle.builder.CreateGEP(ptr_typ,
                                           ptr->codegen(bundle),
                                           ArrayRef<Value *>(access_val));
 
-  return ptr_sub;
+  return ptr_add;
 }
 
 llvm::Value *builder_add(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 
   switch (expr->type_kind()) {
 
-  case AST::Typ::Kind::Bool: {
-    throw std::logic_error("Unsupported op");
-  } break;
-
+  case AST::Typ::Kind::Bool:
   case AST::Typ::Kind::Char: {
     throw std::logic_error("Unsupported op");
   } break;
@@ -267,9 +299,8 @@ llvm::Value *builder_ptr_sub(LLVMBundle &bundle, AST::ExprHandle ptr, AST::ExprH
 
   auto [access_val, access_typ] = bundle.access(val.get());
 
-  auto ptr_typ = access_typ->llvm(bundle);
+  auto ptr_typ = ptr->type()->llvm(bundle);
   auto ptr_elem = bundle.builder.CreateNeg(access_val);
-
   auto ptr_sub = bundle.builder.CreateGEP(ptr_typ,
                                           ptr->codegen(bundle),
                                           ArrayRef<Value *>(ptr_elem));
