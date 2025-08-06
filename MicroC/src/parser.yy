@@ -119,9 +119,9 @@ Block:
 
 
 AtomicConst:
-    CSTINT        { $$ = driver.pk_ExprCstI($1);                                                 }
-  | CSTBOOL       { $$ = std::move(driver.pk_ExprCstI($1));                                      }
-  | NULL          { $$ = driver.pk_ExprPrim1(AST::Expr::OpUnary::Sub, driver.pk_ExprCstI(1));  }
+    CSTINT        { $$ = driver.pk_ExprCstI($1);                                              }
+  | CSTBOOL       { $$ = std::move(driver.pk_ExprCstI($1));                                   }
+  | NULL          { $$ = driver.pk_ExprPrim1(AST::Expr::OpUnary::Sub, driver.pk_ExprCstI(1)); }
 ;
 
 
@@ -140,7 +140,7 @@ Exprs:
 
 ExprsNE:
     Expr                { std::vector<AST::ExprHandle> es{$1}; $$ = es; }
-  | Expr COMMA ExprsNE  { $3.push_back(std::move($1));         $$ = $3; }
+  | ExprsNE COMMA Expr  { $1.push_back(std::move($3));         $$ = $1; }
 ;  
 
 
