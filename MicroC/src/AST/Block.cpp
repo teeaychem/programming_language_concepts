@@ -1,27 +1,25 @@
-
-
 #include "Block.hpp"
 #include "AST/AST.hpp"
-#include "AST/Node/Dec.hpp"
 #include "AST/Node/Stmt.hpp"
 
-void AST::Block::push_DecVar(EnvAST &env, AST::StmtDeclarationHandle const &dec_var) {
+AST::Block AST::Block::push_DecVar(EnvAST &env, AST::StmtDeclarationHandle const &dec_var) {
   std::string var{dec_var->declaration->name()};
 
   auto shadowed = env.vars.find(var);
 
   if (shadowed != env.vars.end()) {
     this->shadow_vars.push_back(dec_var);
-
     this->shadowed_vars.insert(*shadowed);
   } else {
     this->fresh_vars.push_back(dec_var);
   }
 
   env.vars[var] = dec_var->declaration->type();
+
+  return *this;
 }
 
-void AST::Block::push_Stmt(AST::StmtHandle const &stmt) {
+AST::Block AST::Block::push_Stmt(AST::StmtHandle const &stmt) {
   switch (stmt->kind()) {
 
   case Stmt::Kind::Block: {
@@ -73,9 +71,11 @@ void AST::Block::push_Stmt(AST::StmtHandle const &stmt) {
   }
 
   this->statements.push_back(stmt);
+
+  return *this;
 }
 
-void AST::Block::finalize(EnvAST &env) {
+AST::Block AST::Block::finalize(EnvAST &env) {
   // Restore shadowed variables to `env`
   for (auto &shadowed : this->shadowed_vars) {
     env.vars[shadowed.first] = shadowed.second;
@@ -89,4 +89,6 @@ void AST::Block::finalize(EnvAST &env) {
   if (!this->returns) {
     this->pass_throughs += 1;
   }
+
+  return *this;
 }
