@@ -58,6 +58,30 @@ auto std::formatter<AST::Expr::Kind>::format(AST::Expr::Kind c, std::format_cont
   return std::formatter<string_view>::format(name, ctx);
 }
 
+auto std::formatter<AST::Typ::Kind>::format(AST::Typ::Kind c, std::format_context &ctx) const
+    -> std::format_context::iterator {
+  string_view name = "unknown";
+  switch (c) {
+
+  case AST::Typ::Kind::Bool: {
+    name = "bool";
+  } break;
+  case AST::Typ::Kind::Char: {
+    name = "char";
+  } break;
+  case AST::Typ::Kind::Int: {
+    name = "int";
+  } break;
+  case AST::Typ::Kind::Ptr: {
+    name = "ptr";
+  } break;
+  case AST::Typ::Kind::Void: {
+    name = "void";
+  } break;
+  }
+  return std::formatter<string_view>::format(name, ctx);
+}
+
 auto std::formatter<AST::Expr::OpUnary>::format(AST::Expr::OpUnary c, std::format_context &ctx) const
     -> std::format_context::iterator {
   string_view name = "unknown";
