@@ -92,6 +92,7 @@
 
 %nterm <std::pair<std::string, AST::TypHandle>> Vardec
 %nterm <std::pair<std::string, AST::TypHandle>> Vardesc
+%nterm <std::pair<std::string, AST::TypHandle>> Wardesc
 
 %nterm <AST::ExprHandle> AtomicConst
 %nterm <AST::ExprHandle> Expr
@@ -261,16 +262,21 @@ Topdec:
 
 
 Vardec:
-    DataType Vardesc  { $$ = std::make_pair($2.first, $2.second->complete_with($1)); }
+    DataType Wardesc  { $$ = std::make_pair($2.first, $2.second->complete_with($1)); }
 ;
+
+Wardesc:
+   Vardesc                       { $$ = $1;                                                                  }
+ | Vardesc LBRACK RBRACK         { $$ = std::make_pair($1.first, AST::Typ::pk_Ptr($1.second, std::nullopt)); }
+ | Vardesc LBRACK CSTINT RBRACK  { $$ = std::make_pair($1.first, AST::Typ::pk_Ptr($1.second, $3));           }
+ | LPAR Wardesc RPAR             { $$ = $2;                                                                  }
+;  
 
 
 Vardesc:
     NAME                          { $$ = std::make_pair($1, AST::Typ::pk_Void());                             }
   | STAR Vardesc                  { $$ = std::make_pair($2.first, AST::Typ::pk_Ptr($2.second, std::nullopt)); }
   | LPAR Vardesc RPAR             { $$ = $2;                                                                  }
-  | Vardesc LBRACK RBRACK         { $$ = std::make_pair($1.first, AST::Typ::pk_Ptr($1.second, std::nullopt)); }
-  | Vardesc LBRACK CSTINT RBRACK  { $$ = std::make_pair($1.first, AST::Typ::pk_Ptr($1.second, $3));           }
 ;
 
 
