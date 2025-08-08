@@ -1,8 +1,8 @@
 #pragma once
 
-#include "AST.hpp"
-
 #include <format>
+
+#include "AST.hpp"
 
 template <>
 struct std::formatter<AST::Stmt::Kind> : formatter<string_view> {

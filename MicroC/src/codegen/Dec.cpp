@@ -1,3 +1,5 @@
+#include <vector>
+
 #include "AST/AST.hpp"
 #include "LLVMBundle.hpp"
 
@@ -10,8 +12,6 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
-
-#include <vector>
 
 #include "AST/Fmt.hpp"
 
