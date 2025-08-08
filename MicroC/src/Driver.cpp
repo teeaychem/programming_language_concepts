@@ -23,7 +23,6 @@ int Driver::parse(const std::string &file) {
   for (auto &foundation_elem : this->llvm.foundation_fn_map) {
     auto primative_fn = foundation_elem.second;
 
-    // TODO: Revise
     AST::Dec::Prototype proto(primative_fn->return_type, primative_fn->name, primative_fn->args);
     AST::PrototypeHandle handle = std::make_shared<AST::Dec::Prototype>(proto);
 

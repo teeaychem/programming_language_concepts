@@ -72,7 +72,6 @@ struct Driver {
   }
 
   void fn_finalise(AST::DecFnHandle fn) {
-    // TODO: Shadowing of global variables...
     for (auto &param : fn->prototype->args) {
       this->llvm.env_ast.vars.erase(param.first);
     }
