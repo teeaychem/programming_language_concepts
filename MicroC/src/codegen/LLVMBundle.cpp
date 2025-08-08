@@ -1,6 +1,7 @@
 #include "LLVMBundle.hpp"
 #include "AST/AST.hpp"
 #include "AST/Node/Expr.hpp"
+#include <memory>
 
 std::pair<llvm::Value *, AST::TypHandle> LLVMBundle::access(AST::ExprT const *expr) {
 
@@ -32,7 +33,7 @@ std::pair<llvm::Value *, AST::TypHandle> LLVMBundle::access(AST::ExprT const *ex
     auto as_index = (AST::Expr::Index *)(expr);
 
     auto type = as_index->target->type()->deref();
-    auto llvm = this->builder.CreateLoad(type->llvm(*this), value);
+    auto llvm = this->builder.CreateLoad(type->llvm(*this), value, "acc.idx");
 
     return {llvm, type};
   } break;
@@ -50,10 +51,10 @@ std::pair<llvm::Value *, AST::TypHandle> LLVMBundle::access(AST::ExprT const *ex
 
     case AST::Expr::OpUnary::Dereference: {
 
-      auto type = as_prim1->expr->type()->deref();
-      auto llvm = this->builder.CreateLoad(type->llvm(*this), value);
+      auto type = as_prim1->type();
+      value = this->builder.CreateLoad(type->llvm(*this), value, "acc.drf");
 
-      return {llvm, type};
+      return {value, type};
     } break;
 
     case AST::Expr::OpUnary::Sub:
@@ -68,13 +69,16 @@ std::pair<llvm::Value *, AST::TypHandle> LLVMBundle::access(AST::ExprT const *ex
   } break;
 
   case AST::Expr::Kind::Var: {
+
+    auto as_var = (AST::Expr::Var *)expr;
+
     switch (expr->type_kind()) {
 
     case AST::Typ::Kind::Bool:
     case AST::Typ::Kind::Char:
     case AST::Typ::Kind::Int: {
       auto type = expr->type();
-      auto llvm = this->builder.CreateLoad(type->llvm(*this), value);
+      auto llvm = this->builder.CreateLoad(type->llvm(*this), value, as_var->var);
 
       return {llvm, type};
     } break;
@@ -83,29 +87,27 @@ std::pair<llvm::Value *, AST::TypHandle> LLVMBundle::access(AST::ExprT const *ex
 
       auto ptr_typ = std::static_pointer_cast<AST::Typ::Ptr>(expr->type());
 
-      llvm::Value *llvm;
-      auto type = ptr_typ;
+      auto type = std::static_pointer_cast<AST::Typ::Ptr>(expr->type());
+      // auto llvm = this->builder.CreateLoad(type->llvm(*this), value, "acc.ptr");
 
       if (ptr_typ->area().has_value()) {
-
-        // auto llvm = hdl.builder.CreateLoad(typ, alloca);
         llvm::Value *MC_INT = llvm::ConstantInt::get(llvm::Type::getInt64Ty(*this->context), 0);
-        llvm = this->builder.CreateInBoundsGEP(type->llvm(*this), value, llvm::ArrayRef(MC_INT), "decay");
-
+        value = this->builder.CreateInBoundsGEP(expr->type()->llvm(*this), value, llvm::ArrayRef(MC_INT), "acc.ptr.decay");
       } else {
-        llvm = this->builder.CreateLoad(type->llvm(*this), value);
+        value = this->builder.CreateLoad(expr->type()->llvm(*this), value, "acc.ptr");
       }
 
-      return {llvm, type};
+      return {value, type};
 
     } break;
+
     case AST::Typ::Kind::Void: {
       throw std::logic_error("Access to void");
     } break;
     }
 
     auto type = expr->type();
-    auto llvm = this->builder.CreateLoad(type->llvm(*this), value);
+    auto llvm = this->builder.CreateLoad(type->llvm(*this), value, "acc.vd");
 
     return {llvm, type};
   } break;
