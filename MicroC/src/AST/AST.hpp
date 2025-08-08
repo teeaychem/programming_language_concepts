@@ -1,8 +1,6 @@
 #pragma once
 
-#include <format>
 #include <map>
-#include <sstream>
 #include <string>
 
 #include "llvm/IR/DIBuilder.h"
@@ -157,21 +155,19 @@ public:
   AST::Kind kind_node() const override { return AST::Kind::Expr; }
 
   // Returns the type of an expression.
-  AST::TypHandle type() const {
-    if (!this->typ) {
-      throw std::logic_error(std::format("No type for {}", this->to_string()));
-    }
-    return this->typ;
-  };
+  AST::TypHandle type() const { return this->typ; };
 
+  // The kind of type `this` has.
   AST::Typ::Kind type_kind() const { return this->type()->kind(); }
 
   // LLVM IR codegen which returns true if this expression evaluates to true and false otherwise.
   llvm::Value *codegen_eval_true(LLVMBundle &bundle) const;
+
   // LLVM IR codegen which returns false if this expression evaluates to true and false otherwise.
   llvm::Value *codegen_eval_false(LLVMBundle &bundle) const;
 
-  bool has_type_kind(AST::Typ::Kind type) const { return this->typ->kind() == type; };
+  // Returns true if `this` has type of `kind`.
+  bool has_type_kind(AST::Typ::Kind kind) const { return this->typ->kind() == kind; };
 
   virtual Expr::Kind kind() const = 0;
 };
@@ -201,9 +197,19 @@ struct While;
 
 struct StmtT : NodeT {
   AST::Kind kind_node() const override { return AST::Kind::Stmt; }
+
+  // The kind of statement `this` is.
   virtual Stmt::Kind kind() const = 0;
+
+  // True if control of the statement is released through a `return` statement.
   virtual bool returns() const = 0;
+
+  // How many times control may be diverted by a return.
+  // E.g. by the `then` branch of an if.
   virtual size_t early_returns() const = 0;
+
+  // How many times control may avoid being diverted.
+  // E.g. by the absence of an `else` branch of an if.
   virtual size_t pass_throughs() const = 0;
 };
 
@@ -223,8 +229,14 @@ struct Prototype;
 
 struct DecT : NodeT {
   AST::Kind kind_node() const override { return AST::Kind::Dec; }
+
+  // The kind of declaration `this` is.
   virtual Dec::Kind kind() const = 0;
+
+  // The type of variable declared.
   virtual AST::TypHandle type() const = 0;
+
+  // The variable declared.
   virtual std::string name() const = 0;
 };
 } // namespace AST
@@ -233,9 +245,9 @@ struct DecT : NodeT {
 
 namespace AST {
 
-struct Block;
-
 // Handles
+// Pointers to objects.
+// Typically shared pointers, though this is not a requirement.
 
 typedef std::shared_ptr<DecT> DecHandle;
 
@@ -252,27 +264,20 @@ typedef std::shared_ptr<AST::Stmt::Declaration> StmtDeclarationHandle;
 // Etc
 
 typedef std::vector<std::pair<std::string, TypHandle>> ArgVec;
-typedef std::vector<std::variant<StmtHandle, DecHandle>> BlockVec;
 
 // Env
 
 typedef std::map<std::string, AST::TypHandle> NameTypeMap; // Vars have declared type, fns have return type.
+
+// A struct holding the (contextual) environment when generating an AST.
+// 'Contextual', here, means the env is mutated with relevant declarations.
+// And, in particular, it is up to the the mutator to restore any temporary mutations (i.e. local declarations).
 struct EnvAST {
+
   std::map<std::string, AST::PrototypeHandle> fns{};
   NameTypeMap vars{};
 
-  std::string to_string() {
-    std::stringstream ss{};
-    ss << "Env AST:" << "\n";
-    for (auto &var : vars) {
-      ss << "\t" << var.first << " : " << var.second->to_string() << "\n";
-    }
-    for (auto &fn : fns) {
-      ss << "\t" << fn.first << " : " << " ..." << "\n";
-    }
-
-    return ss.str();
-  }
+  std::string to_string();
 };
 
 } // namespace AST
