@@ -160,7 +160,8 @@ llvm::Value *AST::Dec::Var::codegen(LLVMBundle &bundle) const {
 }
 
 // Prototype
-
+// Return the fn as the implementation doesn't permit prototypes independent of a body declaration.
+// If revised to do so, the fn generation should be abstracted as this is called during fn declaration.
 llvm::Value *AST::Dec::Prototype::codegen(LLVMBundle &bundle) const {
   llvm::Type *return_type = this->return_type()->codegen(bundle);
   std::vector<llvm::Type *> parameter_types{};
@@ -179,8 +180,13 @@ llvm::Value *AST::Dec::Prototype::codegen(LLVMBundle &bundle) const {
   return fn;
 }
 
+// Fn
+// The fn codegen is sourced to prototype codegen, though see comments for issues with this.
+// The codegen given is for the body.
+// This amounts to setting up local allocas for each parameter, generating the body, and maintaining the env.
 //
-
+// Returns are handled by setting `return_alloca` in the bundle to the local return alloca.
+// This helps simplify control structure, as any return makes a store and then (something equivalent to) a jump to the end of the fn.
 llvm::Value *AST::Dec::Fn::codegen(LLVMBundle &bundle) const {
 
   llvm::Function *fn = (llvm::Function *)this->prototype->codegen(bundle);
@@ -189,8 +195,8 @@ llvm::Value *AST::Dec::Fn::codegen(LLVMBundle &bundle) const {
 
   llvm::Type *return_type = this->return_type()->codegen(bundle);
 
-  llvm::BasicBlock *outer_return_block = bundle.return_block; // to be restored on exit
-  llvm::Value *outer_return_alloca = bundle.return_alloca;    // likewise for return value allocation
+  llvm::BasicBlock *outer_return_block = bundle.env_llvm.return_block; // to be restored on exit
+  llvm::Value *outer_return_alloca = bundle.env_llvm.return_alloca;    // likewise for return value allocation
 
   std::vector<std::pair<std::string, llvm::Value *>> shadowed_parameters{};
   std::vector<std::string> fresh_parameters{};
@@ -225,33 +231,37 @@ llvm::Value *AST::Dec::Fn::codegen(LLVMBundle &bundle) const {
     if (this->body->block.scoped_return) {
       if (!return_type->isVoidTy()) {
         llvm::AllocaInst *r_alloca = bundle.builder.CreateAlloca(return_type, nullptr, "ret.val");
-        bundle.return_alloca = r_alloca;
+        bundle.env_llvm.return_alloca = r_alloca;
       }
 
       auto return_block = llvm::BasicBlock::Create(*bundle.context, "return");
-      bundle.return_block = return_block;
+      bundle.env_llvm.return_block = return_block;
     }
   }
 
   bundle.builder.SetInsertPoint(fn_body);
 
+  // codegen the body
   this->body->codegen(bundle);
 
+  // handle returns
   if (this->body->block.scoped_return) {
     if (!return_type->isVoidTy()) {
-      fn->insert(fn->end(), bundle.return_block);
-      bundle.builder.SetInsertPoint(bundle.return_block);
+      fn->insert(fn->end(), bundle.env_llvm.return_block);
+      bundle.builder.SetInsertPoint(bundle.env_llvm.return_block);
 
-      auto *return_value = bundle.builder.CreateLoad(return_type, bundle.return_alloca);
+      auto *return_value = bundle.builder.CreateLoad(return_type, bundle.env_llvm.return_alloca);
       bundle.builder.CreateRet(return_value);
     }
   } else if (return_type->isVoidTy()) {
     bundle.builder.CreateRetVoid();
   }
 
-  bundle.return_block = outer_return_block;
-  bundle.return_alloca = outer_return_alloca;
+  // maintain the env
+  bundle.env_llvm.return_block = outer_return_block;
+  bundle.env_llvm.return_alloca = outer_return_alloca;
 
+  //
   for (auto &shadowed : shadowed_parameters) {
     bundle.env_llvm.vars[shadowed.first] = shadowed.second;
   }
@@ -259,8 +269,6 @@ llvm::Value *AST::Dec::Fn::codegen(LLVMBundle &bundle) const {
   for (auto &fresh : fresh_parameters) {
     bundle.env_llvm.vars.erase(fresh);
   }
-
-  bundle.return_alloca = nullptr;
 
   // TODO: Finish...
   return llvm::ConstantInt::get(llvm::Type::getInt64Ty(*bundle.context), 2020);

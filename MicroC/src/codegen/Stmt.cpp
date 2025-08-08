@@ -127,9 +127,9 @@ llvm::Value *AST::Stmt::Return::codegen(LLVMBundle &bundle) const {
 
     auto [return_val, _] = bundle.access(this->value.value().get());
 
-    if (bundle.return_alloca) {
-      bundle.builder.CreateStore(return_val, bundle.return_alloca);
-      bundle.builder.CreateBr(bundle.return_block);
+    if (bundle.env_llvm.return_alloca) {
+      bundle.builder.CreateStore(return_val, bundle.env_llvm.return_alloca);
+      bundle.builder.CreateBr(bundle.env_llvm.return_block);
     } else {
       bundle.builder.CreateRet(return_val);
     }
