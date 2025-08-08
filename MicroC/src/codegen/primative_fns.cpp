@@ -66,11 +66,11 @@ struct PrintLn : FnPrimative {
   int64_t global_map_addr() const override { return (int64_t)(println); };
 };
 
-void generate_primative_fns(LLVMBundle &bundle) {
+void LLVMBundle::generate_foundation_fn_map() {
 
   auto printi = std::make_shared<PrintI>(PrintI());
   auto println = std::make_shared<PrintLn>(PrintLn());
 
-  bundle.foundation_fn_map[printi->name] = printi;
-  bundle.foundation_fn_map[println->name] = println;
+  this->foundation_fn_map[printi->name] = printi;
+  this->foundation_fn_map[println->name] = println;
 }
