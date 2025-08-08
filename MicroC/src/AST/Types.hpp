@@ -19,7 +19,7 @@ struct Bool : TypT {
 
   TypHandle complete_with(TypHandle data) override { throw std::logic_error("Complete into bool"); }
 
-  llvm::Type *codegen(LLVMBundle &bundle) const override { return llvm::Type::getInt1Ty(*bundle.context); }
+  llvm::Type *codegen(LLVMBundle &bundle) const override { return bundle.get_typ(this->kind()); }
 };
 
 struct Char : TypT {
@@ -32,7 +32,7 @@ struct Char : TypT {
 
   TypHandle complete_with(TypHandle data) override { throw std::logic_error("Complete into char."); }
 
-  llvm::Type *codegen(LLVMBundle &bundle) const override { return llvm::Type::getInt8Ty(*bundle.context); }
+  llvm::Type *codegen(LLVMBundle &bundle) const override { return bundle.get_typ(this->kind()); }
 };
 
 struct Int : TypT {
@@ -46,7 +46,7 @@ struct Int : TypT {
 
   TypHandle complete_with(TypHandle data) override { throw std::logic_error("Complete into int."); }
 
-  llvm::Type *codegen(LLVMBundle &bundle) const override { return llvm::Type::getInt64Ty(*bundle.context); }
+  llvm::Type *codegen(LLVMBundle &bundle) const override { return bundle.get_typ(this->kind()); }
 };
 
 struct Ptr : TypT {
@@ -108,7 +108,7 @@ public:
     if (this->_area.has_value()) {
       return llvm::ArrayType::get(this->_pointee->codegen(bundle), this->_area.value());
     } else {
-      return llvm::PointerType::getUnqual(*bundle.context);
+      return bundle.get_typ(this->kind());
     }
   }
 };
@@ -124,7 +124,7 @@ struct Void : TypT {
 
   TypHandle complete_with(TypHandle data) override { return data; }
 
-  llvm::Type *codegen(LLVMBundle &bundle) const override { return llvm::Type::getVoidTy(*bundle.context); }
+  llvm::Type *codegen(LLVMBundle &bundle) const override { return bundle.get_typ(this->kind()); }
 };
 
 // pk typ
