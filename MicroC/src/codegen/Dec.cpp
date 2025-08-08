@@ -73,7 +73,6 @@ Value *AST::Dec::Var::codegen(LLVMBundle &bundle) const {
       case Scope::Local: {
 
         auto alloca = bundle.builder.CreateAlloca(typ, nullptr, this->name());
-        // bundle.builder.CreateStore(default_value, alloca);
         bundle.env_llvm.vars[this->name()] = alloca;
 
         return alloca;
@@ -160,7 +159,7 @@ Value *AST::Dec::Var::codegen(LLVMBundle &bundle) const {
   }
 }
 
-// tmp
+// Prototype
 
 Value *AST::Dec::Prototype::codegen(LLVMBundle &bundle) const {
   llvm::Type *return_type = this->return_type()->codegen(bundle);

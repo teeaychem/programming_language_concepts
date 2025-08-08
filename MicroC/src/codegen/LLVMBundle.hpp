@@ -29,7 +29,7 @@ struct FnPrimative {
 
 typedef std::map<const std::string, std::shared_ptr<FnPrimative>> OpPrimativeMap;
 
-void extend_ops_foundation(LLVMBundle &bundle);
+void generate_primative_fns(LLVMBundle &bundle);
 
 struct EnvLLVM {
   std::map<std::string, llvm::Value *> vars{};
@@ -64,7 +64,7 @@ struct LLVMBundle {
         module(std::make_unique<llvm::Module>("microC", *context)),
         builder(llvm::IRBuilder<>(*context)) {
 
-    extend_ops_foundation(*this);
+    generate_primative_fns(*this);
   };
 
   // Canonical codegen types
