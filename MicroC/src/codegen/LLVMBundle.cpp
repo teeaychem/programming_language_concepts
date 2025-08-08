@@ -1,7 +1,7 @@
-#include "LLVMBundle.hpp"
 #include "AST/AST.hpp"
 #include "AST/Node/Expr.hpp"
-#include <memory>
+
+#include "LLVMBundle.hpp"
 
 std::pair<llvm::Value *, AST::TypHandle> LLVMBundle::access(AST::ExprT const *expr) {
 
