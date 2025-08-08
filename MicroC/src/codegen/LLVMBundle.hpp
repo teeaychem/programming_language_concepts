@@ -32,8 +32,14 @@ typedef std::map<const std::string, std::shared_ptr<FnPrimative>> OpPrimativeMap
 void generate_primative_fns(LLVMBundle &bundle);
 
 struct EnvLLVM {
+  // variables in scope
   std::map<std::string, llvm::Value *> vars{};
+  // fns in scope (as fns are global, this is each)
   std::map<std::string, llvm::Function *> fns{};
+  // contextual return block
+  llvm::BasicBlock *return_block{nullptr};
+  // contextual alloca to write a return value to
+  llvm::Value *return_alloca{nullptr};
 };
 
 struct LLVMBundle {
@@ -47,9 +53,6 @@ struct LLVMBundle {
   // Fn / Prototype / Variable to type mapping maintained during parsing.
   // Empty before, keep after parsing.
   AST::EnvAST env_ast{};
-
-  llvm::BasicBlock *return_block{nullptr};
-  llvm::Value *return_alloca{nullptr};
 
   // Maps to fn builders
   OpPrimativeMap foundation_fn_map{};
