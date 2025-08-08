@@ -10,10 +10,6 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 
-#include "AST/Fmt.hpp"
-
-using namespace llvm;
-
 // Stmt
 
 // Blocks are generated in 'canonical' form:
@@ -25,9 +21,9 @@ using namespace llvm;
 // Generation of statements stops immediately when a `return` statement is found.
 //
 // Codegen mutates the env with any declarations and restore the env on exit of the block.
-Value *AST::Stmt::Block::codegen(LLVMBundle &bundle) const {
+llvm::Value *AST::Stmt::Block::codegen(LLVMBundle &bundle) const {
 
-  std::vector<std::pair<std::string, Value *>> shadowed_values{};
+  std::vector<std::pair<std::string, llvm::Value *>> shadowed_values{};
 
   for (auto &fresh_dec : block.fresh_vars) {
     fresh_dec->codegen(bundle);
@@ -62,12 +58,12 @@ Value *AST::Stmt::Block::codegen(LLVMBundle &bundle) const {
 }
 
 // Declaration codegen redirects to the declaration.
-Value *AST::Stmt::Declaration::codegen(LLVMBundle &bundle) const {
+llvm::Value *AST::Stmt::Declaration::codegen(LLVMBundle &bundle) const {
   return this->declaration->codegen(bundle);
 }
 
 // Expression codegen redirects to the expression.
-Value *AST::Stmt::Expr::codegen(LLVMBundle &bundle) const {
+llvm::Value *AST::Stmt::Expr::codegen(LLVMBundle &bundle) const {
   return this->expr->codegen(bundle);
 }
 
@@ -77,27 +73,27 @@ Value *AST::Stmt::Expr::codegen(LLVMBundle &bundle) const {
 // An `else` block is generated if it is present in the AST.
 //
 // And, control returns to the source block only if it's possible by the semantics of the program.
-Value *AST::Stmt::If::codegen(LLVMBundle &bundle) const {
+llvm::Value *AST::Stmt::If::codegen(LLVMBundle &bundle) const {
 
-  Function *parent = bundle.builder.GetInsertBlock()->getParent();
+  llvm::Function *parent = bundle.builder.GetInsertBlock()->getParent();
 
   // Condition evaluation
-  Value *condition = this->condition->codegen_eval_true(bundle);
+  llvm::Value *condition = this->condition->codegen_eval_true(bundle);
 
   // Flow block setup
-  BasicBlock *block_then = BasicBlock::Create(*bundle.context, "if.then", parent);
-  BasicBlock *block_else{}; // Build only if required
-  BasicBlock *block_end = BasicBlock::Create(*bundle.context, "if.end");
+  llvm::BasicBlock *block_then = llvm::BasicBlock::Create(*bundle.context, "if.then", parent);
+  llvm::BasicBlock *block_else{}; // Build only if required
+  llvm::BasicBlock *block_end = llvm::BasicBlock::Create(*bundle.context, "if.end");
 
   if (this->stmt_else->block.empty()) {
     bundle.builder.CreateCondBr(condition, block_then, block_end);
   } else {
-    block_else = BasicBlock::Create(*bundle.context, "if.else");
+    block_else = llvm::BasicBlock::Create(*bundle.context, "if.else");
     bundle.builder.CreateCondBr(condition, block_then, block_else);
   }
 
   bundle.builder.SetInsertPoint(block_then);
-  Value *true_eval = this->stmt_then->codegen(bundle);
+  llvm::Value *true_eval = this->stmt_then->codegen(bundle);
 
   if (!this->stmt_then->returns()) { //
     bundle.builder.CreateBr(block_end);
@@ -106,7 +102,7 @@ Value *AST::Stmt::If::codegen(LLVMBundle &bundle) const {
   if (block_else) {
     parent->insert(parent->end(), block_else);
     bundle.builder.SetInsertPoint(block_else);
-    Value *false_eval = this->stmt_else->codegen(bundle);
+    llvm::Value *false_eval = this->stmt_else->codegen(bundle);
 
     if (!this->stmt_else->returns()) {
       bundle.builder.CreateBr(block_end);
@@ -125,7 +121,7 @@ Value *AST::Stmt::If::codegen(LLVMBundle &bundle) const {
 // This variable is empty otherwise.
 //
 // Note, in particular, nested blocks in an fn will all access the same return_alloca.
-Value *AST::Stmt::Return::codegen(LLVMBundle &bundle) const {
+llvm::Value *AST::Stmt::Return::codegen(LLVMBundle &bundle) const {
 
   if (this->value.has_value()) {
 
@@ -146,17 +142,17 @@ Value *AST::Stmt::Return::codegen(LLVMBundle &bundle) const {
 }
 
 // While codegen mirrors, mostly, if codegen
-Value *AST::Stmt::While::codegen(LLVMBundle &bundle) const {
-  Function *parent = bundle.builder.GetInsertBlock()->getParent();
+llvm::Value *AST::Stmt::While::codegen(LLVMBundle &bundle) const {
+  llvm::Function *parent = bundle.builder.GetInsertBlock()->getParent();
 
-  BasicBlock *block_cond = BasicBlock::Create(*bundle.context, "while.cond", parent);
-  BasicBlock *block_loop = BasicBlock::Create(*bundle.context, "while.loop");
-  BasicBlock *block_end = BasicBlock::Create(*bundle.context, "while.end");
+  llvm::BasicBlock *block_cond = llvm::BasicBlock::Create(*bundle.context, "while.cond", parent);
+  llvm::BasicBlock *block_loop = llvm::BasicBlock::Create(*bundle.context, "while.loop");
+  llvm::BasicBlock *block_end = llvm::BasicBlock::Create(*bundle.context, "while.end");
 
   bundle.builder.CreateBr(block_cond);
   bundle.builder.SetInsertPoint(block_cond);
 
-  Value *condition = this->condition->codegen_eval_true(bundle);
+  llvm::Value *condition = this->condition->codegen_eval_true(bundle);
   bundle.builder.CreateCondBr(condition, block_loop, block_end);
 
   parent->insert(parent->end(), block_loop);
