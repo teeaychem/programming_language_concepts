@@ -103,11 +103,10 @@ struct Driver {
 
     case AST::Expr::OpUnary::Dereference: {
       if (expr->has_type_kind(AST::Typ::Kind::Ptr)) {
-        return expr->type();
+        return expr->type()->deref();
       } else {
         throw std::logic_error(std::format("Deref panic... {} {}",
-                                           expr->to_string(),
-                                           expr->type()->to_string()));
+                                           expr->to_string(), expr->type()->to_string()));
       }
     } break;
 

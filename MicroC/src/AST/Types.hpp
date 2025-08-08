@@ -44,7 +44,7 @@ struct Int : TypT {
 
   std::string to_string(size_t indent = 0) const override;
 
-  TypHandle deref() const override { throw std::logic_error(std::format("deref called on an int")); }
+  TypHandle deref() const override { throw std::logic_error("deref called on an int"); }
 
   TypHandle complete_with(TypHandle data) override { throw std::logic_error("Complete into int."); }
 
@@ -99,7 +99,6 @@ public:
       auto fresh_pointer = Ptr(data, this->_area);
       auto fresh_handle = std::make_shared<AST::Typ::Ptr>(fresh_pointer);
 
-      // this->_pointee = fresh_handle;
       return fresh_handle;
     } break;
     }

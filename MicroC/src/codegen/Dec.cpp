@@ -225,7 +225,7 @@ Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) const {
 
       arg.setName(base_name);
 
-      AllocaInst *alloca = hdl.builder.CreateAlloca(arg.getType(), nullptr, std::format("{}.local", base_name));
+      AllocaInst *alloca = hdl.builder.CreateAlloca(arg.getType(), nullptr, std::format("arg.{}", base_name));
       hdl.builder.CreateStore(&arg, alloca);
       hdl.env_llvm.vars[base_name] = alloca;
     }
