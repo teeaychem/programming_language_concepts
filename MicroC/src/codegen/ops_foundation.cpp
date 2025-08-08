@@ -24,7 +24,7 @@ struct PrintI : FnPrimative {
   }
 
   llvm::Function *codegen(LLVMBundle &bundle) const override {
-    auto typ = llvm::FunctionType::get(llvm::Type::getVoidTy(*bundle.context), llvm::ArrayRef(bundle.get_int_typ()), false);
+    auto typ = llvm::FunctionType::get(llvm::Type::getVoidTy(*bundle.context), llvm::ArrayRef(bundle.get_typ(AST::Typ::Kind::Int)), false);
 
     auto fn = llvm::Function::Create(typ, llvm::Function::ExternalLinkage, this->name, bundle.module.get());
     fn->setCallingConv(llvm::CallingConv::C);

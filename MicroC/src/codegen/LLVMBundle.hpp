@@ -67,15 +67,36 @@ struct LLVMBundle {
     extend_ops_foundation(*this);
   };
 
-  llvm::Type *get_int_typ() {
-    return (llvm::Type *)llvm::Type::getInt64Ty(*this->context);
+  // Canonical codegen types
+  // Used with `codegen` on types, with the exception of pointers which capture area information.
+  llvm::Type *get_typ(AST::Typ::Kind kind) {
+    switch (kind) {
+
+    case AST::Typ::Kind::Bool: {
+      return llvm::Type::getInt1Ty(*this->context);
+    } break;
+
+    case AST::Typ::Kind::Char: {
+      return llvm::Type::getInt8Ty(*this->context);
+    } break;
+
+    case AST::Typ::Kind::Int: {
+      return llvm::Type::getInt64Ty(*this->context);
+    } break;
+
+    case AST::Typ::Kind::Ptr: {
+      return llvm::PointerType::getUnqual(*this->context);
+    } break;
+
+    case AST::Typ::Kind::Void: {
+      return llvm::Type::getVoidTy(*this->context);
+    } break;
+    }
   }
 
   llvm::Value *get_zero() {
-    return llvm::ConstantInt::get(this->get_int_typ(), 0);
+    return llvm::ConstantInt::get(this->get_typ(AST::Typ::Kind::Int), 0);
   }
 
   llvm::Value *stmt_return_val() { return this->get_zero(); }
 };
-
-typedef std::unique_ptr<LLVMBundle> LLVMBundleHandle;

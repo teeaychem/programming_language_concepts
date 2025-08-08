@@ -105,7 +105,6 @@ Value *AST::Dec::Var::codegen(LLVMBundle &bundle) const {
     case Scope::Local: {
 
       auto alloca = bundle.builder.CreateAlloca(typ, nullptr, this->name());
-      // bundle.builder.CreateStore(default_value, alloca);
       bundle.env_llvm.vars[this->name()] = alloca;
 
     } break;
@@ -134,7 +133,6 @@ Value *AST::Dec::Var::codegen(LLVMBundle &bundle) const {
     case Scope::Local: {
 
       auto alloca = bundle.builder.CreateAlloca(typ, nullptr, this->name());
-      // bundle.builder.CreateStore(default_value, alloca);
       bundle.env_llvm.vars[this->name()] = alloca;
 
     } break;
@@ -154,8 +152,8 @@ Value *AST::Dec::Var::codegen(LLVMBundle &bundle) const {
 
   case Typ::Kind::Void: {
     throw std::logic_error("Creation of variable with void type");
-
   } break;
+
   case Typ::Kind::Bool: {
     throw std::logic_error("Creation of variable with bool type");
   } break;
@@ -165,27 +163,21 @@ Value *AST::Dec::Var::codegen(LLVMBundle &bundle) const {
 // tmp
 
 Value *AST::Dec::Prototype::codegen(LLVMBundle &bundle) const {
-  if (bundle.env_llvm.vars.count(this->name()) != 0) {
-    throw std::logic_error(std::format("Redeclaration of function: {}", this->name()));
-  }
-
   llvm::Type *return_type = this->return_type()->codegen(bundle);
   std::vector<llvm::Type *> parameter_types{};
 
-  { // Generate the parameter types
-    parameter_types.reserve(this->args.size());
-
-    for (auto &p : this->args) {
-      parameter_types.push_back(p.second->codegen(bundle));
-    }
+  // Generate the parameter types
+  parameter_types.reserve(this->args.size());
+  for (auto &p : this->args) {
+    parameter_types.push_back(p.second->codegen(bundle));
   }
 
   auto fn_type = FunctionType::get(return_type, parameter_types, false);
-  Function *fnx = Function::Create(fn_type, Function::ExternalLinkage, this->id, bundle.module.get());
+  Function *fn = Function::Create(fn_type, Function::ExternalLinkage, this->id, bundle.module.get());
 
-  bundle.env_llvm.fns[this->id] = fnx;
+  bundle.env_llvm.fns[this->id] = fn;
 
-  return fnx;
+  return fn;
 }
 
 //
@@ -198,7 +190,7 @@ Value *AST::Dec::Fn::codegen(LLVMBundle &bundle) const {
 
   llvm::Type *return_type = this->return_type()->codegen(bundle);
 
-  BasicBlock *outer_return_block = bundle.return_block; // stash any existing return block, to be restored on exit
+  BasicBlock *outer_return_block = bundle.return_block; // to be restored on exit
   Value *outer_return_alloca = bundle.return_alloca;    // likewise for return value allocation
 
   std::vector<std::pair<std::string, Value *>> shadowed_parameters{};
