@@ -22,13 +22,13 @@ using namespace llvm;
 // Code generation for a declaration.
 // Should always be called when a declaration is made.
 // The details of shadowing are handled at block nodes.
-Value *AST::Dec::Var::codegen(LLVMBundle &hdl) const {
-  auto existing = hdl.env_llvm.vars.find(this->name());
-  if (existing != hdl.env_llvm.vars.end()) {
+Value *AST::Dec::Var::codegen(LLVMBundle &bundle) const {
+  auto existing = bundle.env_llvm.vars.find(this->name());
+  if (existing != bundle.env_llvm.vars.end()) {
     return existing->second;
   }
 
-  auto typ = this->typ->llvm(hdl);
+  auto typ = this->typ->codegen(bundle);
 
   switch (this->typ->kind()) {
 
@@ -38,26 +38,26 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) const {
 
     if (as_index->area().has_value()) {
 
-      ArrayType *array_type = ArrayType::get(as_index->pointee_type()->llvm(hdl), as_index->area().value());
+      ArrayType *array_type = ArrayType::get(as_index->pointee_type()->codegen(bundle), as_index->area().value());
 
       switch (this->scope) {
 
       case Scope::Local: {
 
-        // auto size_value = llvm::ConstantInt::get(llvm::Type::getInt64Ty(*hdl.context), as_index->area().value());
-        auto alloca = hdl.builder.CreateAlloca(typ, nullptr, this->name());
-        hdl.env_llvm.vars[this->name()] = alloca;
+        // auto size_value = llvm::ConstantInt::get(llvm::Type::getInt64Ty(*bundle.context), as_index->area().value());
+        auto alloca = bundle.builder.CreateAlloca(typ, nullptr, this->name());
+        bundle.env_llvm.vars[this->name()] = alloca;
 
         return alloca;
       } break;
 
       case Scope::Global: {
 
-        auto alloca = hdl.module->getOrInsertGlobal(this->name(), array_type);
-        GlobalVariable *globalVar = hdl.module->getNamedGlobal(this->name());
+        auto alloca = bundle.module->getOrInsertGlobal(this->name(), array_type);
+        GlobalVariable *globalVar = bundle.module->getNamedGlobal(this->name());
         ConstantAggregateZero *array_init = ConstantAggregateZero::get(array_type);
         globalVar->setInitializer(array_init);
-        hdl.env_llvm.vars[this->name()] = globalVar;
+        bundle.env_llvm.vars[this->name()] = globalVar;
 
         return alloca;
 
@@ -67,15 +67,15 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) const {
 
     else {
 
-      auto default_value = llvm::ConstantPointerNull::get(llvm::PointerType::getUnqual(*hdl.context));
+      auto default_value = llvm::ConstantPointerNull::get(llvm::PointerType::getUnqual(*bundle.context));
 
       switch (this->scope) {
 
       case Scope::Local: {
 
-        auto alloca = hdl.builder.CreateAlloca(typ, nullptr, this->name());
-        // hdl.builder.CreateStore(default_value, alloca);
-        hdl.env_llvm.vars[this->name()] = alloca;
+        auto alloca = bundle.builder.CreateAlloca(typ, nullptr, this->name());
+        // bundle.builder.CreateStore(default_value, alloca);
+        bundle.env_llvm.vars[this->name()] = alloca;
 
         return alloca;
 
@@ -83,10 +83,10 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) const {
 
       case Scope::Global: {
 
-        auto alloca = hdl.module->getOrInsertGlobal(this->name(), typ);
-        GlobalVariable *globalVar = hdl.module->getNamedGlobal(this->name());
+        auto alloca = bundle.module->getOrInsertGlobal(this->name(), typ);
+        GlobalVariable *globalVar = bundle.module->getNamedGlobal(this->name());
         globalVar->setInitializer(default_value);
-        hdl.env_llvm.vars[this->name()] = globalVar;
+        bundle.env_llvm.vars[this->name()] = globalVar;
 
         return alloca;
 
@@ -99,24 +99,24 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) const {
   case Typ::Kind::Int: {
 
     auto as_int = std::static_pointer_cast<AST::Typ::Int>(this->typ);
-    auto default_value = as_int->defaultgen(hdl);
+    auto default_value = as_int->defaultgen(bundle);
 
     switch (this->scope) {
 
     case Scope::Local: {
 
-      auto alloca = hdl.builder.CreateAlloca(typ, nullptr, this->name());
-      // hdl.builder.CreateStore(default_value, alloca);
-      hdl.env_llvm.vars[this->name()] = alloca;
+      auto alloca = bundle.builder.CreateAlloca(typ, nullptr, this->name());
+      // bundle.builder.CreateStore(default_value, alloca);
+      bundle.env_llvm.vars[this->name()] = alloca;
 
     } break;
 
     case Scope::Global: {
 
-      auto alloca = hdl.module->getOrInsertGlobal(this->name(), typ);
-      GlobalVariable *globalVar = hdl.module->getNamedGlobal(this->name());
+      auto alloca = bundle.module->getOrInsertGlobal(this->name(), typ);
+      GlobalVariable *globalVar = bundle.module->getNamedGlobal(this->name());
       globalVar->setInitializer(default_value);
-      hdl.env_llvm.vars[this->name()] = globalVar;
+      bundle.env_llvm.vars[this->name()] = globalVar;
 
     } break;
     }
@@ -128,24 +128,24 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) const {
   case Typ::Kind::Char: {
 
     auto as_char = std::static_pointer_cast<AST::Typ::Char>(this->typ);
-    auto default_value = as_char->defaultgen(hdl);
+    auto default_value = as_char->defaultgen(bundle);
 
     switch (this->scope) {
 
     case Scope::Local: {
 
-      auto alloca = hdl.builder.CreateAlloca(typ, nullptr, this->name());
-      // hdl.builder.CreateStore(default_value, alloca);
-      hdl.env_llvm.vars[this->name()] = alloca;
+      auto alloca = bundle.builder.CreateAlloca(typ, nullptr, this->name());
+      // bundle.builder.CreateStore(default_value, alloca);
+      bundle.env_llvm.vars[this->name()] = alloca;
 
     } break;
 
     case Scope::Global: {
 
-      auto alloca = hdl.module->getOrInsertGlobal(this->name(), typ);
-      GlobalVariable *globalVar = hdl.module->getNamedGlobal(this->name());
+      auto alloca = bundle.module->getOrInsertGlobal(this->name(), typ);
+      GlobalVariable *globalVar = bundle.module->getNamedGlobal(this->name());
       globalVar->setInitializer(default_value);
-      hdl.env_llvm.vars[this->name()] = globalVar;
+      bundle.env_llvm.vars[this->name()] = globalVar;
 
     } break;
     }
@@ -165,48 +165,48 @@ Value *AST::Dec::Var::codegen(LLVMBundle &hdl) const {
 
 // tmp
 
-Value *AST::Dec::Prototype::codegen(LLVMBundle &hdl) const {
-  if (hdl.env_llvm.vars.count(this->name()) != 0) {
+Value *AST::Dec::Prototype::codegen(LLVMBundle &bundle) const {
+  if (bundle.env_llvm.vars.count(this->name()) != 0) {
     throw std::logic_error(std::format("Redeclaration of function: {}", this->name()));
   }
 
-  llvm::Type *return_type = this->return_type()->llvm(hdl);
+  llvm::Type *return_type = this->return_type()->codegen(bundle);
   std::vector<llvm::Type *> parameter_types{};
 
   { // Generate the parameter types
     parameter_types.reserve(this->args.size());
 
     for (auto &p : this->args) {
-      parameter_types.push_back(p.second->llvm(hdl));
+      parameter_types.push_back(p.second->codegen(bundle));
     }
   }
 
   auto fn_type = FunctionType::get(return_type, parameter_types, false);
-  Function *fnx = Function::Create(fn_type, Function::ExternalLinkage, this->id, hdl.module.get());
+  Function *fnx = Function::Create(fn_type, Function::ExternalLinkage, this->id, bundle.module.get());
 
-  hdl.env_llvm.fns[this->id] = fnx;
+  bundle.env_llvm.fns[this->id] = fnx;
 
   return fnx;
 }
 
 //
 
-Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) const {
+Value *AST::Dec::Fn::codegen(LLVMBundle &bundle) const {
 
-  Function *fn = (Function *)this->prototype->codegen(hdl);
+  Function *fn = (Function *)this->prototype->codegen(bundle);
 
   // Fn details
 
-  llvm::Type *return_type = this->return_type()->llvm(hdl);
+  llvm::Type *return_type = this->return_type()->codegen(bundle);
 
-  BasicBlock *outer_return_block = hdl.return_block; // stash any existing return block, to be restored on exit
-  Value *outer_return_alloca = hdl.return_alloca;    // likewise for return value allocation
+  BasicBlock *outer_return_block = bundle.return_block; // stash any existing return block, to be restored on exit
+  Value *outer_return_alloca = bundle.return_alloca;    // likewise for return value allocation
 
   std::vector<std::pair<std::string, Value *>> shadowed_parameters{};
   std::vector<std::string> fresh_parameters{};
 
-  BasicBlock *fn_body = BasicBlock::Create(*hdl.context, "entry", fn);
-  hdl.builder.SetInsertPoint(fn_body);
+  BasicBlock *fn_body = BasicBlock::Create(*bundle.context, "entry", fn);
+  bundle.builder.SetInsertPoint(fn_body);
 
   { // Parameters
     size_t name_idx{0};
@@ -216,8 +216,8 @@ Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) const {
       auto &base_type = this->prototype->args[name_idx].second;
       name_idx += 1;
 
-      auto it = hdl.env_llvm.vars.find(base_name);
-      if (it != hdl.env_llvm.vars.end()) {
+      auto it = bundle.env_llvm.vars.find(base_name);
+      if (it != bundle.env_llvm.vars.end()) {
         shadowed_parameters.push_back(std::make_pair(base_name, it->second));
       } else {
         fresh_parameters.push_back(base_name);
@@ -225,49 +225,49 @@ Value *AST::Dec::Fn::codegen(LLVMBundle &hdl) const {
 
       arg.setName(base_name);
 
-      AllocaInst *alloca = hdl.builder.CreateAlloca(arg.getType(), nullptr, std::format("arg.{}", base_name));
-      hdl.builder.CreateStore(&arg, alloca);
-      hdl.env_llvm.vars[base_name] = alloca;
+      AllocaInst *alloca = bundle.builder.CreateAlloca(arg.getType(), nullptr, std::format("arg.{}", base_name));
+      bundle.builder.CreateStore(&arg, alloca);
+      bundle.env_llvm.vars[base_name] = alloca;
     }
 
     // Return setup
     if (this->body->block.scoped_return) {
       if (!return_type->isVoidTy()) {
-        AllocaInst *r_alloca = hdl.builder.CreateAlloca(return_type, nullptr, "ret.val");
-        hdl.return_alloca = r_alloca;
+        AllocaInst *r_alloca = bundle.builder.CreateAlloca(return_type, nullptr, "ret.val");
+        bundle.return_alloca = r_alloca;
       }
 
-      auto return_block = BasicBlock::Create(*hdl.context, "return");
-      hdl.return_block = return_block;
+      auto return_block = BasicBlock::Create(*bundle.context, "return");
+      bundle.return_block = return_block;
     }
   }
 
-  hdl.builder.SetInsertPoint(fn_body);
+  bundle.builder.SetInsertPoint(fn_body);
 
-  this->body->codegen(hdl);
+  this->body->codegen(bundle);
 
   if (this->body->block.scoped_return) {
     if (!return_type->isVoidTy()) {
-      fn->insert(fn->end(), hdl.return_block);
-      hdl.builder.SetInsertPoint(hdl.return_block);
+      fn->insert(fn->end(), bundle.return_block);
+      bundle.builder.SetInsertPoint(bundle.return_block);
 
-      auto *return_value = hdl.builder.CreateLoad(return_type, hdl.return_alloca);
-      hdl.builder.CreateRet(return_value);
+      auto *return_value = bundle.builder.CreateLoad(return_type, bundle.return_alloca);
+      bundle.builder.CreateRet(return_value);
     }
   } else if (return_type->isVoidTy()) {
-    hdl.builder.CreateRetVoid();
+    bundle.builder.CreateRetVoid();
   }
 
-  hdl.return_block = outer_return_block;
-  hdl.return_alloca = outer_return_alloca;
+  bundle.return_block = outer_return_block;
+  bundle.return_alloca = outer_return_alloca;
 
   for (auto &shadowed : shadowed_parameters) {
-    hdl.env_llvm.vars[shadowed.first] = shadowed.second;
+    bundle.env_llvm.vars[shadowed.first] = shadowed.second;
   }
 
   for (auto &fresh : fresh_parameters) {
-    hdl.env_llvm.vars.erase(fresh);
+    bundle.env_llvm.vars.erase(fresh);
   }
 
-  return ConstantInt::get(Type::getInt64Ty(*hdl.context), 2020);
+  return ConstantInt::get(Type::getInt64Ty(*bundle.context), 2020);
 }

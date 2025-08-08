@@ -33,7 +33,7 @@ std::pair<llvm::Value *, AST::TypHandle> LLVMBundle::access(AST::ExprT const *ex
     auto as_index = (AST::Expr::Index *)(expr);
 
     auto type = as_index->target->type()->deref();
-    auto llvm = this->builder.CreateLoad(type->llvm(*this), value, "acc.idx");
+    auto llvm = this->builder.CreateLoad(type->codegen(*this), value, "acc.idx");
 
     return {llvm, type};
   } break;
@@ -52,7 +52,7 @@ std::pair<llvm::Value *, AST::TypHandle> LLVMBundle::access(AST::ExprT const *ex
     case AST::Expr::OpUnary::Dereference: {
 
       auto type = as_prim1->type();
-      value = this->builder.CreateLoad(type->llvm(*this), value, "acc.drf");
+      value = this->builder.CreateLoad(type->codegen(*this), value, "acc.drf");
 
       return {value, type};
     } break;
@@ -78,7 +78,7 @@ std::pair<llvm::Value *, AST::TypHandle> LLVMBundle::access(AST::ExprT const *ex
     case AST::Typ::Kind::Char:
     case AST::Typ::Kind::Int: {
       auto type = expr->type();
-      auto llvm = this->builder.CreateLoad(type->llvm(*this), value, as_var->var);
+      auto llvm = this->builder.CreateLoad(type->codegen(*this), value, as_var->var);
 
       return {llvm, type};
     } break;
@@ -92,9 +92,9 @@ std::pair<llvm::Value *, AST::TypHandle> LLVMBundle::access(AST::ExprT const *ex
 
       if (ptr_typ->area().has_value()) {
         llvm::Value *MC_INT = llvm::ConstantInt::get(llvm::Type::getInt64Ty(*this->context), 0);
-        value = this->builder.CreateInBoundsGEP(expr->type()->llvm(*this), value, llvm::ArrayRef(MC_INT), "acc.ptr.decay");
+        value = this->builder.CreateInBoundsGEP(expr->type()->codegen(*this), value, llvm::ArrayRef(MC_INT), "acc.ptr.decay");
       } else {
-        value = this->builder.CreateLoad(expr->type()->llvm(*this), value, "acc.ptr");
+        value = this->builder.CreateLoad(expr->type()->codegen(*this), value, "acc.ptr");
       }
 
       return {value, type};
@@ -107,7 +107,7 @@ std::pair<llvm::Value *, AST::TypHandle> LLVMBundle::access(AST::ExprT const *ex
     }
 
     auto type = expr->type();
-    auto llvm = this->builder.CreateLoad(type->llvm(*this), value, "acc.vd");
+    auto llvm = this->builder.CreateLoad(type->codegen(*this), value, "acc.vd");
 
     return {llvm, type};
   } break;
