@@ -9,6 +9,8 @@
 #include "AST/Types.hpp"
 #include "LLVMBundle.hpp"
 
+// printi
+
 extern "C" {
 void printi(int64_t i) {
   printf("%lld ", i);
@@ -34,6 +36,8 @@ struct PrintI : FnPrimative {
 
   int64_t global_map_addr() const override { return (int64_t)(printi); };
 };
+
+// println
 
 extern "C" {
 
@@ -62,7 +66,7 @@ struct PrintLn : FnPrimative {
   int64_t global_map_addr() const override { return (int64_t)(println); };
 };
 
-void extend_ops_foundation(LLVMBundle &bundle) {
+void generate_primative_fns(LLVMBundle &bundle) {
 
   auto printi = std::make_shared<PrintI>(PrintI());
   auto println = std::make_shared<PrintLn>(PrintLn());
