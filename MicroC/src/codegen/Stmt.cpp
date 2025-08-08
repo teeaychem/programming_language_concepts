@@ -6,7 +6,6 @@
 
 #include "AST/Node/Stmt.hpp"
 
-#include "llvm/IR/Constants.h"
 #include "llvm/IR/DIBuilder.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
@@ -50,7 +49,7 @@ Value *AST::Stmt::Block::codegen(LLVMBundle &bundle) const {
     bundle.env_llvm.vars.erase(fresh_var->declaration->name());
   }
 
-  return ConstantInt::get(Type::getInt64Ty(*bundle.context), 0);
+  return bundle.stmt_return_val();
 }
 
 Value *AST::Stmt::Declaration::codegen(LLVMBundle &bundle) const {
@@ -104,7 +103,7 @@ Value *AST::Stmt::If::codegen(LLVMBundle &bundle) const {
     bundle.builder.SetInsertPoint(block_end);
   }
 
-  return ConstantInt::get(Type::getInt64Ty(*bundle.context), 0);
+  return bundle.stmt_return_val();
 }
 
 Value *AST::Stmt::Return::codegen(LLVMBundle &bundle) const {
@@ -124,7 +123,7 @@ Value *AST::Stmt::Return::codegen(LLVMBundle &bundle) const {
     bundle.builder.CreateRetVoid();
   }
 
-  return ConstantInt::get(Type::getInt64Ty(*bundle.context), 0);
+  return bundle.stmt_return_val();
 }
 
 Value *AST::Stmt::While::codegen(LLVMBundle &bundle) const {
@@ -150,5 +149,5 @@ Value *AST::Stmt::While::codegen(LLVMBundle &bundle) const {
   parent->insert(parent->end(), block_end);
   bundle.builder.SetInsertPoint(block_end);
 
-  return ConstantInt::get(Type::getInt64Ty(*bundle.context), 0);
+  return bundle.stmt_return_val();
 }

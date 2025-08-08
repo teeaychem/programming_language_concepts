@@ -55,7 +55,7 @@ struct LLVMBundle {
   OpPrimativeMap foundation_fn_map{};
 
   // Utils
-  std::pair<llvm::Value *, AST::TypHandle>access(AST::ExprT const *expr);
+  std::pair<llvm::Value *, AST::TypHandle> access(AST::ExprT const *expr);
 
   AST::TypHandle access_type(AST::ExprT const *expr);
 
@@ -66,6 +66,16 @@ struct LLVMBundle {
 
     extend_ops_foundation(*this);
   };
+
+  llvm::Type *get_int_typ() {
+    return (llvm::Type *)llvm::Type::getInt64Ty(*this->context);
+  }
+
+  llvm::Value *get_zero() {
+    return llvm::ConstantInt::get(this->get_int_typ(), 0);
+  }
+
+  llvm::Value *stmt_return_val() { return this->get_zero(); }
 };
 
 typedef std::unique_ptr<LLVMBundle> LLVMBundleHandle;

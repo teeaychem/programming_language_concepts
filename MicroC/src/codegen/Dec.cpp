@@ -44,7 +44,6 @@ Value *AST::Dec::Var::codegen(LLVMBundle &bundle) const {
 
       case Scope::Local: {
 
-        // auto size_value = llvm::ConstantInt::get(llvm::Type::getInt64Ty(*bundle.context), as_index->area().value());
         auto alloca = bundle.builder.CreateAlloca(typ, nullptr, this->name());
         bundle.env_llvm.vars[this->name()] = alloca;
 
@@ -269,5 +268,6 @@ Value *AST::Dec::Fn::codegen(LLVMBundle &bundle) const {
     bundle.env_llvm.vars.erase(fresh);
   }
 
+  // TODO: Finish...
   return ConstantInt::get(Type::getInt64Ty(*bundle.context), 2020);
 }
