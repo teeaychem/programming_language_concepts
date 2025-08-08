@@ -87,11 +87,10 @@ public:
       auto pointee_ptr = std::static_pointer_cast<AST::Typ::Ptr>(this->_pointee);
 
       auto fresh_destination = this->_pointee->complete_with(data);
-      auto fresh_pointer = Ptr(fresh_destination, pointee_ptr->_area);
+      auto fresh_pointer = Ptr(fresh_destination, this->_area);
       auto fresh_handle = std::make_shared<AST::Typ::Ptr>(fresh_pointer);
 
-      // this->_pointee = fresh_destination;
-      return fresh_destination;
+      return fresh_handle;
     } break;
 
     case Kind::Void: {
