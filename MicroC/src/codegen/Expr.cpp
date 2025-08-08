@@ -1,4 +1,5 @@
 #include <iostream>
+#include <memory>
 #include <vector>
 
 #include "llvm/IR/Constants.h"
@@ -117,15 +118,15 @@ Value *AST::Expr::CstI::codegen(LLVMBundle &bundle) const {
 }
 
 Value *AST::Expr::Index::codegen(LLVMBundle &bundle) const {
-  // FIXME: Check access for all expressions
-  Value *value = this->target->codegen(bundle);
-  Type *typ = this->target->type()->llvm(bundle);
 
-  auto [index_val, index_typ] = bundle.access(this->index.get());
+  auto [ptr_val, ptr_typ] = bundle.access(this->target.get());
+  auto [access_val, access_typ] = bundle.access(this->index.get());
 
-  auto ptr = bundle.builder.CreateGEP(typ, value, ArrayRef<Value *>(index_val));
+  auto ptr_add = bundle.builder.CreateInBoundsGEP(ptr_typ->deref()->llvm(bundle),
+                                                  ptr_val,
+                                                  ArrayRef<Value *>{access_val}, "idx");
 
-  return ptr;
+  return ptr_add;
 }
 
 Value *AST::Expr::Prim1::codegen(LLVMBundle &bundle) const {
@@ -136,56 +137,30 @@ Value *AST::Expr::Prim1::codegen(LLVMBundle &bundle) const {
 
     // The address of a dereference is obtained by avoiding the dereference.
     // This is an instance of the general approach to never take the address of an object.
-    // And, instead, as here, avoid moving to the object.
-    if (expr->kind() == AST::Expr::Kind::Prim1) {
-      auto as_prim1 = std::static_pointer_cast<AST::Expr::Prim1>(expr);
-      if (as_prim1->op == AST::Expr::OpUnary::Dereference) {
-        return as_prim1->expr->codegen(bundle);
-      }
-    }
-
-    return expr->codegen(bundle);
-
-  } break;
-
-  case OpUnary::Dereference: {
+    // So, codegen.
 
     auto value = expr->codegen(bundle);
-
-    // Dereference on an address op does nothing.
-    // This is because there is no operation associated with taking the address of an object.
-    // As, in part, no action is performed when accessing the address of an object.
-    // When taking the address, the alloca is returned, which is what deref should return.
-    if (expr->kind() == AST::Expr::Kind::Prim1) {
-      auto as_prim1 = std::static_pointer_cast<AST::Expr::Prim1>(expr);
-      if (as_prim1->op == AST::Expr::OpUnary::AddressOf) {
-        return value;
-      }
-    }
-
-    // Dereference on any other op performs dereference via a load.
-    // Though, in the case of an array
-    assert(this->has_type_kind(AST::Typ::Ptr));
-    auto ptr_typ = std::static_pointer_cast<AST::Typ::Ptr>(this->typ);
-
-    if (ptr_typ->area().has_value()) {
-      llvm::Value *MC_INT = llvm::ConstantInt::get(llvm::Type::getInt64Ty(*bundle.context), 0);
-      value = bundle.builder.CreateInBoundsGEP(this->type()->llvm(bundle), value, llvm::ArrayRef(MC_INT), "decay");
-    } else {
-      value = bundle.builder.CreateLoad(this->expr->type()->llvm(bundle), value);
-    }
 
     return value;
 
   } break;
 
+  case OpUnary::Dereference: {
+
+    // Dereference performs a load / access.
+    auto [val, _] = bundle.access(this->expr.get());
+
+    return val;
+
+  } break;
+
   case OpUnary::Sub: {
-    auto [access_val, access_typ] = bundle.access(expr.get());
+    auto [access_val, _] = bundle.access(expr.get());
     return bundle.builder.CreateNeg(access_val, "op.neg");
   } break;
 
   case OpUnary::Negation: {
-    auto [access_val, access_typ] = bundle.access(expr.get());
+    auto [access_val, _] = bundle.access(expr.get());
     return bundle.builder.CreateNot(access_val, "op.not");
   } break;
   }
@@ -247,10 +222,11 @@ llvm::Value *builder_assign(LLVMBundle &bundle, AST::ExprHandle destination, AST
 llvm::Value *builder_ptr_add(LLVMBundle &bundle, AST::ExprHandle ptr, AST::ExprHandle val) {
 
   auto [access_val, access_typ] = bundle.access(val.get());
-  auto ptr_typ = ptr->type()->llvm(bundle);
-  auto ptr_add = bundle.builder.CreateGEP(ptr_typ,
-                                          ptr->codegen(bundle),
-                                          ArrayRef<Value *>(access_val));
+  auto [ptr_val, ptr_typ] = bundle.access(ptr.get());
+
+  auto ptr_add = bundle.builder.CreateInBoundsGEP(ptr_typ->deref()->llvm(bundle),
+                                                  ptr_val,
+                                                  ArrayRef<Value *>{access_val}, "add.ptr");
 
   return ptr_add;
 }
@@ -303,7 +279,7 @@ llvm::Value *builder_ptr_sub(LLVMBundle &bundle, AST::ExprHandle ptr, AST::ExprH
   auto ptr_elem = bundle.builder.CreateNeg(access_val);
   auto ptr_sub = bundle.builder.CreateGEP(ptr_typ,
                                           ptr->codegen(bundle),
-                                          ArrayRef<Value *>(ptr_elem));
+                                          ArrayRef<Value *>(ptr_elem), "sub");
 
   return ptr_sub;
 }
