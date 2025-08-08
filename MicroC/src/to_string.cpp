@@ -196,3 +196,18 @@ std::string AST::Stmt::While::to_string(size_t indent) const {
 
   return while_ss.str();
 }
+
+// Env
+
+std::string AST::EnvAST::to_string() {
+  std::stringstream ss{};
+  ss << "Env AST:" << "\n";
+  for (auto &var : vars) {
+    ss << "\t" << var.first << " : " << var.second->to_string() << "\n";
+  }
+  for (auto &fn : fns) {
+    ss << "\t" << fn.first << " : " << " ..." << "\n";
+  }
+
+  return ss.str();
+}
