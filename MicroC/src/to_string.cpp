@@ -12,6 +12,14 @@
 
 #include "AST/Fmt.hpp"
 
+// Collection of all `to_string` methods.
+//
+// These methods are designed to provide sufficient information for inspecting the result of parsing at a high level.
+// In general these methods are not required to produce valid source.
+//
+// Style is to split format calls oo multiple lines.
+// The first holds the format string, and the subsequent lines hold arguments.
+
 size_t const INDENT_SIZE = 2;
 
 // Support
@@ -25,9 +33,11 @@ std::string AST::Typ::Int::to_string(size_t indent) const { return "int"; }
 
 std::string AST::Typ::Ptr::to_string(size_t indent) const {
   if (this->area().has_value()) {
-    return std::format("{}[{}]", this->pointee_type()->to_string(indent), this->area().value());
+    return std::format("{}[{}]",
+                       this->pointee_type()->to_string(indent), this->area().value());
   } else {
-    return std::format("*{}", this->pointee_type()->to_string(indent));
+    return std::format("*{}",
+                       this->pointee_type()->to_string(indent));
   }
 }
 
@@ -38,17 +48,20 @@ std::string AST::Typ::Void::to_string(size_t indent) const { return "void"; }
 // Dec
 
 std::string AST::Dec::Fn::to_string(size_t indent) const {
-  return std::format("{} {}", this->prototype->to_string(), this->body->to_string(indent));
+  return std::format("{} {}",
+                     this->prototype->to_string(), this->body->to_string(indent));
 }
 
 std::string AST::Dec::Prototype::to_string(size_t indent) const {
   std::stringstream fn_ss{};
 
-  fn_ss << std::format("{} {} (", r_typ->to_string(indent), this->id);
+  fn_ss << std::format("{} {} (",
+                       r_typ->to_string(indent), this->id);
 
   if (!args.empty()) {
     for (auto &p : args) {
-      fn_ss << std::format("{} {}, ", p.second->to_string(indent), p.first);
+      fn_ss << std::format("{} {}, ",
+                           p.second->to_string(indent), p.first);
     }
     fn_ss.seekp(-2, std::ios_base::end);
   }
@@ -59,7 +72,8 @@ std::string AST::Dec::Prototype::to_string(size_t indent) const {
 }
 
 std::string AST::Dec::Var::to_string(size_t indent) const {
-  return std::format("{} {}", typ->to_string(indent), id);
+  return std::format("{} {}",
+                     typ->to_string(indent), id);
 }
 
 // Expr
@@ -67,8 +81,7 @@ std::string AST::Dec::Var::to_string(size_t indent) const {
 std::string AST::Expr::Call::to_string(size_t indent) const {
   std::stringstream call_ss{};
 
-  call_ss << this->name
-          << "(";
+  call_ss << this->name << "(";
 
   if (!arguments.empty()) {
     for (auto &param : arguments) {
@@ -89,23 +102,28 @@ std::string AST::Expr::Call::to_string(size_t indent) const {
 }
 
 std::string AST::Expr::Cast::to_string(size_t indent) const {
-  return std::format("({}){}", this->typ->to_string(), this->expr->to_string());
+  return std::format("({}){}",
+                     this->typ->to_string(), this->expr->to_string());
 }
 
 std::string AST::Expr::CstI::to_string(size_t indent) const {
-  return std::format("{}", i);
+  return std::format("{}",
+                     i);
 }
 
 std::string AST::Expr::Index::to_string(size_t indent) const {
-  return std::format("{}[{}]", this->target->to_string(indent), this->index->to_string(indent));
+  return std::format("{}[{}]",
+                     this->target->to_string(indent), this->index->to_string(indent));
 }
 
 std::string AST::Expr::Prim1::to_string(size_t indent) const {
-  return std::format("{}{}", op, expr->to_string(indent));
+  return std::format("{}{}",
+                     op, expr->to_string(indent));
 }
 
 std::string AST::Expr::Prim2::to_string(size_t indent) const {
-  return std::format("({} {} {})", this->lhs->to_string(indent), this->op, this->rhs->to_string(indent));
+  return std::format("({} {} {})",
+                     this->lhs->to_string(indent), this->op, this->rhs->to_string(indent));
 }
 
 std::string AST::Expr::Var::to_string(size_t indent) const {
@@ -159,7 +177,8 @@ std::string AST::Stmt::Expr::to_string(size_t indent) const {
 
 std::string AST::Stmt::If::to_string(size_t indent) const {
   std::stringstream if_ss{};
-  if_ss << std::format("if {} {}", this->condition->to_string(indent), this->stmt_then->to_string(indent));
+  if_ss << std::format("if {} {}",
+                       this->condition->to_string(indent), this->stmt_then->to_string(indent));
 
   if (this->stmt_else->kind() == AST::Stmt::Kind::Block) {
     auto as_block = std::static_pointer_cast<AST::Stmt::Block>(this->stmt_else);
@@ -168,7 +187,8 @@ std::string AST::Stmt::If::to_string(size_t indent) const {
     }
   }
 
-  if_ss << std::format(" else {}", this->stmt_else->to_string(indent));
+  if_ss << std::format(" else {}",
+                       this->stmt_else->to_string(indent));
 
 complete_if_string:
 
