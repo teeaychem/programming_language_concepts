@@ -34,13 +34,19 @@ add_flex_bison_dependency(SCANNER PARSER)
 
 # AST files
 
-file(GLOB AST_HDR src/AST/*.hpp)
-file(GLOB AST_SRC src/AST/*.cpp)
+file(GLOB_RECURSE AST_HDR src/AST/*.hpp)
+file(GLOB_RECURSE AST_SRC src/AST/*.cpp)
 
 # Source files
 
-file(GLOB SRC_TOP_SRC src/*.cpp)
-file(GLOB SRC_SUB_SRC src/**/*.cpp)
+file(GLOB TOP_HDR src/*.hpp)
+file(GLOB TOP_SRC src/*.cpp)
+
+
+file(GLOB_RECURSE CODEGEN_HDR src/codegen/*.hpp)
+file(GLOB_RECURSE CODEGEN_SRC src/codegen/*.cpp)
+
+message(STATUS "Found src ${CODEGEN_SRC}")
 
 # LLVM
 
@@ -77,8 +83,10 @@ target_sources(
         ${FLEX_SCANNER_OUTPUTS}
         ${AST_HDR}
         ${AST_SRC}
-        ${SRC_TOP_SRC}
-        ${SRC_SUB_SRC}
+        ${TOP_HDR}
+        ${TOP_SRC}
+        ${CODEGEN_HDR}
+        ${CODEGEN_SRC}
     PUBLIC
         FILE_SET HEADERS
             BASE_DIRS ${PROJECT_SOURCE_DIR}/src

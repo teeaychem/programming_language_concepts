@@ -2,7 +2,7 @@
 #include <vector>
 
 #include "AST/AST.hpp"
-#include "LLVMBundle.hpp"
+#include "codegen/LLVMBundle.hpp"
 
 #include "AST/Node/Stmt.hpp"
 
