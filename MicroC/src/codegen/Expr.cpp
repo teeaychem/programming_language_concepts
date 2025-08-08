@@ -1,5 +1,3 @@
-#include <iostream>
-#include <memory>
 #include <vector>
 
 #include "llvm/IR/Constants.h"
@@ -10,9 +8,8 @@
 
 #include "AST/AST.hpp"
 #include "AST/Fmt.hpp"
-#include "AST/Node/Dec.hpp"
+
 #include "AST/Node/Expr.hpp"
-#include "AST/Node/Stmt.hpp"
 
 #include "LLVMBundle.hpp"
 
@@ -75,7 +72,7 @@ Value *AST::Expr::Cast::codegen(LLVMBundle &bundle) const {
 
     case Typ::Kind::Bool: {
       auto expr_value = this->expr->codegen(bundle);
-      auto cast = bundle.builder.CreateIntCast(expr_value, this->type()->llvm(bundle), false);
+      auto cast = bundle.builder.CreateIntCast(expr_value, this->type()->codegen(bundle), false);
       return cast;
     } break;
 
@@ -86,7 +83,7 @@ Value *AST::Expr::Cast::codegen(LLVMBundle &bundle) const {
 
     case Typ::Kind::Ptr: {
       auto ptr_value = this->expr->codegen(bundle);
-      auto cast = bundle.builder.CreatePtrToInt(ptr_value, this->type()->llvm(bundle));
+      auto cast = bundle.builder.CreatePtrToInt(ptr_value, this->type()->codegen(bundle));
       return cast;
     } break;
 
@@ -100,7 +97,7 @@ Value *AST::Expr::Cast::codegen(LLVMBundle &bundle) const {
   case Typ::Kind::Ptr: {
     if (this->expr->has_type_kind(AST::Typ::Kind::Int)) {
       auto int_value = this->expr->codegen(bundle);
-      auto cast = bundle.builder.CreateIntToPtr(int_value, this->type()->llvm(bundle));
+      auto cast = bundle.builder.CreateIntToPtr(int_value, this->type()->codegen(bundle));
       return cast;
     } else {
       throw std::logic_error(std::format("Unsupported cast {}", this->to_string()));
@@ -114,7 +111,7 @@ Value *AST::Expr::Cast::codegen(LLVMBundle &bundle) const {
 }
 
 Value *AST::Expr::CstI::codegen(LLVMBundle &bundle) const {
-  return ConstantInt::get(this->type()->llvm(bundle), this->i, true);
+  return ConstantInt::get(this->type()->codegen(bundle), this->i, true);
 }
 
 Value *AST::Expr::Index::codegen(LLVMBundle &bundle) const {
@@ -122,7 +119,7 @@ Value *AST::Expr::Index::codegen(LLVMBundle &bundle) const {
   auto [ptr_val, ptr_typ] = bundle.access(this->target.get());
   auto [access_val, access_typ] = bundle.access(this->index.get());
 
-  auto ptr_add = bundle.builder.CreateInBoundsGEP(ptr_typ->deref()->llvm(bundle),
+  auto ptr_add = bundle.builder.CreateInBoundsGEP(ptr_typ->deref()->codegen(bundle),
                                                   ptr_val,
                                                   ArrayRef<Value *>{access_val}, "idx");
 
@@ -224,7 +221,7 @@ llvm::Value *builder_ptr_add(LLVMBundle &bundle, AST::ExprHandle ptr, AST::ExprH
   auto [access_val, access_typ] = bundle.access(val.get());
   auto [ptr_val, ptr_typ] = bundle.access(ptr.get());
 
-  auto ptr_add = bundle.builder.CreateInBoundsGEP(ptr_typ->deref()->llvm(bundle),
+  auto ptr_add = bundle.builder.CreateInBoundsGEP(ptr_typ->deref()->codegen(bundle),
                                                   ptr_val,
                                                   ArrayRef<Value *>{access_val}, "add.ptr");
 
@@ -275,7 +272,7 @@ llvm::Value *builder_ptr_sub(LLVMBundle &bundle, AST::ExprHandle ptr, AST::ExprH
 
   auto [access_val, access_typ] = bundle.access(val.get());
 
-  auto ptr_typ = ptr->type()->llvm(bundle);
+  auto ptr_typ = ptr->type()->codegen(bundle);
   auto ptr_elem = bundle.builder.CreateNeg(access_val);
   auto ptr_sub = bundle.builder.CreateGEP(ptr_typ,
                                           ptr->codegen(bundle),

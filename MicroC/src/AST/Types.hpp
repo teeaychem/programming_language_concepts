@@ -1,7 +1,5 @@
 #pragma once
 
-#include <iostream>
-#include <memory>
 #include <string>
 
 #include "AST/AST.hpp"
@@ -21,7 +19,7 @@ struct Bool : TypT {
 
   TypHandle complete_with(TypHandle data) override { throw std::logic_error("Complete into bool"); }
 
-  llvm::Type *llvm(LLVMBundle &hdl) const override { return llvm::Type::getInt1Ty(*hdl.context); }
+  llvm::Type *codegen(LLVMBundle &bundle) const override { return llvm::Type::getInt1Ty(*bundle.context); }
 };
 
 struct Char : TypT {
@@ -34,7 +32,7 @@ struct Char : TypT {
 
   TypHandle complete_with(TypHandle data) override { throw std::logic_error("Complete into char."); }
 
-  llvm::Type *llvm(LLVMBundle &hdl) const override { return llvm::Type::getInt8Ty(*hdl.context); }
+  llvm::Type *codegen(LLVMBundle &bundle) const override { return llvm::Type::getInt8Ty(*bundle.context); }
 };
 
 struct Int : TypT {
@@ -48,7 +46,7 @@ struct Int : TypT {
 
   TypHandle complete_with(TypHandle data) override { throw std::logic_error("Complete into int."); }
 
-  llvm::Type *llvm(LLVMBundle &hdl) const override { return llvm::Type::getInt64Ty(*hdl.context); }
+  llvm::Type *codegen(LLVMBundle &bundle) const override { return llvm::Type::getInt64Ty(*bundle.context); }
 };
 
 struct Ptr : TypT {
@@ -105,12 +103,12 @@ public:
 
   TypHandle deref() const override { return _pointee; }
 
-  llvm::Type *llvm(LLVMBundle &hdl) const override {
+  llvm::Type *codegen(LLVMBundle &bundle) const override {
 
     if (this->_area.has_value()) {
-      return llvm::ArrayType::get(this->_pointee->llvm(hdl), this->_area.value());
+      return llvm::ArrayType::get(this->_pointee->codegen(bundle), this->_area.value());
     } else {
-      return llvm::PointerType::getUnqual(*hdl.context);
+      return llvm::PointerType::getUnqual(*bundle.context);
     }
   }
 };
@@ -126,7 +124,7 @@ struct Void : TypT {
 
   TypHandle complete_with(TypHandle data) override { return data; }
 
-  llvm::Type *llvm(LLVMBundle &hdl) const override { return llvm::Type::getVoidTy(*hdl.context); }
+  llvm::Type *codegen(LLVMBundle &bundle) const override { return llvm::Type::getVoidTy(*bundle.context); }
 };
 
 // pk typ

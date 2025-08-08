@@ -35,7 +35,7 @@ typedef std::shared_ptr<TypT> TypHandle;
 
 struct TypT {
   // Generate the representation of this type.
-  virtual llvm::Type *llvm(LLVMBundle &hdl) const = 0;
+  virtual llvm::Type *codegen(LLVMBundle &bundle) const = 0;
 
   // The kind of this type, corresponding to a struct.
   virtual Typ::Kind kind() const = 0;
@@ -49,8 +49,8 @@ struct TypT {
   // Completes the type, may throw if already complete.
   virtual TypHandle complete_with(TypHandle d_typ) = 0;
 
-  virtual llvm::Constant *defaultgen(LLVMBundle &hdl) const {
-    return llvm::Constant::getNullValue(this->llvm(hdl));
+  virtual llvm::Constant *defaultgen(LLVMBundle &bundle) const {
+    return llvm::Constant::getNullValue(this->codegen(bundle));
   };
 
   virtual ~TypT() = default;

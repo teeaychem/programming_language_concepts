@@ -24,7 +24,7 @@ struct Block : StmtT {
   size_t pass_throughs() const override { return this->block.pass_throughs; };
 
   std::string to_string(size_t indent = 0) const override;
-  llvm::Value *codegen(LLVMBundle &hdl) const override;
+  llvm::Value *codegen(LLVMBundle &bundle) const override;
 };
 
 // Declaration
@@ -41,7 +41,7 @@ struct Declaration : StmtT {
   size_t pass_throughs() const override { return 0; };
 
   std::string to_string(size_t indent = 0) const override;
-  llvm::Value *codegen(LLVMBundle &hdl) const override;
+  llvm::Value *codegen(LLVMBundle &bundle) const override;
 };
 
 // Expr
@@ -58,7 +58,7 @@ struct Expr : StmtT {
   size_t pass_throughs() const override { return 0; };
 
   std::string to_string(size_t indent = 0) const override;
-  llvm::Value *codegen(LLVMBundle &hdl) const override;
+  llvm::Value *codegen(LLVMBundle &bundle) const override;
 };
 
 // If
@@ -79,7 +79,7 @@ struct If : StmtT {
   size_t pass_throughs() const override { return this->stmt_then->pass_throughs() + this->stmt_else->pass_throughs(); };
 
   std::string to_string(size_t indent = 0) const override;
-  llvm::Value *codegen(LLVMBundle &hdl) const override;
+  llvm::Value *codegen(LLVMBundle &bundle) const override;
 };
 
 // Return
@@ -96,7 +96,7 @@ struct Return : StmtT {
   size_t pass_throughs() const override { return 0; };
 
   std::string to_string(size_t indent = 0) const override;
-  llvm::Value *codegen(LLVMBundle &hdl) const override;
+  llvm::Value *codegen(LLVMBundle &bundle) const override;
 };
 
 // While
@@ -115,7 +115,7 @@ struct While : StmtT {
   size_t pass_throughs() const override { return this->body->pass_throughs(); };
 
   std::string to_string(size_t indent = 0) const override;
-  llvm::Value *codegen(LLVMBundle &hdl) const override;
+  llvm::Value *codegen(LLVMBundle &bundle) const override;
 };
 
 } // namespace Stmt
