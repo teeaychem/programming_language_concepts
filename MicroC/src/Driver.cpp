@@ -174,7 +174,7 @@ AST::ExprHandle Driver::pk_ExprCall(std::string var, std::vector<AST::ExprHandle
 
   for (int i = 0; i < args.size(); ++i) {
 
-    auto arg_prototype = prototype->args[i].second;
+    auto arg_prototype = prototype->args[i].typ;
 
     if (!args[i]->has_type_kind(arg_prototype->kind())) {
 
@@ -261,7 +261,7 @@ AST::StmtHandle Driver::pk_StmtBlockStmt(AST::Block &&block) {
   return std::make_shared<AST::Stmt::Block>(std::move(stmt));
 }
 
-AST::StmtDeclarationHandle Driver::pk_StmtDeclaration(AST::DecHandle &&declaration) {
+AST::StmtDeclarationHandle Driver::pk_StmtDeclaration(AST::DecHandle declaration) {
   AST::Stmt::Declaration stmt(std::move(declaration));
   return std::make_shared<AST::Stmt::Declaration>(std::move(stmt));
 }

@@ -169,7 +169,7 @@ llvm::Value *AST::Dec::Prototype::codegen(LLVMBundle &bundle) const {
   // Generate the parameter types
   parameter_types.reserve(this->args.size());
   for (auto &p : this->args) {
-    parameter_types.push_back(p.second->codegen(bundle));
+    parameter_types.push_back(p.typ->codegen(bundle));
   }
 
   auto fn_type = llvm::FunctionType::get(return_type, parameter_types, false);
@@ -207,8 +207,8 @@ llvm::Value *AST::Dec::Fn::codegen(LLVMBundle &bundle) const {
   { // Parameters
     size_t name_idx{0};
     for (auto &arg : fn->args()) {
-      auto &base_name = this->prototype->args[name_idx].first;
-      auto &base_type = this->prototype->args[name_idx].second;
+      auto &base_name = this->prototype->args[name_idx].var;
+      auto &base_type = this->prototype->args[name_idx].typ;
 
       auto it = bundle.env_llvm.vars.find(base_name);
       if (it != bundle.env_llvm.vars.end()) {

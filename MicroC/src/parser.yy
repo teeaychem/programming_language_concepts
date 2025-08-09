@@ -90,9 +90,9 @@
 %nterm <AST::StmtHandle> StmtA
 %nterm <AST::StmtHandle> StmtB
 
-%nterm <std::pair<std::string, AST::TypHandle>> Vardec
-%nterm <std::pair<std::string, AST::TypHandle>> Vardesc
-%nterm <std::pair<std::string, AST::TypHandle>> Wardesc
+%nterm <AST::VarTyp> Vardec
+%nterm <AST::VarTyp> Vardesc
+%nterm <AST::VarTyp> Wardesc
 
 %nterm <AST::ExprHandle> AtomicConst
 %nterm <AST::ExprHandle> Expr
@@ -121,7 +121,7 @@ Block:
 
 AtomicConst:
     CSTINT        { $$ = driver.pk_ExprCstI($1);                                              }
-  | CSTBOOL       { $$ = std::move(driver.pk_ExprCstI($1));                                   }
+  | CSTBOOL       { $$ = driver.pk_ExprCstI($1);                                              }
   | NULL          { $$ = driver.pk_ExprPrim1(AST::Expr::OpUnary::Sub, driver.pk_ExprCstI(1)); }
 ;
 
@@ -141,7 +141,7 @@ Exprs:
 
 ExprsNE:
     Expr                { std::vector<AST::ExprHandle> es{$1}; $$ = es; }
-  | ExprsNE COMMA Expr  { $1.push_back(std::move($3));         $$ = $1; }
+  | ExprsNE COMMA Expr  { $1.push_back($3);                    $$ = $1; }
 ;  
 
 
@@ -155,7 +155,7 @@ Expr:
   | Expr SLASH_ASSIGN Expr    { $$ = driver.pk_ExprPrim2(AST::Expr::OpBinary::AssignDiv, $1, $3); }
   | Expr MOD_ASSIGN Expr      { $$ = driver.pk_ExprPrim2(AST::Expr::OpBinary::AssignMod, $1, $3); }
   | NAME LPAR Exprs RPAR      { $$ = driver.pk_ExprCall($1, $3);                                  }
-  | MINUS Expr                { $$ = driver.pk_ExprPrim1(AST::Expr::OpUnary::Sub, $2);          }
+  | MINUS Expr                { $$ = driver.pk_ExprPrim1(AST::Expr::OpUnary::Sub, $2);            }
   | AMP Expr                  { $$ = driver.pk_ExprPrim1(AST::Expr::OpUnary::AddressOf, $2);      }
   | STAR Expr                 { $$ = driver.pk_ExprPrim1(AST::Expr::OpUnary::Dereference, $2);    }
   | NOT Expr                  { $$ = driver.pk_ExprPrim1(AST::Expr::OpUnary::Negation, $2);       }
@@ -204,7 +204,7 @@ Paramdecs:
 
 
 ParamdecsNE:
-    Vardec                    { $$ = AST::ArgVec{$1};    }
+    Vardec                    { $$ = AST::ArgVec{$1};      }
   | ParamdecsNE COMMA Vardec  { $1.push_back($3); $$ = $1; }
 ;
 
@@ -238,9 +238,8 @@ StmtOrDecSeq:
     %empty                    { $$ = AST::Block{};                              }
   | StmtOrDecSeq Stmt         { $1.push_Stmt($2); $$ = $1;                      }
   | StmtOrDecSeq Vardec SEMI  {
-      auto dec = driver.pk_DecVar(AST::Dec::Scope::Local, $2.second, $2.first);
-      auto s = driver.pk_StmtDeclaration(dec);
-      $$ = $1.push_DecVar(driver.llvm.env_ast, s);                              }
+      auto dec = driver.pk_DecVar(AST::Dec::Scope::Local, $2.typ, $2.var);
+      $$ = $1.push_DecVar(driver.llvm.env_ast, driver.pk_StmtDeclaration(dec)); }
 ;
 
 
@@ -252,31 +251,28 @@ Topdecs:
 
 Topdec:
    Vardec SEMI  {
-     auto dec = driver.pk_DecVar(AST::Dec::Scope::Global, $1.second, $1.first);
-     auto s = driver.pk_StmtDeclaration(dec);
-     driver.push_dec(s);                                                        }
-  | Fndec       {
-    auto s = driver.pk_StmtDeclaration(std::move($1));
-    driver.push_dec(s);                                                         }
+     auto dec = driver.pk_DecVar(AST::Dec::Scope::Global, $1.typ, $1.var);
+     driver.push_dec(driver.pk_StmtDeclaration(dec));                      }
+  | Fndec       { driver.push_dec(driver.pk_StmtDeclaration($1));          }
 ;
 
 
 Vardec:
-    DataType Wardesc  { $$ = std::make_pair($2.first, $2.second->complete_with($1)); }
+    DataType Wardesc  { $$ = AST::VarTyp($2.var, $2.typ->complete_with($1)); }
 ;
 
 Wardesc:
-   Vardesc                       { $$ = $1;                                                                  }
- | Vardesc LBRACK RBRACK         { $$ = std::make_pair($1.first, AST::Typ::pk_Ptr($1.second, std::nullopt)); }
- | Vardesc LBRACK CSTINT RBRACK  { $$ = std::make_pair($1.first, AST::Typ::pk_Ptr($1.second, $3));           }
- | LPAR Wardesc RPAR             { $$ = $2;                                                                  }
+   Vardesc                       { $$ = $1;                                                          }
+ | Vardesc LBRACK RBRACK         { $$ = AST::VarTyp($1.var, AST::Typ::pk_Ptr($1.typ, std::nullopt)); }
+ | Vardesc LBRACK CSTINT RBRACK  { $$ = AST::VarTyp($1.var, AST::Typ::pk_Ptr($1.typ, $3));           }
+ | LPAR Wardesc RPAR             { $$ = $2;                                                          }
 ;  
 
 
 Vardesc:
-    NAME                          { $$ = std::make_pair($1, AST::Typ::pk_Void());                             }
-  | STAR Vardesc                  { $$ = std::make_pair($2.first, AST::Typ::pk_Ptr($2.second, std::nullopt)); }
-  | LPAR Vardesc RPAR             { $$ = $2;                                                                  }
+    NAME                          { $$ = AST::VarTyp($1, AST::Typ::pk_Void());                        }
+  | STAR Vardesc                  { $$ = AST::VarTyp($2.var, AST::Typ::pk_Ptr($2.typ, std::nullopt)); }
+  | LPAR Vardesc RPAR             { $$ = $2;                                                          }
 ;
 
 

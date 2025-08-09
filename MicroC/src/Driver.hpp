@@ -62,18 +62,18 @@ struct Driver {
 
   void add_to_env(AST::ArgVec &args) {
     for (auto &arg : args) {
-      auto existing_global = this->llvm.env_ast.vars.find(arg.first);
+      auto existing_global = this->llvm.env_ast.vars.find(arg.var);
       if (existing_global != this->llvm.env_ast.vars.end()) {
         this->shadow_cache[existing_global->first] = existing_global->second;
       }
 
-      this->llvm.env_ast.vars[arg.first] = arg.second;
+      this->llvm.env_ast.vars[arg.var] = arg.typ;
     }
   }
 
   void fn_finalise(AST::DecFnHandle fn) {
     for (auto &param : fn->prototype->args) {
-      this->llvm.env_ast.vars.erase(param.first);
+      this->llvm.env_ast.vars.erase(param.var);
     }
 
     for (auto &shadowed : this->shadow_cache) {
@@ -286,7 +286,7 @@ struct Driver {
 
   AST::StmtHandle pk_StmtBlockStmt(AST::Block &&block);
 
-  AST::StmtDeclarationHandle pk_StmtDeclaration(AST::DecHandle &&declaration);
+  AST::StmtDeclarationHandle pk_StmtDeclaration(AST::DecHandle declaration);
 
   AST::StmtHandle pk_StmtExpr(AST::ExprHandle expr);
 
