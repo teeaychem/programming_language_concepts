@@ -272,7 +272,8 @@ llvm::Value *builder_ptr_sub(LLVMBundle &bundle, AST::ExprHandle ptr, AST::ExprH
   auto ptr_elem = bundle.builder.CreateNeg(access_val);
   auto ptr_sub = bundle.builder.CreateGEP(ptr_typ,
                                           ptr->codegen(bundle),
-                                          ArrayRef<Value *>(ptr_elem), "sub");
+                                          ArrayRef<Value *>(ptr_elem),
+                                          "sub");
 
   return ptr_sub;
 }
@@ -336,61 +337,6 @@ llvm::Value *builder_mod(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
   return bundle.builder.CreateSRem(lhs_val, rhs_val, "op.mod");
 }
 
-llvm::Value *builder_eq(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-  auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
-  auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
-
-  return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_EQ, lhs_val, rhs_val, "op.eq");
-}
-
-llvm::Value *builder_ne(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-  auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
-  auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
-
-  return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_NE, lhs_val, rhs_val, "op.neq");
-}
-
-llvm::Value *builder_gt(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-  auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
-  auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
-
-  return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SGT, lhs_val, rhs_val, "op.gt");
-}
-
-llvm::Value *builder_lt(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-  auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
-  auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
-
-  return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SLT, lhs_val, rhs_val, "op.lt");
-}
-
-llvm::Value *builder_geq(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-  auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
-  auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
-
-  return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SGE, lhs_val, rhs_val, "op.geq");
-}
-
-llvm::Value *builder_leq(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-  auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
-  auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
-
-  return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SLE, lhs_val, rhs_val, "op.leq");
-}
-
-llvm::Value *builder_and(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-  auto lhs_val = expr->lhs->codegen_eval_true(bundle);
-  auto rhs_val = expr->rhs->codegen_eval_true(bundle);
-
-  return bundle.builder.CreateAnd(lhs_val, rhs_val, "op.and");
-}
-
-llvm::Value *builder_or(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-  auto lhs_val = expr->lhs->codegen_eval_true(bundle);
-  auto rhs_val = expr->rhs->codegen_eval_true(bundle);
-
-  return bundle.builder.CreateOr(lhs_val, rhs_val, "op.or");
-}
 } // namespace OpBinaryCodegen
 
 Value *AST::Expr::Prim2::codegen(LLVMBundle &bundle) const {
@@ -442,35 +388,59 @@ Value *AST::Expr::Prim2::codegen(LLVMBundle &bundle) const {
   } break;
 
   case OpBinary::Eq: {
-    return OpBinaryCodegen::builder_eq(bundle, this);
+    auto [lhs_val, lhs_typ] = bundle.access(this->lhs.get());
+    auto [rhs_val, rhs_typ] = bundle.access(this->rhs.get());
+
+    return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_EQ, lhs_val, rhs_val, "op.eq");
   } break;
 
   case OpBinary::Neq: {
-    return OpBinaryCodegen::builder_ne(bundle, this);
+    auto [lhs_val, lhs_typ] = bundle.access(this->lhs.get());
+    auto [rhs_val, rhs_typ] = bundle.access(this->rhs.get());
+
+    return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_NE, lhs_val, rhs_val, "op.neq");
   } break;
 
   case OpBinary::Gt: {
-    return OpBinaryCodegen::builder_gt(bundle, this);
+    auto [lhs_val, lhs_typ] = bundle.access(this->lhs.get());
+    auto [rhs_val, rhs_typ] = bundle.access(this->rhs.get());
+
+    return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SGT, lhs_val, rhs_val, "op.gt");
   } break;
 
   case OpBinary::Lt: {
-    return OpBinaryCodegen::builder_lt(bundle, this);
+    auto [lhs_val, lhs_typ] = bundle.access(this->lhs.get());
+    auto [rhs_val, rhs_typ] = bundle.access(this->rhs.get());
+
+    return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SLT, lhs_val, rhs_val, "op.lt");
   } break;
 
   case OpBinary::Leq: {
-    return OpBinaryCodegen::builder_geq(bundle, this);
+    auto [lhs_val, lhs_typ] = bundle.access(this->lhs.get());
+    auto [rhs_val, rhs_typ] = bundle.access(this->rhs.get());
+
+    return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SLE, lhs_val, rhs_val, "op.leq");
   } break;
 
   case OpBinary::Geq: {
-    return OpBinaryCodegen::builder_leq(bundle, this);
+    auto [lhs_val, lhs_typ] = bundle.access(this->lhs.get());
+    auto [rhs_val, rhs_typ] = bundle.access(this->rhs.get());
+
+    return bundle.builder.CreateCmp(llvm::ICmpInst::ICMP_SGE, lhs_val, rhs_val, "op.geq");
   } break;
 
   case OpBinary::And: {
-    return OpBinaryCodegen::builder_and(bundle, this);
+    auto lhs_val = this->lhs->codegen_eval_true(bundle);
+    auto rhs_val = this->rhs->codegen_eval_true(bundle);
+
+    return bundle.builder.CreateAnd(lhs_val, rhs_val, "op.and");
   } break;
 
   case OpBinary::Or: {
-    return OpBinaryCodegen::builder_or(bundle, this);
+    auto lhs_val = this->lhs->codegen_eval_true(bundle);
+    auto rhs_val = this->rhs->codegen_eval_true(bundle);
+
+    return bundle.builder.CreateOr(lhs_val, rhs_val, "op.or");
   } break;
   }
 }
