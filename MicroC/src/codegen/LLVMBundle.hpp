@@ -29,21 +29,25 @@ struct FnPrimative {
   virtual int64_t global_map_addr() const = 0;
 };
 
-// A struct containing contextually relevant information for codegen.
+// Ccontextually relevant information for codegen.
 // As with the EnvAST struct, this is mutated to maintain information about variables in scope, etc.
 // And, in particular, it is up to codegen methods to appropriately maintain the struct.
 // See codegen for blocks or fn declarations for examples of significant maintenance.
 struct EnvLLVM {
   // variables in scope
   std::map<std::string, llvm::Value *> vars{};
+
   // fns in scope (as fns are global, this is each)
   std::map<std::string, llvm::Function *> fns{};
-  // contextual return block
+
+  // block designated for return codegen for fns, to pass control to
   llvm::BasicBlock *return_block{nullptr};
-  // contextual alloca to write a return value to
+
+  // alloca to write a return value to
   llvm::Value *return_alloca{nullptr};
 };
 
+// Objects and general methods for codegen.
 struct LLVMBundle {
 
   std::unique_ptr<llvm::LLVMContext> context;
@@ -60,63 +64,66 @@ struct LLVMBundle {
   // Maps to fn builders
   std::map<const std::string, std::shared_ptr<FnPrimative>> foundation_fn_map{};
 
-  // Utils
-
   // Contextully 'access' `expr`, returning the codegen'd value and corresponding AST type.
   // Variables, pointers, etc., are not loaded in order to support assignment.
   // The `access` method typically performs a load if required.
   // Called on the rhs of an assignment, or when passing a value to an fn.
   std::pair<llvm::Value *, AST::TypHandle> access(AST::ExprT const *expr);
 
-  // The type which would be returned with a codegen'd value by calling `access` on `expr`.
-  AST::TypHandle access_type(AST::ExprT const *expr);
-
-  void generate_foundation_fn_map();
-
   LLVMBundle()
       : context(std::make_unique<llvm::LLVMContext>()),
         module(std::make_unique<llvm::Module>("microC", *context)),
         builder(llvm::IRBuilder<>(*context)) {
 
-    this->generate_foundation_fn_map();
+    this->populate_foundation_fn_map();
   };
+
+  // The type which would be returned with a codegen'd value by calling `access` on `expr`.
+  AST::TypHandle access_type(AST::ExprT const *expr);
+
+  // Populates the foundation fn map, to be called on initialisation of this.
+  // Defined together with the fns.
+  void populate_foundation_fn_map();
 
   // Canonical codegen types
   // Used with `codegen` on types, with the exception of pointers which capture area information.
   llvm::Type *get_typ(AST::Typ::Kind kind) {
+
+    llvm::Type *return_typ;
+
     switch (kind) {
 
     case AST::Typ::Kind::Bool: {
       // Booleans are Int1 to match LLVM returns to comparisons, etc.
-      return llvm::Type::getInt1Ty(*this->context);
+      return_typ = llvm::Type::getInt1Ty(*this->context);
     } break;
 
     case AST::Typ::Kind::Char: {
       // As standard.
-      return llvm::Type::getInt8Ty(*this->context);
+      return_typ = llvm::Type::getInt8Ty(*this->context);
     } break;
 
     case AST::Typ::Kind::Int: {
       // An arbitrary choice over Int32.
-      return llvm::Type::getInt64Ty(*this->context);
+      return_typ = llvm::Type::getInt64Ty(*this->context);
     } break;
 
     case AST::Typ::Kind::Ptr: {
       // Generally unqualified, following current LLVM trends.
       // Still, calling `codegen` on an AST type is preferred to obtain information about arrays, etc.
-      return llvm::PointerType::getUnqual(*this->context);
+      return_typ = llvm::PointerType::getUnqual(*this->context);
     } break;
 
     case AST::Typ::Kind::Void: {
-      return llvm::Type::getVoidTy(*this->context);
+      return_typ = llvm::Type::getVoidTy(*this->context);
     } break;
     }
+
+    return return_typ;
   }
 
   // Returns an zero of type int.
-  llvm::Value *get_zero() {
-    return llvm::ConstantInt::get(this->get_typ(AST::Typ::Kind::Int), 0);
-  }
+  llvm::Value *get_zero() { return llvm::ConstantInt::get(this->get_typ(AST::Typ::Kind::Int), 0); }
 
   // The return value for a statement.
   // Unused in practice.

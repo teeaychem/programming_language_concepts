@@ -9,6 +9,12 @@
 #include "AST/Types.hpp"
 #include "LLVMBundle.hpp"
 
+// Contents:
+// - Foundation fns in lexicographic order, as extern / FnPrimative pairings.
+// - Specification of the foundation fn map.
+
+// Foundation fns
+
 // printi
 
 extern "C" {
@@ -17,6 +23,8 @@ void printi(int64_t i) {
 }
 }
 
+// Prints an integer.
+// Equivalent to the `print` statement in microC of PLC, with each `print` parsed to a `printi` call.
 struct PrintI : FnPrimative {
 
   PrintI() {
@@ -38,7 +46,6 @@ struct PrintI : FnPrimative {
 };
 
 // println
-
 extern "C" {
 
 void println() {
@@ -46,6 +53,8 @@ void println() {
 }
 }
 
+// Prints a new line.
+// Equivalent to the `println` statement in microC of PLC, with each `println` parsed to a `println` call.
 struct PrintLn : FnPrimative {
 
   PrintLn() {
@@ -66,7 +75,8 @@ struct PrintLn : FnPrimative {
   int64_t global_map_addr() const override { return (int64_t)(println); };
 };
 
-void LLVMBundle::generate_foundation_fn_map() {
+// Specification of the foundation fn map
+void LLVMBundle::populate_foundation_fn_map() {
 
   auto printi = std::make_shared<PrintI>(PrintI());
   auto println = std::make_shared<PrintLn>(PrintLn());

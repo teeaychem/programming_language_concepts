@@ -54,7 +54,7 @@ std::pair<llvm::Value *, AST::TypHandle> LLVMBundle::access(AST::ExprT const *ex
 
       // Decay a pointer to an array
       if (ptr_typ->area().has_value()) {
-        value = this->builder.CreateInBoundsGEP(expr->type()->codegen(*this), value, llvm::ArrayRef(this->get_zero()), "acc.ptr.decay");
+        value = this->builder.CreateInBoundsGEP(expr->type()->codegen(*this), value, llvm::ArrayRef(this->get_zero()), "acc.dcy");
       }
       // Otherwise, load
       else {
