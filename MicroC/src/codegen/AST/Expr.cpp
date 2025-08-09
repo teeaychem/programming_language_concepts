@@ -204,13 +204,6 @@ Value *AST::ExprT::codegen_eval_false(LLVMBundle &bundle) const {
 
 namespace OpBinaryCodegen {
 
-void throw_unsupported(const AST::Expr::Prim2 *expr) {
-  throw std::logic_error(std::format("Cannot '{}' on types '{}' and '{}'",
-                                     expr->op,
-                                     expr->lhs->type()->to_string(),
-                                     expr->rhs->type()->to_string()));
-}
-
 llvm::Value *builder_assign(LLVMBundle &bundle, AST::ExprHandle destination, AST::ExprHandle value) {
 
   llvm::Value *destination_val = destination->codegen(bundle);
@@ -323,11 +316,6 @@ llvm::Value *builder_sub(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 }
 
 llvm::Value *builder_mul(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-
-  if (!expr->lhs->has_type_kind(AST::Typ::Kind::Int) || !expr->rhs->has_type_kind(AST::Typ::Kind::Int)) {
-    throw_unsupported(expr);
-  }
-
   auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
   auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
 
@@ -335,10 +323,6 @@ llvm::Value *builder_mul(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 }
 
 llvm::Value *builder_div(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-  if (!expr->lhs->has_type_kind(AST::Typ::Kind::Int) || !expr->rhs->has_type_kind(AST::Typ::Kind::Int)) {
-    throw_unsupported(expr);
-  }
-
   auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
   auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
 
@@ -346,10 +330,6 @@ llvm::Value *builder_div(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 }
 
 llvm::Value *builder_mod(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-  if (!expr->lhs->has_type_kind(AST::Typ::Kind::Int) || !expr->rhs->has_type_kind(AST::Typ::Kind::Int)) {
-    throw_unsupported(expr);
-  }
-
   auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
   auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
 
@@ -357,10 +337,6 @@ llvm::Value *builder_mod(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 }
 
 llvm::Value *builder_eq(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-  if (!expr->lhs->has_type_kind(expr->rhs->type_kind())) {
-    throw_unsupported(expr);
-  }
-
   auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
   auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
 
@@ -368,10 +344,6 @@ llvm::Value *builder_eq(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 }
 
 llvm::Value *builder_ne(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-  if (!expr->lhs->has_type_kind(expr->rhs->type_kind())) {
-    throw_unsupported(expr);
-  }
-
   auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
   auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
 
@@ -379,10 +351,6 @@ llvm::Value *builder_ne(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 }
 
 llvm::Value *builder_gt(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-  if (!expr->lhs->has_type_kind(expr->rhs->type_kind())) {
-    throw_unsupported(expr);
-  }
-
   auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
   auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
 
@@ -390,10 +358,6 @@ llvm::Value *builder_gt(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 }
 
 llvm::Value *builder_lt(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-  if (!expr->lhs->has_type_kind(expr->rhs->type_kind())) {
-    throw_unsupported(expr);
-  }
-
   auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
   auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
 
@@ -401,10 +365,6 @@ llvm::Value *builder_lt(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 }
 
 llvm::Value *builder_geq(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-  if (!expr->lhs->has_type_kind(expr->rhs->type_kind())) {
-    throw_unsupported(expr);
-  }
-
   auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
   auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
 
@@ -412,10 +372,6 @@ llvm::Value *builder_geq(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 }
 
 llvm::Value *builder_leq(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
-  if (!expr->lhs->has_type_kind(expr->rhs->type_kind())) {
-    throw_unsupported(expr);
-  }
-
   auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
   auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
 
@@ -444,57 +400,75 @@ Value *AST::Expr::Prim2::codegen(LLVMBundle &bundle) const {
   case OpBinary::Assign: {
     return OpBinaryCodegen::builder_assign(bundle, this->lhs, this->rhs);
   } break;
+
   case OpBinary::AssignAdd: {
     throw std::logic_error("todo: +=");
   } break;
+
   case OpBinary::AssignSub: {
     throw std::logic_error("todo: -=");
   } break;
+
   case OpBinary::AssignMul: {
     throw std::logic_error("todo: *=");
   } break;
+
   case OpBinary::AssignDiv: {
     throw std::logic_error("todo: /=");
   } break;
+
   case OpBinary::AssignMod: {
     throw std::logic_error("todo: %=");
   } break;
+
   case OpBinary::Add: {
     return OpBinaryCodegen::builder_add(bundle, this);
   } break;
+
   case OpBinary::Sub: {
     return OpBinaryCodegen::builder_sub(bundle, this);
   } break;
+
   case OpBinary::Mul: {
     return OpBinaryCodegen::builder_mul(bundle, this);
   } break;
+
   case OpBinary::Div: {
     return OpBinaryCodegen::builder_div(bundle, this);
   } break;
+
   case OpBinary::Mod: {
     return OpBinaryCodegen::builder_mod(bundle, this);
   } break;
+
   case OpBinary::Eq: {
     return OpBinaryCodegen::builder_eq(bundle, this);
   } break;
+
   case OpBinary::Neq: {
     return OpBinaryCodegen::builder_ne(bundle, this);
   } break;
+
   case OpBinary::Gt: {
     return OpBinaryCodegen::builder_gt(bundle, this);
   } break;
+
   case OpBinary::Lt: {
     return OpBinaryCodegen::builder_lt(bundle, this);
   } break;
+
   case OpBinary::Leq: {
     return OpBinaryCodegen::builder_geq(bundle, this);
   } break;
+
   case OpBinary::Geq: {
     return OpBinaryCodegen::builder_leq(bundle, this);
   } break;
+
   case OpBinary::And: {
     return OpBinaryCodegen::builder_and(bundle, this);
   } break;
+
   case OpBinary::Or: {
     return OpBinaryCodegen::builder_or(bundle, this);
   } break;
