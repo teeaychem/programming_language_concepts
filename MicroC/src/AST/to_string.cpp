@@ -61,7 +61,7 @@ std::string AST::Dec::Prototype::to_string(size_t indent) const {
   if (!args.empty()) {
     for (auto &p : args) {
       fn_ss << std::format("{} {}, ",
-                           p.second->to_string(indent), p.first);
+                           p.typ->to_string(indent), p.var);
     }
     fn_ss.seekp(-2, std::ios_base::end);
   }

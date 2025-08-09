@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <stdexcept>
 #include <string>
 
 #include "llvm/IR/DIBuilder.h"
@@ -263,7 +264,15 @@ typedef std::shared_ptr<AST::Stmt::Declaration> StmtDeclarationHandle;
 
 // Etc
 
-typedef std::vector<std::pair<std::string, TypHandle>> ArgVec;
+struct VarTyp {
+  std::string var;
+  TypHandle typ;
+
+  VarTyp() : var("!"), typ(nullptr) {}; // To appease bison
+  VarTyp(std::string var, TypHandle typ) : var(var), typ(typ) {};
+};
+
+typedef std::vector<AST::VarTyp> ArgVec;
 
 // Env
 
