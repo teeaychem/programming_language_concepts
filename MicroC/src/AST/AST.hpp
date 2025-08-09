@@ -1,11 +1,16 @@
 #pragma once
 
 #include <map>
-#include <stdexcept>
 #include <string>
 
 #include "llvm/IR/DIBuilder.h"
 
+// A general header containing forward declarations for AST nodes, types, and (virtual) base structures.
+// Also, some useful typedefs and related things.
+//
+// See the `Node` subfolder for headers containing specific node declarations.
+
+// Used for codegen
 struct LLVMBundle;
 
 // Types
@@ -161,10 +166,10 @@ public:
   // The kind of type `this` has.
   AST::Typ::Kind type_kind() const { return this->type()->kind(); }
 
-  // LLVM IR codegen which returns true if this expression evaluates to true and false otherwise.
+  // LLVM IR codegen which returns true if this expression does not have (LLVM IR) null value for its type and false otherwise.
   llvm::Value *codegen_eval_true(LLVMBundle &bundle) const;
 
-  // LLVM IR codegen which returns false if this expression evaluates to true and false otherwise.
+  // LLVM IR codegen which returns true if this expression does not evaluate to true and false otherwise.
   llvm::Value *codegen_eval_false(LLVMBundle &bundle) const;
 
   // Returns true if `this` has type of `kind`.
@@ -265,26 +270,32 @@ typedef std::shared_ptr<AST::Stmt::Declaration> StmtDeclarationHandle;
 // Etc
 
 struct VarTyp {
+  // The var
   std::string var;
+
+  // The type
   TypHandle typ;
 
-  VarTyp() : var("!"), typ(nullptr) {}; // To appease bison
   VarTyp(std::string var, TypHandle typ) : var(var), typ(typ) {};
+
+  // To appease bison, should not be used
+  VarTyp() : var("!"), typ(nullptr) {};
 };
 
-typedef std::vector<AST::VarTyp> ArgVec;
+typedef std::vector<AST::VarTyp> VarTypVec;
 
-// Env
+typedef std::map<std::string, AST::TypHandle> VarTypMap; // Vars have declared type, fns have return type.
 
-typedef std::map<std::string, AST::TypHandle> NameTypeMap; // Vars have declared type, fns have return type.
-
-// A struct holding the (contextual) environment when generating an AST.
+// The (contextual) environment when generating an AST.
 // 'Contextual', here, means the env is mutated with relevant declarations.
-// And, in particular, it is up to the the mutator to restore any temporary mutations (i.e. local declarations).
+// And, in particular, it is up to the the mutator to restore any temporary mutations (i.e. local declarations)
 struct EnvAST {
 
+  // Function declarations
   std::map<std::string, AST::PrototypeHandle> fns{};
-  NameTypeMap vars{};
+
+  // Variables in scope
+  VarTypMap vars{};
 
   std::string to_string();
 };

@@ -30,7 +30,7 @@ struct PrintI : FnPrimative {
   PrintI() {
     this->name = "printi";
     this->return_type = std::make_shared<AST::Typ::Void>(AST::Typ::Void());
-    this->args = AST::ArgVec{{"n", AST::Typ::pk_Int()}};
+    this->args = AST::VarTypVec{{"n", AST::Typ::pk_Int()}};
   }
 
   llvm::Function *codegen(LLVMBundle &bundle) const override {
@@ -60,7 +60,7 @@ struct PrintLn : FnPrimative {
   PrintLn() {
     this->name = "println";
     this->return_type = std::make_shared<AST::Typ::Void>(AST::Typ::Void());
-    this->args = AST::ArgVec{};
+    this->args = AST::VarTypVec{};
   }
 
   llvm::Function *codegen(LLVMBundle &bundle) const override {

@@ -173,11 +173,10 @@ Value *AST::ExprT::codegen_eval_true(LLVMBundle &bundle) const {
     return access_val;
   } else {
 
-    Value *zero = this->type()->defaultgen(bundle);
+    Value *null_val = this->type()->defaultgen(bundle);
+    null_val = access_typ->defaultgen(bundle);
 
-    zero = access_typ->defaultgen(bundle);
-
-    return bundle.builder.CreateCmp(ICmpInst::ICMP_NE, access_val, zero, "op.eval_true");
+    return bundle.builder.CreateCmp(ICmpInst::ICMP_NE, access_val, null_val, "op.eval_true");
   }
 }
 

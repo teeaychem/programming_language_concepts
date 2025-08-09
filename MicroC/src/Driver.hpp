@@ -22,7 +22,7 @@ struct Driver {
   std::vector<AST::StmtDeclarationHandle> prg{};
 
   // Temporary storage for shadowed globals during parsing
-  AST::NameTypeMap shadow_cache{};
+  AST::VarTypMap shadow_cache{};
 
   // A bundle of things useful for LLVM codegen.
   LLVMBundle llvm{};
@@ -60,7 +60,7 @@ struct Driver {
 
   // etc
 
-  void add_to_env(AST::ArgVec &args) {
+  void add_to_env(AST::VarTypVec &args) {
     for (auto &arg : args) {
       auto existing_global = this->llvm.env_ast.vars.find(arg.var);
       if (existing_global != this->llvm.env_ast.vars.end()) {
@@ -260,7 +260,7 @@ struct Driver {
 
   AST::DecFnHandle pk_DecFn(AST::PrototypeHandle prototype, AST::StmtBlockHandle body);
 
-  AST::PrototypeHandle pk_Prototype(AST::TypHandle r_typ, std::string var, AST::ArgVec params);
+  AST::PrototypeHandle pk_Prototype(AST::TypHandle r_typ, std::string var, AST::VarTypVec params);
 
   // pk Expr
 

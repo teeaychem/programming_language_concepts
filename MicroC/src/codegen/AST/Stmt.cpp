@@ -123,18 +123,23 @@ llvm::Value *AST::Stmt::If::codegen(LLVMBundle &bundle) const {
 // Note, in particular, nested blocks in an fn will all access the same return_alloca.
 llvm::Value *AST::Stmt::Return::codegen(LLVMBundle &bundle) const {
 
+  // If the return has some value...
   if (this->value.has_value()) {
-
+    // Ensure the return value is loaded
     auto [return_val, _] = bundle.access(this->value.value().get());
 
+    // Use a return allocatio if available, and break to the corresponding block
     if (bundle.env_llvm.return_alloca) {
       bundle.builder.CreateStore(return_val, bundle.env_llvm.return_alloca);
       bundle.builder.CreateBr(bundle.env_llvm.return_block);
-    } else {
+    }
+    // Otherwise, create a return
+    else {
       bundle.builder.CreateRet(return_val);
     }
-
-  } else {
+  }
+  // Otherwise, the return must be void
+  else {
     bundle.builder.CreateRetVoid();
   }
 
