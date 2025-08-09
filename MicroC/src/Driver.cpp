@@ -142,7 +142,7 @@ AST::DecFnHandle Driver::pk_DecFn(AST::PrototypeHandle prototype, AST::StmtBlock
 }
 
 // Prototype declaration requires specification of return type, var, and arguments (as type var pairs).
-AST::PrototypeHandle Driver::pk_Prototype(AST::TypHandle r_typ, std::string var, AST::ArgVec args) {
+AST::PrototypeHandle Driver::pk_Prototype(AST::TypHandle r_typ, std::string var, AST::VarTypVec args) {
   if (this->llvm.env_ast.fns.find(var) != this->llvm.env_ast.fns.end()) {
     throw std::logic_error(std::format("Existing prototype for: {}.", var));
   }

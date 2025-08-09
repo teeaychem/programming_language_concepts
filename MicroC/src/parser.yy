@@ -80,8 +80,8 @@
 
 %nterm <AST::DecHandle> Fndec
 
-%nterm <AST::ArgVec> Paramdecs
-%nterm <AST::ArgVec> ParamdecsNE
+%nterm <AST::VarTypVec> Paramdecs
+%nterm <AST::VarTypVec> ParamdecsNE
 
 %nterm <AST::StmtBlockHandle> Block
 %nterm <AST::Block> StmtOrDecSeq
@@ -198,13 +198,13 @@ Fndec:
 
 
 Paramdecs:
-    %empty       { $$ = AST::ArgVec{}; }
+    %empty       { $$ = AST::VarTypVec{}; }
   | ParamdecsNE  { $$ = $1;              }
 ;
 
 
 ParamdecsNE:
-    Vardec                    { $$ = AST::ArgVec{$1};      }
+    Vardec                    { $$ = AST::VarTypVec{$1};      }
   | ParamdecsNE COMMA Vardec  { $1.push_back($3); $$ = $1; }
 ;
 

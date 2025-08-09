@@ -44,9 +44,9 @@ private:
   std::string id;
 
 public:
-  ArgVec args;
+  VarTypVec args;
 
-  Prototype(TypHandle r_typ, std::string name, ArgVec args)
+  Prototype(TypHandle r_typ, std::string name, VarTypVec args)
       : r_typ(std::move(r_typ)),
         id(name),
         args(std::move(args)) {}

@@ -36,7 +36,7 @@ struct Block {
   std::vector<AST::StmtHandle> statements{};
 
   // (Temporary) storage of shadowed variables
-  NameTypeMap shadowed_vars{};
+  VarTypMap shadowed_vars{};
 
   // How many paths originating in the block *lead* to a return statment
   size_t early_returns{0};

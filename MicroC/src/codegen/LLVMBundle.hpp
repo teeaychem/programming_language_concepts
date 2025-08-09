@@ -19,7 +19,7 @@ struct FnPrimative {
   AST::TypHandle return_type;
 
   // Arguments to the fn.
-  AST::ArgVec args;
+  AST::VarTypVec args;
 
   // LLVM IR codegen for the function.
   virtual llvm::Function *codegen(LLVMBundle &bundle) const = 0;
