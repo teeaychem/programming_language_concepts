@@ -128,68 +128,76 @@ Value *AST::Expr::Index::codegen(LLVMBundle &bundle) const {
 
 Value *AST::Expr::Prim1::codegen(LLVMBundle &bundle) const {
 
+  llvm::Value *return_value;
+
   switch (this->op) {
 
   case OpUnary::AddressOf: {
-
     // The address of a dereference is obtained by avoiding the dereference.
     // This is an instance of the general approach to never take the address of an object.
-    // So, codegen.
-
-    auto value = expr->codegen(bundle);
-
-    return value;
+    return_value = expr->codegen(bundle);
 
   } break;
 
   case OpUnary::Dereference: {
-
     // Dereference performs a load / access.
-    auto [val, _] = bundle.access(this->expr.get());
-
-    return val;
-
+    auto [access_val, _] = bundle.access(this->expr.get());
+    return_value = access_val;
   } break;
 
   case OpUnary::Sub: {
     auto [access_val, _] = bundle.access(expr.get());
-    return bundle.builder.CreateNeg(access_val, "op.neg");
+    return_value = bundle.builder.CreateNeg(access_val, "op.neg");
   } break;
 
   case OpUnary::Negation: {
     auto [access_val, _] = bundle.access(expr.get());
-    return bundle.builder.CreateNot(access_val, "op.not");
+    return_value = bundle.builder.CreateNot(access_val, "op.not");
   } break;
   }
+
+  return return_value;
 }
 
 // Support
 
 Value *AST::ExprT::codegen_eval_true(LLVMBundle &bundle) const {
 
+  llvm::Value *return_value;
+
   auto [access_val, access_typ] = bundle.access(this);
 
+  // If Already a boolean...
   if (access_val->getType()->isIntegerTy(1)) {
-    return access_val;
-  } else {
-
-    Value *null_val = this->type()->defaultgen(bundle);
-    null_val = access_typ->defaultgen(bundle);
-
-    return bundle.builder.CreateCmp(ICmpInst::ICMP_NE, access_val, null_val, "op.eval_true");
+    return_value = access_val;
   }
+  // Otherwise test not equal to null val of expr type
+  else {
+    return_value = bundle.builder.CreateCmp(ICmpInst::ICMP_NE,
+                                            access_val,
+                                            access_typ->defaultgen(bundle),
+                                            "op.eval_true");
+  }
+
+  return return_value;
 }
 
 Value *AST::ExprT::codegen_eval_false(LLVMBundle &bundle) const {
 
+  llvm::Value *return_value;
+
   auto [access_val, access_typ] = bundle.access(this);
 
   if (access_val->getType()->isIntegerTy(1)) {
-    return access_val;
+    return_value = access_val;
   } else {
-    Value *zero = access_typ->defaultgen(bundle);
-    return bundle.builder.CreateCmp(ICmpInst::ICMP_EQ, access_val, zero, "op.eval_false");
+    return_value = bundle.builder.CreateCmp(ICmpInst::ICMP_EQ,
+                                            access_val,
+                                            access_typ->defaultgen(bundle),
+                                            "op.eval_false");
   }
+
+  return return_value;
 }
 
 // Binary ops
@@ -197,7 +205,7 @@ Value *AST::ExprT::codegen_eval_false(LLVMBundle &bundle) const {
 namespace OpBinaryCodegen {
 
 void throw_unsupported(const AST::Expr::Prim2 *expr) {
-  throw std::logic_error(std::format("Cannot perform '{}' on types '{}' and '{}'",
+  throw std::logic_error(std::format("Cannot '{}' on types '{}' and '{}'",
                                      expr->op,
                                      expr->lhs->type()->to_string(),
                                      expr->rhs->type()->to_string()));
@@ -208,7 +216,6 @@ llvm::Value *builder_assign(LLVMBundle &bundle, AST::ExprHandle destination, AST
   llvm::Value *destination_val = destination->codegen(bundle);
 
   auto [access_val, access_typ] = bundle.access(value.get());
-
   bundle.builder.CreateStore(access_val, destination_val, "op.assign");
 
   return access_val;
@@ -219,10 +226,10 @@ llvm::Value *builder_ptr_add(LLVMBundle &bundle, AST::ExprHandle ptr, AST::ExprH
 
   auto [access_val, access_typ] = bundle.access(val.get());
   auto [ptr_val, ptr_typ] = bundle.access(ptr.get());
-
   auto ptr_add = bundle.builder.CreateInBoundsGEP(ptr_typ->deref()->codegen(bundle),
                                                   ptr_val,
-                                                  ArrayRef<Value *>{access_val}, "add.ptr");
+                                                  ArrayRef<Value *>{access_val},
+                                                  "add.ptr");
 
   return ptr_add;
 }
@@ -232,7 +239,8 @@ llvm::Value *builder_add(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
   switch (expr->type_kind()) {
 
   case AST::Typ::Kind::Bool:
-  case AST::Typ::Kind::Char: {
+  case AST::Typ::Kind::Char:
+  case AST::Typ::Kind::Void: {
     throw std::logic_error("Unsupported op");
   } break;
 
@@ -258,10 +266,6 @@ llvm::Value *builder_add(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
     else {
       throw std::logic_error("Incompatible targets for pointer arithmetic");
     }
-  }
-
-  case AST::Typ::Kind::Void: {
-    throw std::logic_error("Unsupported op");
   } break;
   }
 }
@@ -284,11 +288,9 @@ llvm::Value *builder_sub(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 
   switch (expr->type_kind()) {
 
-  case AST::Typ::Kind::Bool: {
-    throw std::logic_error("Unsupported op");
-  } break;
-
-  case AST::Typ::Kind::Char: {
+  case AST::Typ::Kind::Bool:
+  case AST::Typ::Kind::Char:
+  case AST::Typ::Kind::Void: {
     throw std::logic_error("Unsupported op");
   } break;
 
@@ -316,9 +318,7 @@ llvm::Value *builder_sub(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
     }
   }
 
-  case AST::Typ::Kind::Void: {
-    throw std::logic_error("Unsupported op");
-  } break;
+  break;
   }
 }
 
