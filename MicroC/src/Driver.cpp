@@ -1,11 +1,10 @@
 #include "Driver.hpp"
-#include "codegen/LLVMBundle.hpp"
-#include "parser.hpp"
 
 #include "AST/AST.hpp"
 #include "AST/Node/Dec.hpp"
 #include "AST/Node/Expr.hpp"
 #include "AST/Node/Stmt.hpp"
+#include "codegen/LLVMBundle.hpp"
 
 void Driver::generate_llvm() {
   for (auto &dec : prg) {
@@ -22,7 +21,7 @@ int Driver::parse(const std::string &file) {
     auto primative_fn = foundation_elem.second;
 
     AST::Dec::Prototype proto(primative_fn->return_type, primative_fn->name, primative_fn->args);
-    AST::PrototypeHandle handle = std::make_shared<AST::Dec::Prototype>(proto);
+    AST::Dec::PrototypeHandle handle = std::make_shared<AST::Dec::Prototype>(proto);
 
     this->llvm.env_ast.fns[primative_fn->name] = handle;
   }
@@ -59,7 +58,7 @@ void Driver::print_llvm() {
   printf("\n----------\n");
 }
 
-void Driver::push_dec(AST::StmtDeclarationHandle stmt) { prg.push_back(stmt); }
+void Driver::push_dec(AST::Stmt::DeclarationHandle stmt) { prg.push_back(stmt); }
 
 AST::Expr::OpBinary Driver::to_binary_op(std::string op) {
   static std::map<std::string, AST::Expr::OpBinary> op_map{
@@ -117,8 +116,28 @@ AST::Expr::OpUnary Driver::to_unary_op(std::string op) {
 // The motivation is recusive fn calls, which require access to the fn prototype.
 // This motivation is extended to vars to form a rule.
 
-// Variable declaration requires specification scope, typ, and var of the variable.
-AST::DecVarHandle Driver::pk_DecVar(AST::Dec::Scope scope, AST::TypHandle typ, std::string var) {
+AST::Dec::FnHandle Driver::pk_DecFn(AST::Dec::PrototypeHandle prototype, AST::Stmt::BlockHandle body) {
+  if (!this->llvm.env_ast.fns.contains(prototype->name())) {
+    throw std::logic_error(std::format("Missing prototype for {}", prototype->name()));
+  }
+
+  AST::Dec::Fn dec(std::move(prototype), std::move(body));
+  return std::make_shared<AST::Dec::Fn>(std::move(dec));
+}
+
+AST::Dec::PrototypeHandle Driver::pk_Prototype(AST::TypHandle r_typ, std::string var, AST::VarTypVec args) {
+  if (this->llvm.env_ast.fns.find(var) != this->llvm.env_ast.fns.end()) {
+    throw std::logic_error(std::format("Existing prototype for: {}.", var));
+  }
+
+  AST::Dec::Prototype prototype(std::move(r_typ), var, std::move(args));
+  auto pt_ptr = std::make_shared<AST::Dec::Prototype>(std::move(prototype));
+  this->llvm.env_ast.fns[var] = pt_ptr;
+
+  return pt_ptr;
+}
+
+AST::Dec::VarHandle Driver::pk_DecVar(AST::Dec::Scope scope, AST::TypHandle typ, std::string var) {
   if (scope == AST::Dec::Scope::Global) {
     if (this->llvm.env_ast.vars.find(var) != this->llvm.env_ast.vars.end()) {
       throw std::logic_error(std::format("Redeclaration of global: {}", var));
@@ -131,33 +150,9 @@ AST::DecVarHandle Driver::pk_DecVar(AST::Dec::Scope scope, AST::TypHandle typ, s
   return std::make_shared<AST::Dec::Var>(std::move(dec));
 }
 
-// Function declaration requires an existing prototype and a body.
-AST::DecFnHandle Driver::pk_DecFn(AST::PrototypeHandle prototype, AST::StmtBlockHandle body) {
-  if (!this->llvm.env_ast.fns.contains(prototype->name())) {
-    throw std::logic_error(std::format("Missing prototype for {}", prototype->name()));
-  }
-
-  AST::Dec::Fn dec(std::move(prototype), std::move(body));
-  return std::make_shared<AST::Dec::Fn>(std::move(dec));
-}
-
-// Prototype declaration requires specification of return type, var, and arguments (as type var pairs).
-AST::PrototypeHandle Driver::pk_Prototype(AST::TypHandle r_typ, std::string var, AST::VarTypVec args) {
-  if (this->llvm.env_ast.fns.find(var) != this->llvm.env_ast.fns.end()) {
-    throw std::logic_error(std::format("Existing prototype for: {}.", var));
-  }
-
-  AST::Dec::Prototype prototype(std::move(r_typ), var, std::move(args));
-  auto pt_ptr = std::make_shared<AST::Dec::Prototype>(std::move(prototype));
-  this->llvm.env_ast.fns[var] = pt_ptr;
-
-  return pt_ptr;
-}
-
 // Pointer make methods for expressions
 
-// Calls requires the var of the fn and arguments.
-AST::ExprHandle Driver::pk_ExprCall(std::string var, std::vector<AST::ExprHandle> args) {
+AST::Expr::CallHandle Driver::pk_ExprCall(std::string var, std::vector<AST::ExprHandle> args) {
 
   auto prototype_find = this->llvm.env_ast.fns.find(var);
   if (prototype_find == this->llvm.env_ast.fns.end()) {
@@ -176,7 +171,7 @@ AST::ExprHandle Driver::pk_ExprCall(std::string var, std::vector<AST::ExprHandle
 
     auto arg_prototype = prototype->args[i].typ;
 
-    if (!args[i]->has_type_kind(arg_prototype->kind())) {
+    if (!args[i]->typ_has_kind(arg_prototype->kind())) {
 
       auto arg_access_type = this->llvm.access_type(args[i].get());
       if (arg_prototype->kind() != arg_access_type->kind()) {
@@ -191,38 +186,38 @@ AST::ExprHandle Driver::pk_ExprCall(std::string var, std::vector<AST::ExprHandle
   return std::make_shared<AST::Expr::Call>(std::move(call));
 }
 
-AST::ExprHandle Driver::pk_ExprCast(AST::ExprHandle expr, AST::TypHandle to) {
+AST::Expr::CastHandle Driver::pk_ExprCast(AST::ExprHandle expr, AST::TypHandle to) {
 
   AST::Expr::Cast cast(expr, to);
   return std::make_shared<AST::Expr::Cast>(std::move(cast));
 }
 
-AST::ExprHandle Driver::pk_ExprCall(std::string name, AST::ExprHandle param) {
+AST::Expr::CallHandle Driver::pk_ExprCall(std::string name, AST::ExprHandle param) {
 
   std::vector<AST::ExprHandle> params = std::vector<AST::ExprHandle>{param};
   return this->pk_ExprCall(name, params);
 }
 
-AST::ExprHandle Driver::pk_ExprCall(std::string name) {
+AST::Expr::CallHandle Driver::pk_ExprCall(std::string name) {
 
   std::vector<AST::ExprHandle> empty_params = std::vector<AST::ExprHandle>{};
   return this->pk_ExprCall(name, empty_params);
 }
 
-AST::ExprHandle Driver::pk_ExprCstI(std::int64_t i) {
+AST::Expr::CstIHandle Driver::pk_ExprCstI(std::int64_t i) {
   auto typ = AST::Typ::pk_Int();
   AST::Expr::CstI csti(std::move(typ), i);
 
   return std::make_shared<AST::Expr::CstI>(std::move(csti));
 }
 
-AST::ExprHandle Driver::pk_ExprIndex(AST::ExprHandle access, AST::ExprHandle index) {
+AST::Expr::IndexHandle Driver::pk_ExprIndex(AST::ExprHandle access, AST::ExprHandle index) {
 
   AST::Expr::Index instance(std::move(access), std::move(index));
   return std::make_shared<AST::Expr::Index>(std::move(instance));
 }
 
-AST::ExprHandle Driver::pk_ExprPrim1(AST::Expr::OpUnary op, AST::ExprHandle expr) {
+AST::Expr::Prim1Handle Driver::pk_ExprPrim1(AST::Expr::OpUnary op, AST::ExprHandle expr) {
 
   auto typ = this->type_resolution_prim1(op, expr);
   AST::Expr::Prim1 prim1(std::move(typ), op, std::move(expr));
@@ -230,14 +225,14 @@ AST::ExprHandle Driver::pk_ExprPrim1(AST::Expr::OpUnary op, AST::ExprHandle expr
   return std::make_shared<AST::Expr::Prim1>(std::move(prim1));
 }
 
-AST::ExprHandle Driver::pk_ExprPrim2(AST::Expr::OpBinary op, AST::ExprHandle lhs, AST::ExprHandle rhs) {
+AST::Expr::Prim2Handle Driver::pk_ExprPrim2(AST::Expr::OpBinary op, AST::ExprHandle lhs, AST::ExprHandle rhs) {
 
   auto typ = this->type_resolution_prim2(op, lhs, rhs);
   AST::Expr::Prim2 prim2(std::move(typ), op, std::move(lhs), std::move(rhs));
   return std::make_shared<AST::Expr::Prim2>(std::move(prim2));
 }
 
-AST::ExprHandle Driver::pk_ExprVar(std::string var) {
+AST::Expr::VarHandle Driver::pk_ExprVar(std::string var) {
   auto env_var = this->llvm.env_ast.vars.find(var);
 
   if (env_var == this->llvm.env_ast.vars.end()) {
@@ -251,30 +246,30 @@ AST::ExprHandle Driver::pk_ExprVar(std::string var) {
 
 // Pointer make methods for statements
 
-AST::StmtBlockHandle Driver::pk_StmtBlock(AST::Block &&block) {
+AST::Stmt::BlockHandle Driver::pk_StmtBlock(AST::Block &&block) {
   AST::Stmt::Block stmt(std::move(block));
   return std::make_shared<AST::Stmt::Block>(std::move(stmt));
 }
 
-AST::StmtHandle Driver::pk_StmtBlockStmt(AST::Block &&block) {
+AST::Stmt::BlockHandle Driver::pk_StmtBlockStmt(AST::Block &&block) {
   AST::Stmt::Block stmt(std::move(block));
   return std::make_shared<AST::Stmt::Block>(std::move(stmt));
 }
 
-AST::StmtDeclarationHandle Driver::pk_StmtDeclaration(AST::DecHandle declaration) {
+AST::Stmt::DeclarationHandle Driver::pk_StmtDeclaration(AST::DecHandle declaration) {
   AST::Stmt::Declaration stmt(std::move(declaration));
   return std::make_shared<AST::Stmt::Declaration>(std::move(stmt));
 }
 
-AST::StmtHandle Driver::pk_StmtExpr(AST::ExprHandle expr) {
+AST::Stmt::ExprHandle Driver::pk_StmtExpr(AST::ExprHandle expr) {
   AST::Stmt::Expr stmt(std::move(expr));
   return std::make_shared<AST::Stmt::Expr>(std::move(stmt));
 }
 
-AST::StmtHandle Driver::pk_StmtIf(AST::ExprHandle condition, AST::StmtHandle thn, AST::StmtHandle els) {
+AST::Stmt::IfHandle Driver::pk_StmtIf(AST::ExprHandle condition, AST::StmtHandle thn, AST::StmtHandle els) {
 
-  AST::StmtBlockHandle block_then;
-  AST::StmtBlockHandle block_else;
+  AST::Stmt::BlockHandle block_then;
+  AST::Stmt::BlockHandle block_else;
 
   if (thn->kind() == AST::Stmt::Kind::Block) {
     block_then = std::static_pointer_cast<AST::Stmt::Block>(thn);
@@ -297,12 +292,12 @@ AST::StmtHandle Driver::pk_StmtIf(AST::ExprHandle condition, AST::StmtHandle thn
   return std::make_shared<AST::Stmt::If>(std::move(stmt));
 }
 
-AST::StmtHandle Driver::pk_StmtReturn(std::optional<AST::ExprHandle> value) {
+AST::Stmt::ReturnHandle Driver::pk_StmtReturn(std::optional<AST::ExprHandle> value) {
   AST::Stmt::Return stmt(std::move(value));
   return std::make_shared<AST::Stmt::Return>(std::move(stmt));
 }
 
-AST::StmtHandle Driver::pk_StmtWhile(AST::ExprHandle condition, AST::StmtHandle block) {
+AST::Stmt::WhileHandle Driver::pk_StmtWhile(AST::ExprHandle condition, AST::StmtHandle block) {
   AST::Stmt::While stmt(condition, block);
   return std::make_shared<AST::Stmt::While>(std::move(stmt));
 }

@@ -1,18 +1,17 @@
 #include <format>
 #include <vector>
 
-#include "AST/AST.hpp"
-#include "codegen/LLVMBundle.hpp"
-
-#include "AST/Node/Dec.hpp"
-#include "AST/Node/Expr.hpp"
-#include "AST/Node/Stmt.hpp"
-
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DIBuilder.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
+
+#include "AST/AST.hpp"
+#include "AST/Node/Dec.hpp"
+#include "AST/Node/Expr.hpp"
+#include "AST/Node/Stmt.hpp"
+#include "codegen/LLVMBundle.hpp"
 
 // Dec
 

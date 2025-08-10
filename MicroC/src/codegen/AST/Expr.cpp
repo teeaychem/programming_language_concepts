@@ -8,7 +8,6 @@
 
 #include "AST/AST.hpp"
 #include "AST/Fmt.hpp"
-
 #include "AST/Node/Expr.hpp"
 
 #include "codegen/LLVMBundle.hpp"
@@ -58,11 +57,9 @@ Value *AST::Expr::Cast::codegen(LLVMBundle &bundle) const {
 
   switch (this->type_kind()) {
 
-  case Typ::Kind::Bool: {
-    throw std::logic_error(std::format("Unsupported cast {}", this->to_string()));
-  } break;
-
-  case Typ::Kind::Char: {
+  case Typ::Kind::Bool:
+  case Typ::Kind::Char:
+  case Typ::Kind::Void: {
     throw std::logic_error(std::format("Unsupported cast {}", this->to_string()));
   } break;
 
@@ -71,41 +68,34 @@ Value *AST::Expr::Cast::codegen(LLVMBundle &bundle) const {
     switch (expr->type_kind()) {
 
     case Typ::Kind::Bool: {
-      auto expr_value = this->expr->codegen(bundle);
-      auto cast = bundle.builder.CreateIntCast(expr_value, this->type()->codegen(bundle), false);
+      auto cast = bundle.builder.CreateIntCast(this->expr->codegen(bundle),
+                                               this->type()->codegen(bundle), false);
       return cast;
     } break;
 
     case Typ::Kind::Char:
-    case Typ::Kind::Int: {
+    case Typ::Kind::Int:
+    case Typ::Kind::Void: {
       throw std::logic_error(std::format("Unsupported cast {}", this->to_string()));
     } break;
 
     case Typ::Kind::Ptr: {
-      auto ptr_value = this->expr->codegen(bundle);
-      auto cast = bundle.builder.CreatePtrToInt(ptr_value, this->type()->codegen(bundle));
+      auto cast = bundle.builder.CreatePtrToInt(this->expr->codegen(bundle),
+                                                this->type()->codegen(bundle));
       return cast;
-    } break;
-
-    case Typ::Kind::Void: {
-      throw std::logic_error(std::format("Unsupported cast {}", this->to_string()));
     } break;
     }
 
   } break;
 
   case Typ::Kind::Ptr: {
-    if (this->expr->has_type_kind(AST::Typ::Kind::Int)) {
-      auto int_value = this->expr->codegen(bundle);
-      auto cast = bundle.builder.CreateIntToPtr(int_value, this->type()->codegen(bundle));
+    if (this->expr->typ_has_kind(AST::Typ::Kind::Int)) {
+      auto cast = bundle.builder.CreateIntToPtr(this->expr->codegen(bundle),
+                                                this->type()->codegen(bundle));
       return cast;
     } else {
       throw std::logic_error(std::format("Unsupported cast {}", this->to_string()));
     }
-  } break;
-
-  case Typ::Kind::Void: {
-    throw std::logic_error(std::format("Unsupported cast {}", this->to_string()));
   } break;
   }
 }
@@ -121,7 +111,8 @@ Value *AST::Expr::Index::codegen(LLVMBundle &bundle) const {
 
   auto ptr_add = bundle.builder.CreateInBoundsGEP(ptr_typ->deref()->codegen(bundle),
                                                   ptr_val,
-                                                  ArrayRef<Value *>{access_val}, "idx");
+                                                  ArrayRef<Value *>{access_val},
+                                                  "idx");
 
   return ptr_add;
 }
@@ -229,6 +220,8 @@ llvm::Value *builder_ptr_add(LLVMBundle &bundle, AST::ExprHandle ptr, AST::ExprH
 
 llvm::Value *builder_add(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 
+  llvm::Value *return_value;
+
   switch (expr->type_kind()) {
 
   case AST::Typ::Kind::Bool:
@@ -242,18 +235,21 @@ llvm::Value *builder_add(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
     auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
     auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
 
-    return bundle.builder.CreateAdd(lhs_val, rhs_val, "op.add");
+    return_value = bundle.builder.CreateAdd(lhs_val, rhs_val, "op.add");
 
   } break;
 
   case AST::Typ::Kind::Ptr: {
 
-    if (expr->lhs->has_type_kind(AST::Typ::Kind::Ptr) && expr->rhs->has_type_kind(AST::Typ::Kind::Int)) {
-      return builder_ptr_add(bundle, expr->lhs, expr->rhs);
+    auto lhs_typ = expr->lhs->type();
+    auto rhs_typ = expr->rhs->type();
+
+    if (lhs_typ->is_kind(AST::Typ::Kind::Ptr) && rhs_typ->is_kind(AST::Typ::Kind::Int)) {
+      return_value = builder_ptr_add(bundle, expr->lhs, expr->rhs);
     }
 
-    else if (expr->lhs->has_type_kind(AST::Typ::Kind::Int) && expr->rhs->has_type_kind(AST::Typ::Kind::Ptr)) {
-      return builder_ptr_add(bundle, expr->rhs, expr->lhs);
+    else if (lhs_typ->is_kind(AST::Typ::Kind::Int) && rhs_typ->is_kind(AST::Typ::Kind::Ptr)) {
+      return_value = builder_ptr_add(bundle, expr->rhs, expr->lhs);
     }
 
     else {
@@ -261,6 +257,8 @@ llvm::Value *builder_add(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
     }
   } break;
   }
+
+  return return_value;
 }
 
 // Codegen for ptr - int
@@ -280,6 +278,8 @@ llvm::Value *builder_ptr_sub(LLVMBundle &bundle, AST::ExprHandle ptr, AST::ExprH
 
 llvm::Value *builder_sub(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 
+  llvm::Value *return_value;
+
   switch (expr->type_kind()) {
 
   case AST::Typ::Kind::Bool:
@@ -293,18 +293,21 @@ llvm::Value *builder_sub(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
     auto [lhs_val, lhs_typ] = bundle.access(expr->lhs.get());
     auto [rhs_val, rhs_typ] = bundle.access(expr->rhs.get());
 
-    return bundle.builder.CreateSub(lhs_val, rhs_val, "op.sub");
+    return_value = bundle.builder.CreateSub(lhs_val, rhs_val, "op.sub");
 
   } break;
 
   case AST::Typ::Kind::Ptr: {
 
-    if (expr->lhs->has_type_kind(AST::Typ::Kind::Ptr) && expr->rhs->has_type_kind(AST::Typ::Kind::Int)) {
-      return builder_ptr_sub(bundle, expr->lhs, expr->rhs);
+    auto lhs_typ = expr->lhs->type();
+    auto rhs_typ = expr->rhs->type();
+
+    if (lhs_typ->is_kind(AST::Typ::Kind::Ptr) && rhs_typ->is_kind(AST::Typ::Kind::Int)) {
+      return_value = builder_ptr_sub(bundle, expr->lhs, expr->rhs);
     }
 
-    else if (expr->lhs->has_type_kind(AST::Typ::Kind::Int) && expr->rhs->has_type_kind(AST::Typ::Kind::Ptr)) {
-      return builder_ptr_sub(bundle, expr->rhs, expr->lhs);
+    else if (lhs_typ->is_kind(AST::Typ::Kind::Int) && rhs_typ->is_kind(AST::Typ::Kind::Ptr)) {
+      return_value = builder_ptr_sub(bundle, expr->rhs, expr->lhs);
     }
 
     else {
@@ -314,6 +317,8 @@ llvm::Value *builder_sub(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {
 
   break;
   }
+
+  return return_value;
 }
 
 llvm::Value *builder_mul(LLVMBundle &bundle, const AST::Expr::Prim2 *expr) {

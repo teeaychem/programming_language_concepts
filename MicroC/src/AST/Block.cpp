@@ -2,7 +2,7 @@
 #include "AST/AST.hpp"
 #include "AST/Node/Stmt.hpp"
 
-AST::Block AST::Block::push_DecVar(EnvAST &env, AST::StmtDeclarationHandle const &dec_var) {
+AST::Block AST::Block::push_DecVar(EnvAST &env, AST::Stmt::DeclarationHandle const &dec_var) {
   std::string var{dec_var->declaration->name()};
 
   auto shadowed = env.vars.find(var);

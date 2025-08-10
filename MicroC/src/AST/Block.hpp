@@ -27,10 +27,10 @@ struct Block {
   bool scoped_return{false};
 
   // Variables whose name does *not* appear in any enclosing scope
-  std::vector<AST::StmtDeclarationHandle> fresh_vars{};
+  std::vector<AST::Stmt::DeclarationHandle> fresh_vars{};
 
   // Variables whose name *does* appear in some enclosing scope
-  std::vector<AST::StmtDeclarationHandle> shadow_vars{};
+  std::vector<AST::Stmt::DeclarationHandle> shadow_vars{};
 
   // All non-declaration statements of the block
   std::vector<AST::StmtHandle> statements{};
@@ -51,7 +51,7 @@ struct Block {
 
   // Add a declaration, using `env` to determine which variables are in scope.
   // And, mutates `env` in accordance with the declaration.
-  AST::Block push_DecVar(EnvAST &env, AST::StmtDeclarationHandle const &dec_var);
+  AST::Block push_DecVar(EnvAST &env, AST::Stmt::DeclarationHandle const &dec_var);
 
   // Add a statement.
   AST::Block push_Stmt(AST::StmtHandle const &stmt);
