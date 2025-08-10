@@ -10,7 +10,7 @@
 
 #include "AST/Fmt.hpp"
 #include "AST/Types.hpp"
-#include "codegen/LLVMBundle.hpp"
+#include "codegen/Structs.hpp"
 
 #include "parser.hpp"
 
@@ -24,8 +24,8 @@ struct Driver {
   // Temporary storage for shadowed globals during parsing
   AST::VarTypMap shadow_cache{};
 
-  // A bundle of things useful for LLVM codegen.
-  LLVMBundle llvm{};
+  // Things useful for LLVM codegen.
+  Context llvm{};
 
   // The file to be parsed.
   std::string src_file;
@@ -39,7 +39,7 @@ struct Driver {
   Driver()
       : trace_parsing(false),
         trace_scanning(false),
-        llvm(LLVMBundle{}) {}
+        llvm(Context{}) {}
 
   void generate_llvm();
   void print_llvm();
