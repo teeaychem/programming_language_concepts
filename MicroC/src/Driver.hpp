@@ -19,7 +19,7 @@
 YY_DECL; // Declare the prototype for bison
 
 struct Driver {
-  std::vector<AST::StmtDeclarationHandle> prg{};
+  std::vector<AST::Stmt::DeclarationHandle> prg{};
 
   // Temporary storage for shadowed globals during parsing
   AST::VarTypMap shadow_cache{};
@@ -48,7 +48,7 @@ struct Driver {
   int parse(const std::string &file);
 
   // Push a declaration to the AST representation of the program.
-  void push_dec(AST::StmtDeclarationHandle stmt);
+  void push_dec(AST::Stmt::DeclarationHandle stmt);
 
   // Handling the scanner.
   void scan_begin();
@@ -71,7 +71,7 @@ struct Driver {
     }
   }
 
-  void fn_finalise(AST::DecFnHandle fn) {
+  void fn_finalise(AST::Dec::FnHandle fn) {
     for (auto &param : fn->prototype->args) {
       this->llvm.env_ast.vars.erase(param.var);
     }
@@ -100,7 +100,7 @@ struct Driver {
     } break;
 
     case AST::Expr::OpUnary::Dereference: {
-      if (expr->has_type_kind(AST::Typ::Kind::Ptr)) {
+      if (expr->typ_has_kind(AST::Typ::Kind::Ptr)) {
         return expr->type()->deref();
       } else {
         throw std::logic_error(std::format("Deref panic... {} {}",
@@ -127,8 +127,8 @@ struct Driver {
       rhs_type = as_index->target->type()->deref();
     }
 
-    if ((lhs->has_type_kind(rhs_type->kind())) //
-        || (lhs->has_type_kind(AST::Typ::Kind::Ptr) && lhs->type()->deref()->kind() == rhs_type->kind())) {
+    if ((lhs->typ_has_kind(rhs_type->kind())) //
+        || (lhs->typ_has_kind(AST::Typ::Kind::Ptr) && lhs->type()->deref()->kind() == rhs_type->kind())) {
       return;
     }
 
@@ -142,7 +142,7 @@ struct Driver {
   }
 
   void type_ensure_match(AST::ExprHandle lhs, AST::ExprHandle rhs) {
-    if (lhs->has_type_kind(rhs->type_kind())) {
+    if (lhs->typ_has_kind(rhs->type_kind())) {
       return;
     }
 
@@ -165,7 +165,7 @@ struct Driver {
   }
 
   AST::TypHandle type_resolution_prim2_ptr_expr(AST::Expr::OpBinary op, AST::ExprHandle ptr, AST::ExprHandle expr) {
-    if (expr->has_type_kind(AST::Typ::Kind::Int)) {
+    if (expr->typ_has_kind(AST::Typ::Kind::Int)) {
       return ptr->type();
     }
 
@@ -213,11 +213,11 @@ struct Driver {
 
       }
 
-      else if (lhs->has_type_kind(AST::Typ::Kind::Ptr)) {
+      else if (lhs->typ_has_kind(AST::Typ::Kind::Ptr)) {
         return type_resolution_prim2_ptr_expr(op, lhs, rhs);
       }
 
-      else if (rhs->has_type_kind(AST::Typ::Kind::Ptr)) {
+      else if (rhs->typ_has_kind(AST::Typ::Kind::Ptr)) {
         return type_resolution_prim2_ptr_expr(op, rhs, lhs);
       }
 
@@ -256,45 +256,54 @@ struct Driver {
 
   // pk Dec
 
-  AST::DecVarHandle pk_DecVar(AST::Dec::Scope scope, AST::TypHandle typ, std::string var);
+  // Function declaration requires an existing prototype and a body.
+  AST::Dec::FnHandle pk_DecFn(AST::Dec::PrototypeHandle prototype, AST::Stmt::BlockHandle body);
 
-  AST::DecFnHandle pk_DecFn(AST::PrototypeHandle prototype, AST::StmtBlockHandle body);
+  // Prototypes require specification of return type, var, and arguments (as type var pairs).
+  AST::Dec::PrototypeHandle pk_Prototype(AST::TypHandle r_typ, std::string var, AST::VarTypVec params);
 
-  AST::PrototypeHandle pk_Prototype(AST::TypHandle r_typ, std::string var, AST::VarTypVec params);
+  // Variable declaration requires specification scope, typ, and var of the variable.
+  AST::Dec::VarHandle pk_DecVar(AST::Dec::Scope scope, AST::TypHandle typ, std::string var);
 
   // pk Expr
 
-  AST::ExprHandle pk_ExprCall(std::string name, std::vector<AST::ExprHandle> params);
-  AST::ExprHandle pk_ExprCall(std::string name, AST::ExprHandle param);
-  AST::ExprHandle pk_ExprCall(std::string name);
+  // Calls requires the var of the fn and arguments.
+  // An error is thrown if no prototype is found, or if arguments are incorrect.
+  // Overloads are provided for convenience.
+  AST::Expr::CallHandle pk_ExprCall(std::string name, std::vector<AST::ExprHandle> params);
+  AST::Expr::CallHandle pk_ExprCall(std::string name, AST::ExprHandle param);
+  AST::Expr::CallHandle pk_ExprCall(std::string name);
 
-  AST::ExprHandle pk_ExprCast(AST::ExprHandle expr, AST::TypHandle to);
+  // Casts require the expression cast and the target type.
+  AST::Expr::CastHandle pk_ExprCast(AST::ExprHandle expr, AST::TypHandle to);
 
-  AST::ExprHandle pk_ExprCstI(std::int64_t i);
+  // Ints are 64 bit throughout.
+  AST::Expr::CstIHandle pk_ExprCstI(std::int64_t i);
 
-  AST::ExprHandle pk_ExprIndex(AST::ExprHandle access, AST::ExprHandle index);
+  //
+  AST::Expr::IndexHandle pk_ExprIndex(AST::ExprHandle access, AST::ExprHandle index);
 
-  AST::ExprHandle pk_ExprPrim1(AST::Expr::OpUnary op, AST::ExprHandle expr);
+  AST::Expr::Prim1Handle pk_ExprPrim1(AST::Expr::OpUnary op, AST::ExprHandle expr);
 
-  AST::ExprHandle pk_ExprPrim2(AST::Expr::OpBinary op, AST::ExprHandle a, AST::ExprHandle b);
+  AST::Expr::Prim2Handle pk_ExprPrim2(AST::Expr::OpBinary op, AST::ExprHandle a, AST::ExprHandle b);
 
-  AST::ExprHandle pk_ExprVar(std::string var);
+  AST::Expr::VarHandle pk_ExprVar(std::string var);
 
   // pk Stmt
 
-  AST::StmtBlockHandle pk_StmtBlock(AST::Block &&block);
+  AST::Stmt::BlockHandle pk_StmtBlock(AST::Block &&block);
 
-  AST::StmtHandle pk_StmtBlockStmt(AST::Block &&block);
+  AST::Stmt::BlockHandle pk_StmtBlockStmt(AST::Block &&block);
 
-  AST::StmtDeclarationHandle pk_StmtDeclaration(AST::DecHandle declaration);
+  AST::Stmt::DeclarationHandle pk_StmtDeclaration(AST::DecHandle declaration);
 
-  AST::StmtHandle pk_StmtExpr(AST::ExprHandle expr);
+  AST::Stmt::ExprHandle pk_StmtExpr(AST::ExprHandle expr);
 
-  AST::StmtHandle pk_StmtIf(AST::ExprHandle condition, AST::StmtHandle thn, AST::StmtHandle els);
+  AST::Stmt::IfHandle pk_StmtIf(AST::ExprHandle condition, AST::StmtHandle thn, AST::StmtHandle els);
 
-  AST::StmtHandle pk_StmtReturn(std::optional<AST::ExprHandle> value);
+  AST::Stmt::ReturnHandle pk_StmtReturn(std::optional<AST::ExprHandle> value);
 
-  AST::StmtHandle pk_StmtWhile(AST::ExprHandle condition, AST::StmtHandle block);
+  AST::Stmt::WhileHandle pk_StmtWhile(AST::ExprHandle condition, AST::StmtHandle block);
 
   // pk end
 };

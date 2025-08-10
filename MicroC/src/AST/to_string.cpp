@@ -2,15 +2,12 @@
 #include <string>
 
 #include "AST/AST.hpp"
-
 #include "AST/Block.hpp"
+#include "AST/Fmt.hpp"
 #include "AST/Node/Dec.hpp"
 #include "AST/Node/Expr.hpp"
 #include "AST/Node/Stmt.hpp"
-
 #include "AST/Types.hpp"
-
-#include "AST/Fmt.hpp"
 
 // Collection of all `to_string` methods.
 //

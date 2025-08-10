@@ -64,9 +64,9 @@ public:
 
 struct Fn : DecT {
   PrototypeHandle prototype;
-  StmtBlockHandle body;
+  Stmt::BlockHandle body;
 
-  Fn(PrototypeHandle prototype, StmtBlockHandle body)
+  Fn(PrototypeHandle prototype, Stmt::BlockHandle body)
       : prototype(std::move(prototype)),
         body(std::move(body)) {}
 

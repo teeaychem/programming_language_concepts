@@ -28,6 +28,7 @@ struct Char : TypT {
   Char() {};
 
   std::string to_string(size_t indent = 0) const override;
+
   TypHandle deref() const override { throw std::logic_error("deref called on a char"); }
 
   TypHandle complete_with(TypHandle data) override { throw std::logic_error("Complete into char."); }

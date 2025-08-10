@@ -45,6 +45,9 @@ struct TypT {
   // The kind of this type, corresponding to a struct.
   virtual Typ::Kind kind() const = 0;
 
+  // Whether the kind is of `kind`.
+  bool is_kind(AST::Typ::Kind kind) { return this->kind() == kind; };
+
   // String representation.
   virtual std::string to_string(size_t indent = 0) const = 0;
 
@@ -118,6 +121,14 @@ struct Prim1;
 struct Prim2;
 struct Var;
 
+typedef std::shared_ptr<Call> CallHandle;
+typedef std::shared_ptr<Cast> CastHandle;
+typedef std::shared_ptr<CstI> CstIHandle;
+typedef std::shared_ptr<Index> IndexHandle;
+typedef std::shared_ptr<Prim1> Prim1Handle;
+typedef std::shared_ptr<Prim2> Prim2Handle;
+typedef std::shared_ptr<Var> VarHandle;
+
 // Permitted unary operations
 enum class OpUnary {
   AddressOf,
@@ -173,10 +184,12 @@ public:
   llvm::Value *codegen_eval_false(LLVMBundle &bundle) const;
 
   // Returns true if `this` has type of `kind`.
-  bool has_type_kind(AST::Typ::Kind kind) const { return this->typ->kind() == kind; };
+  bool typ_has_kind(AST::Typ::Kind kind) const { return this->typ->kind() == kind; };
 
   virtual Expr::Kind kind() const = 0;
 };
+
+typedef std::shared_ptr<ExprT> ExprHandle;
 
 // Statements
 
@@ -199,6 +212,14 @@ struct Expr;
 struct If;
 struct Return;
 struct While;
+
+typedef std::shared_ptr<Block> BlockHandle;
+typedef std::shared_ptr<Declaration> DeclarationHandle;
+typedef std::shared_ptr<Expr> ExprHandle;
+typedef std::shared_ptr<If> IfHandle;
+typedef std::shared_ptr<Return> ReturnHandle;
+typedef std::shared_ptr<While> WhileHandle;
+
 } // namespace Stmt
 
 struct StmtT : NodeT {
@@ -219,6 +240,8 @@ struct StmtT : NodeT {
   virtual size_t pass_throughs() const = 0;
 };
 
+typedef std::shared_ptr<StmtT> StmtHandle;
+
 // Declarations
 
 namespace Dec {
@@ -231,6 +254,11 @@ enum class Kind {
 struct Var;
 struct Fn;
 struct Prototype;
+
+typedef std::shared_ptr<Var> VarHandle;
+typedef std::shared_ptr<Fn> FnHandle;
+typedef std::shared_ptr<Prototype> PrototypeHandle;
+
 } // namespace Dec
 
 struct DecT : NodeT {
@@ -245,40 +273,26 @@ struct DecT : NodeT {
   // The variable declared.
   virtual std::string name() const = 0;
 };
+
+typedef std::shared_ptr<DecT> DecHandle;
 } // namespace AST
 
 // etc.
 
 namespace AST {
 
-// Handles
-// Pointers to objects.
-// Typically shared pointers, though this is not a requirement.
-
-typedef std::shared_ptr<DecT> DecHandle;
-
-typedef std::shared_ptr<Dec::Var> DecVarHandle;
-typedef std::shared_ptr<Dec::Fn> DecFnHandle;
-typedef std::shared_ptr<Dec::Prototype> PrototypeHandle;
-
-typedef std::shared_ptr<ExprT> ExprHandle;
-
-typedef std::shared_ptr<StmtT> StmtHandle;
-typedef std::shared_ptr<AST::Stmt::Block> StmtBlockHandle;
-typedef std::shared_ptr<AST::Stmt::Declaration> StmtDeclarationHandle;
-
 // Etc
 
 struct VarTyp {
-  // The var
+  // The var.
   std::string var;
 
-  // The type
+  // The type.
   TypHandle typ;
 
   VarTyp(std::string var, TypHandle typ) : var(var), typ(typ) {};
 
-  // To appease bison, should not be used
+  // To appease bison, should not be used directly.
   VarTyp() : var("!"), typ(nullptr) {};
 };
 
@@ -291,12 +305,13 @@ typedef std::map<std::string, AST::TypHandle> VarTypMap; // Vars have declared t
 // And, in particular, it is up to the the mutator to restore any temporary mutations (i.e. local declarations)
 struct EnvAST {
 
-  // Function declarations
-  std::map<std::string, AST::PrototypeHandle> fns{};
+  // Function declarations.
+  std::map<std::string, AST::Dec::PrototypeHandle> fns{};
 
-  // Variables in scope
+  // Variables in scope.
   VarTypMap vars{};
 
+  // String representation of the env.
   std::string to_string();
 };
 

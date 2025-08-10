@@ -47,9 +47,9 @@ struct Declaration : StmtT {
 // Expr
 
 struct Expr : StmtT {
-  ExprHandle expr;
+  AST::ExprHandle expr;
 
-  Expr(ExprHandle expr)
+  Expr(AST::ExprHandle expr)
       : expr(std::move(expr)) {}
 
   Stmt::Kind kind() const override { return Stmt::Kind::Expr; }
@@ -64,11 +64,11 @@ struct Expr : StmtT {
 // If
 
 struct If : StmtT {
-  ExprHandle condition;
-  StmtBlockHandle stmt_then;
-  StmtBlockHandle stmt_else;
+  AST::ExprHandle condition;
+  Stmt::BlockHandle stmt_then;
+  Stmt::BlockHandle stmt_else;
 
-  If(ExprHandle condition, StmtBlockHandle stmt_then, StmtBlockHandle stmt_else)
+  If(AST::ExprHandle condition, Stmt::BlockHandle stmt_then, Stmt::BlockHandle stmt_else)
       : condition(condition),
         stmt_then(stmt_then),
         stmt_else(stmt_else) {}
@@ -85,9 +85,9 @@ struct If : StmtT {
 // Return
 
 struct Return : StmtT {
-  std::optional<ExprHandle> value;
+  std::optional<AST::ExprHandle> value;
 
-  Return(std::optional<ExprHandle> value)
+  Return(std::optional<AST::ExprHandle> value)
       : value(std::move(value)) {}
 
   Stmt::Kind kind() const override { return Stmt::Kind::Return; }
@@ -102,10 +102,10 @@ struct Return : StmtT {
 // While
 
 struct While : StmtT {
-  ExprHandle condition;
+  AST::ExprHandle condition;
   StmtHandle body;
 
-  While(ExprHandle condition, StmtHandle body)
+  While(AST::ExprHandle condition, StmtHandle body)
       : condition(condition),
         body(body) {}
 

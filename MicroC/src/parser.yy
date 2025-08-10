@@ -83,7 +83,7 @@
 %nterm <AST::VarTypVec> Paramdecs
 %nterm <AST::VarTypVec> ParamdecsNE
 
-%nterm <AST::StmtBlockHandle> Block
+%nterm <AST::Stmt::BlockHandle> Block
 %nterm <AST::Block> StmtOrDecSeq
 
 %nterm <AST::StmtHandle> Stmt
@@ -102,7 +102,7 @@
 
 %nterm <AST::TypHandle> DataType
 
-%nterm <AST::PrototypeHandle> FnPrototype
+%nterm <AST::Dec::PrototypeHandle> FnPrototype
 
 %printer {  } <*>; // yyo << $$;
 
