@@ -8,7 +8,7 @@
 
 void Driver::generate_llvm() {
   for (auto &dec : prg) {
-    dec->codegen(llvm);
+    dec->codegen(ctx);
   }
 };
 
@@ -16,15 +16,6 @@ int Driver::parse(const std::string &file) {
 
   // Ensure a fresh env.
   assert(this->env.empty());
-
-  for (auto &foundation_elem : this->llvm.foundation_fn_map) {
-    auto primative_fn = foundation_elem.second;
-
-    AST::Dec::Prototype proto(primative_fn->return_type, primative_fn->name, primative_fn->args);
-    AST::Dec::PrototypeHandle handle = std::make_shared<AST::Dec::Prototype>(proto);
-
-    this->llvm.env_ast.fns[primative_fn->name] = handle;
-  }
 
   src_file = file;
   location.initialize(&src_file);
@@ -54,7 +45,7 @@ std::string Driver::prg_string() {
 
 void Driver::print_llvm() {
   printf("\n----------\n");
-  llvm.module->print(llvm::outs(), nullptr);
+  ctx.module->print(llvm::outs(), nullptr);
   printf("\n----------\n");
 }
 
@@ -117,7 +108,7 @@ AST::Expr::OpUnary Driver::to_unary_op(std::string op) {
 // This motivation is extended to vars to form a rule.
 
 AST::Dec::FnHandle Driver::pk_DecFn(AST::Dec::PrototypeHandle prototype, AST::Stmt::BlockHandle body) {
-  if (!this->llvm.env_ast.fns.contains(prototype->name())) {
+  if (!this->ctx.env_ast.fns.contains(prototype->name())) {
     throw std::logic_error(std::format("Missing prototype for {}", prototype->name()));
   }
 
@@ -126,24 +117,24 @@ AST::Dec::FnHandle Driver::pk_DecFn(AST::Dec::PrototypeHandle prototype, AST::St
 }
 
 AST::Dec::PrototypeHandle Driver::pk_Prototype(AST::TypHandle r_typ, std::string var, AST::VarTypVec args) {
-  if (this->llvm.env_ast.fns.find(var) != this->llvm.env_ast.fns.end()) {
+  if (this->ctx.env_ast.fns.find(var) != this->ctx.env_ast.fns.end()) {
     throw std::logic_error(std::format("Existing prototype for: {}.", var));
   }
 
   AST::Dec::Prototype prototype(std::move(r_typ), var, std::move(args));
   auto pt_ptr = std::make_shared<AST::Dec::Prototype>(std::move(prototype));
-  this->llvm.env_ast.fns[var] = pt_ptr;
+  this->ctx.env_ast.fns[var] = pt_ptr;
 
   return pt_ptr;
 }
 
 AST::Dec::VarHandle Driver::pk_DecVar(AST::Dec::Scope scope, AST::TypHandle typ, std::string var) {
   if (scope == AST::Dec::Scope::Global) {
-    if (this->llvm.env_ast.vars.find(var) != this->llvm.env_ast.vars.end()) {
+    if (this->ctx.env_ast.vars.find(var) != this->ctx.env_ast.vars.end()) {
       throw std::logic_error(std::format("Redeclaration of global: {}", var));
     }
 
-    this->llvm.env_ast.vars[var] = typ;
+    this->ctx.env_ast.vars[var] = typ;
   }
 
   AST::Dec::Var dec(scope, std::move(typ), var);
@@ -154,8 +145,8 @@ AST::Dec::VarHandle Driver::pk_DecVar(AST::Dec::Scope scope, AST::TypHandle typ,
 
 AST::Expr::CallHandle Driver::pk_ExprCall(std::string var, std::vector<AST::ExprHandle> args) {
 
-  auto prototype_find = this->llvm.env_ast.fns.find(var);
-  if (prototype_find == this->llvm.env_ast.fns.end()) {
+  auto prototype_find = this->ctx.env_ast.fns.find(var);
+  if (prototype_find == this->ctx.env_ast.fns.end()) {
     throw std::logic_error(std::format("Call without prototype: {}", var));
   }
   auto prototype = prototype_find->second;
@@ -173,7 +164,7 @@ AST::Expr::CallHandle Driver::pk_ExprCall(std::string var, std::vector<AST::Expr
 
     if (!args[i]->typ_has_kind(arg_prototype->kind())) {
 
-      auto arg_access_type = this->llvm.access_type(args[i].get());
+      auto arg_access_type = this->ctx.access_type(args[i].get());
       if (arg_prototype->kind() != arg_access_type->kind()) {
         auto cast = pk_ExprCast(args[i], arg_prototype);
         args[i] = cast;
@@ -233,9 +224,9 @@ AST::Expr::Prim2Handle Driver::pk_ExprPrim2(AST::Expr::OpBinary op, AST::ExprHan
 }
 
 AST::Expr::VarHandle Driver::pk_ExprVar(std::string var) {
-  auto env_var = this->llvm.env_ast.vars.find(var);
+  auto env_var = this->ctx.env_ast.vars.find(var);
 
-  if (env_var == this->llvm.env_ast.vars.end()) {
+  if (env_var == this->ctx.env_ast.vars.end()) {
     throw std::logic_error(std::format("Unknown variable: {}", var));
   }
 

@@ -25,7 +25,7 @@ struct Driver {
   AST::VarTypMap shadow_cache{};
 
   // Things useful for LLVM codegen.
-  Context llvm{};
+  Context ctx{};
 
   // The file to be parsed.
   std::string src_file;
@@ -39,7 +39,7 @@ struct Driver {
   Driver()
       : trace_parsing(false),
         trace_scanning(false),
-        llvm(Context{}) {}
+        ctx(Context{}) {}
 
   void generate_llvm();
   void print_llvm();
@@ -62,22 +62,22 @@ struct Driver {
 
   void add_to_env(AST::VarTypVec &args) {
     for (auto &arg : args) {
-      auto existing_global = this->llvm.env_ast.vars.find(arg.var);
-      if (existing_global != this->llvm.env_ast.vars.end()) {
+      auto existing_global = this->ctx.env_ast.vars.find(arg.var);
+      if (existing_global != this->ctx.env_ast.vars.end()) {
         this->shadow_cache[existing_global->first] = existing_global->second;
       }
 
-      this->llvm.env_ast.vars[arg.var] = arg.typ;
+      this->ctx.env_ast.vars[arg.var] = arg.typ;
     }
   }
 
   void fn_finalise(AST::Dec::FnHandle fn) {
     for (auto &param : fn->prototype->args) {
-      this->llvm.env_ast.vars.erase(param.var);
+      this->ctx.env_ast.vars.erase(param.var);
     }
 
     for (auto &shadowed : this->shadow_cache) {
-      this->llvm.env_ast.vars[shadowed.first] = shadowed.second;
+      this->ctx.env_ast.vars[shadowed.first] = shadowed.second;
     }
 
     this->shadow_cache.clear();
