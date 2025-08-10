@@ -6,7 +6,7 @@
 
 #include "AST/AST.hpp"
 #include "AST/Types.hpp"
-#include "codegen/LLVMBundle.hpp"
+#include "codegen/Structs.hpp"
 
 namespace AST {
 
@@ -28,7 +28,7 @@ struct Call : ExprT {
     return Expr::Kind::Call;
   }
 
-  llvm::Value *codegen(LLVMBundle &bundle) const override;
+  llvm::Value *codegen(Context &ctx) const override;
   std::string to_string(size_t indent = 0) const override;
 };
 
@@ -43,7 +43,7 @@ struct Cast : ExprT {
 
   Expr::Kind kind() const override { return Expr::Kind::Cast; }
 
-  llvm::Value *codegen(LLVMBundle &bundle) const override;
+  llvm::Value *codegen(Context &ctx) const override;
   std::string to_string(size_t indent = 0) const override;
 };
 
@@ -58,7 +58,7 @@ struct CstI : ExprT {
 
   Expr::Kind kind() const override { return Expr::Kind::CstI; }
 
-  llvm::Value *codegen(LLVMBundle &bundle) const override;
+  llvm::Value *codegen(Context &ctx) const override;
   std::string to_string(size_t indent = 0) const override;
 };
 
@@ -75,7 +75,7 @@ struct Index : ExprT {
 
   Expr::Kind kind() const override { return Expr::Kind::Index; }
 
-  llvm::Value *codegen(LLVMBundle &bundle) const override;
+  llvm::Value *codegen(Context &ctx) const override;
   std::string to_string(size_t indent = 0) const override;
 };
 
@@ -93,7 +93,7 @@ struct Prim1 : ExprT {
 
   Expr::Kind kind() const override { return Expr::Kind::Prim1; }
 
-  llvm::Value *codegen(LLVMBundle &bundle) const override;
+  llvm::Value *codegen(Context &ctx) const override;
   std::string to_string(size_t indent = 0) const override;
 };
 
@@ -113,7 +113,7 @@ struct Prim2 : ExprT {
 
   Expr::Kind kind() const override { return Expr::Kind::Prim2; }
 
-  llvm::Value *codegen(LLVMBundle &bundle) const override;
+  llvm::Value *codegen(Context &ctx) const override;
   std::string to_string(size_t indent = 0) const override;
 };
 
@@ -126,7 +126,7 @@ struct Var : ExprT {
 
   Expr::Kind kind() const override { return Expr::Kind::Var; }
 
-  llvm::Value *codegen(LLVMBundle &bundle) const override;
+  llvm::Value *codegen(Context &ctx) const override;
   std::string to_string(size_t indent = 0) const override;
 };
 

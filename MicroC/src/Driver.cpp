@@ -4,7 +4,7 @@
 #include "AST/Node/Dec.hpp"
 #include "AST/Node/Expr.hpp"
 #include "AST/Node/Stmt.hpp"
-#include "codegen/LLVMBundle.hpp"
+#include "codegen/Structs.hpp"
 
 void Driver::generate_llvm() {
   for (auto &dec : prg) {

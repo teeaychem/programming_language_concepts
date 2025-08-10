@@ -1,9 +1,9 @@
 #include "AST/AST.hpp"
 #include "AST/Node/Expr.hpp"
 
-#include "LLVMBundle.hpp"
+#include "codegen/Structs.hpp"
 
-std::pair<llvm::Value *, AST::TypHandle> LLVMBundle::access(AST::ExprT const *expr) {
+std::pair<llvm::Value *, AST::TypHandle> Context::access(AST::ExprT const *expr) {
 
   auto value = expr->codegen(*this);
   auto type = access_type(expr);
@@ -77,7 +77,7 @@ std::pair<llvm::Value *, AST::TypHandle> LLVMBundle::access(AST::ExprT const *ex
 // E.g., accessing var of int type returns something of int type.
 // The exceptions are pointer deref through indexing or direct deref.
 // Here, the type is obtained through dereference.
-AST::TypHandle LLVMBundle::access_type(AST::ExprT const *expr) {
+AST::TypHandle Context::access_type(AST::ExprT const *expr) {
 
   auto typ = expr->type();
 

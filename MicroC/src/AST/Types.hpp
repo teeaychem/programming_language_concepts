@@ -3,7 +3,7 @@
 #include <string>
 
 #include "AST/AST.hpp"
-#include "codegen/LLVMBundle.hpp"
+#include "codegen/Structs.hpp"
 
 namespace AST {
 
@@ -19,7 +19,7 @@ struct Bool : TypT {
 
   TypHandle complete_with(TypHandle data) override { throw std::logic_error("Complete into bool"); }
 
-  llvm::Type *codegen(LLVMBundle &bundle) const override { return bundle.get_typ(this->kind()); }
+  llvm::Type *codegen(Context &ctx) const override { return ctx.get_typ(this->kind()); }
 };
 
 struct Char : TypT {
@@ -33,7 +33,7 @@ struct Char : TypT {
 
   TypHandle complete_with(TypHandle data) override { throw std::logic_error("Complete into char."); }
 
-  llvm::Type *codegen(LLVMBundle &bundle) const override { return bundle.get_typ(this->kind()); }
+  llvm::Type *codegen(Context &ctx) const override { return ctx.get_typ(this->kind()); }
 };
 
 struct Int : TypT {
@@ -47,7 +47,7 @@ struct Int : TypT {
 
   TypHandle complete_with(TypHandle data) override { throw std::logic_error("Complete into int."); }
 
-  llvm::Type *codegen(LLVMBundle &bundle) const override { return bundle.get_typ(this->kind()); }
+  llvm::Type *codegen(Context &ctx) const override { return ctx.get_typ(this->kind()); }
 };
 
 struct Ptr : TypT {
@@ -104,12 +104,12 @@ public:
 
   TypHandle deref() const override { return _pointee; }
 
-  llvm::Type *codegen(LLVMBundle &bundle) const override {
+  llvm::Type *codegen(Context &ctx) const override {
 
     if (this->_area.has_value()) {
-      return llvm::ArrayType::get(this->_pointee->codegen(bundle), this->_area.value());
+      return llvm::ArrayType::get(this->_pointee->codegen(ctx), this->_area.value());
     } else {
-      return bundle.get_typ(this->kind());
+      return ctx.get_typ(this->kind());
     }
   }
 };
@@ -125,7 +125,7 @@ struct Void : TypT {
 
   TypHandle complete_with(TypHandle data) override { return data; }
 
-  llvm::Type *codegen(LLVMBundle &bundle) const override { return bundle.get_typ(this->kind()); }
+  llvm::Type *codegen(Context &ctx) const override { return ctx.get_typ(this->kind()); }
 };
 
 // pk typ

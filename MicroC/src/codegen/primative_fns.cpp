@@ -7,7 +7,7 @@
 
 #include "AST/AST.hpp"
 #include "AST/Types.hpp"
-#include "LLVMBundle.hpp"
+#include "Structs.hpp"
 
 // Contents:
 // - Foundation fns in lexicographic order, as extern / FnPrimative pairings.
@@ -33,10 +33,10 @@ struct PrintI : FnPrimative {
     this->args = AST::VarTypVec{{"n", AST::Typ::pk_Int()}};
   }
 
-  llvm::Function *codegen(LLVMBundle &bundle) const override {
-    auto typ = llvm::FunctionType::get(llvm::Type::getVoidTy(*bundle.context), llvm::ArrayRef(bundle.get_typ(AST::Typ::Kind::Int)), false);
+  llvm::Function *codegen(Context &ctx) const override {
+    auto typ = llvm::FunctionType::get(llvm::Type::getVoidTy(*ctx.context), llvm::ArrayRef(ctx.get_typ(AST::Typ::Kind::Int)), false);
 
-    auto fn = llvm::Function::Create(typ, llvm::Function::ExternalLinkage, this->name, bundle.module.get());
+    auto fn = llvm::Function::Create(typ, llvm::Function::ExternalLinkage, this->name, ctx.module.get());
     fn->setCallingConv(llvm::CallingConv::C);
 
     return fn;
@@ -63,10 +63,10 @@ struct PrintLn : FnPrimative {
     this->args = AST::VarTypVec{};
   }
 
-  llvm::Function *codegen(LLVMBundle &bundle) const override {
-    auto typ = llvm::FunctionType::get(llvm::Type::getVoidTy(*bundle.context), false);
+  llvm::Function *codegen(Context &ctx) const override {
+    auto typ = llvm::FunctionType::get(llvm::Type::getVoidTy(*ctx.context), false);
 
-    auto fn = llvm::Function::Create(typ, llvm::Function::ExternalLinkage, "println", bundle.module.get());
+    auto fn = llvm::Function::Create(typ, llvm::Function::ExternalLinkage, "println", ctx.module.get());
     fn->setCallingConv(llvm::CallingConv::C);
 
     return fn;
@@ -76,7 +76,7 @@ struct PrintLn : FnPrimative {
 };
 
 // Specification of the foundation fn map
-void LLVMBundle::populate_foundation_fn_map() {
+void Context::populate_foundation_fn_map() {
 
   auto printi = std::make_shared<PrintI>(PrintI());
   auto println = std::make_shared<PrintLn>(PrintLn());

@@ -22,7 +22,7 @@ struct FnPrimative {
   AST::VarTypVec args;
 
   // LLVM IR codegen for the function.
-  virtual llvm::Function *codegen(LLVMBundle &bundle) const = 0;
+  virtual llvm::Function *codegen(Context &ctx) const = 0;
 
   // For the LLVM `addGlobalMapping` method.
   // Currently unused.
@@ -48,7 +48,7 @@ struct EnvLLVM {
 };
 
 // Objects and general methods for codegen.
-struct LLVMBundle {
+struct Context {
 
   std::unique_ptr<llvm::LLVMContext> context;
   std::unique_ptr<llvm::Module> module;
@@ -70,7 +70,7 @@ struct LLVMBundle {
   // Called on the rhs of an assignment, or when passing a value to an fn.
   std::pair<llvm::Value *, AST::TypHandle> access(AST::ExprT const *expr);
 
-  LLVMBundle()
+  Context()
       : context(std::make_unique<llvm::LLVMContext>()),
         module(std::make_unique<llvm::Module>("microC", *context)),
         builder(llvm::IRBuilder<>(*context)) {

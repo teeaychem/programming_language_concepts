@@ -11,7 +11,7 @@
 // See the `Node` subfolder for headers containing specific node declarations.
 
 // Used for codegen
-struct LLVMBundle;
+struct Context;
 
 // Types
 
@@ -40,7 +40,7 @@ typedef std::shared_ptr<TypT> TypHandle;
 
 struct TypT {
   // Generate the representation of this type.
-  virtual llvm::Type *codegen(LLVMBundle &bundle) const = 0;
+  virtual llvm::Type *codegen(Context &ctx) const = 0;
 
   // The kind of this type, corresponding to a struct.
   virtual Typ::Kind kind() const = 0;
@@ -57,8 +57,8 @@ struct TypT {
   // Completes the type, may throw if already complete.
   virtual TypHandle complete_with(TypHandle d_typ) = 0;
 
-  virtual llvm::Constant *defaultgen(LLVMBundle &bundle) const {
-    return llvm::Constant::getNullValue(this->codegen(bundle));
+  virtual llvm::Constant *defaultgen(Context &ctx) const {
+    return llvm::Constant::getNullValue(this->codegen(ctx));
   };
 
   virtual ~TypT() = default;
@@ -84,7 +84,7 @@ struct NodeT {
   virtual AST::Kind kind_node() const = 0;
 
   // Generates LLVM IR and returns the resulting LLVM value.
-  virtual llvm::Value *codegen(LLVMBundle &bundle) const = 0;
+  virtual llvm::Value *codegen(Context &ctx) const = 0;
 
   // A string representation of the node, indented to `indent`.
   virtual std::string to_string(size_t indent = 0) const = 0;
@@ -178,10 +178,10 @@ public:
   AST::Typ::Kind type_kind() const { return this->type()->kind(); }
 
   // LLVM IR codegen which returns true if this expression does not have (LLVM IR) null value for its type and false otherwise.
-  llvm::Value *codegen_eval_true(LLVMBundle &bundle) const;
+  llvm::Value *codegen_eval_true(Context &ctx) const;
 
   // LLVM IR codegen which returns true if this expression does not evaluate to true and false otherwise.
-  llvm::Value *codegen_eval_false(LLVMBundle &bundle) const;
+  llvm::Value *codegen_eval_false(Context &ctx) const;
 
   // Returns true if `this` has type of `kind`.
   bool typ_has_kind(AST::Typ::Kind kind) const { return this->typ->kind() == kind; };
