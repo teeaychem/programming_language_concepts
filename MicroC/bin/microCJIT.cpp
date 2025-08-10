@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -102,15 +103,21 @@ int main(int argc, char *argv[]) {
     throw std::logic_error("Failed to identify main fn for JIT");
   }
 
+  // For simplificty, always pass a default arg, as it'll be ignored if not needed.
+  int64_t arg = 0;
+  if (1 < args.size()) {
+    arg = std::stoll(args[1]);
+  }
+  if (2 < args.size()) {
+    std::cout << "Note: Only zero or one arguments are supported, all others are ignored..." << "\n";
+  }
+
   int64_t (*main)(int64_t) = (int64_t (*)(int64_t))main_ptr;
 
-  std::cout << "Executing..." << "\n";
-
-  std::cout << "------" << "\n";
-
-  // TODO: Variable argument length
-  int64_t GV = main(10);
+  std::cout << "Executing..." << "\n"
+            << "------" << "\n";
+  int64_t GV = main(arg);
   std::cout << "\n"
             << "------" << "\n"
-            << GV << "\n";
+            << "Exit code: " << GV << "\n";
 }
