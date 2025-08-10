@@ -41,7 +41,7 @@ struct Driver {
         trace_scanning(false),
         ctx(Context{}) {}
 
-  void generate_llvm();
+  void generate_ir();
   void print_llvm();
 
   // Run the parser on file; return 0 on success.
