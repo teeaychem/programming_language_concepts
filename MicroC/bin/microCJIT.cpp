@@ -1,4 +1,3 @@
-#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -24,8 +23,6 @@ int main(int argc, char *argv[]) {
   llvm::InitializeNativeTargetAsmParser();
   llvm::InitializeNativeTargetAsmPrinter();
 
-  std::printf("Scratch, for the moment\n");
-
   Driver driver{};
 
   std::vector<std::string> args{};
@@ -47,6 +44,11 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  if (args.empty()) {
+    std::cout << "Usage: " << argv[0] << " <source> [arg]" << "\n";
+    std::exit(-1);
+  }
+
   std::cout << "Parsing... ";
   driver.parse(args[0]);
   std::cout << "OK" << "\n";
@@ -66,12 +68,12 @@ int main(int argc, char *argv[]) {
   if (print_module) {
     std::cout << "The module:" << "\n"
               << "---------" << "\n";
-    driver.llvm.module->print(llvm::outs(), nullptr);
+    driver.ctx.module->print(llvm::outs(), nullptr);
     std::cout << "---------" << "\n";
   }
 
   std::cout << "Verifying... ";
-  if (llvm::verifyModule(*driver.llvm.module, &llvm::outs())) {
+  if (llvm::verifyModule(*driver.ctx.module, &llvm::outs())) {
     llvm::errs() << argv[0] << ": Error constructing function!";
     return 1;
   }
@@ -79,7 +81,7 @@ int main(int argc, char *argv[]) {
 
   std::cout << "Building execution engine... ";
   std::string err_str;
-  llvm::ExecutionEngine *execution_engine = llvm::EngineBuilder(std::move(driver.llvm.module))
+  llvm::ExecutionEngine *execution_engine = llvm::EngineBuilder(std::move(driver.ctx.module))
                                                 .setEngineKind(llvm::EngineKind::JIT)
                                                 .setErrorStr(&err_str)
                                                 .create();
@@ -116,8 +118,8 @@ int main(int argc, char *argv[]) {
 
   std::cout << "Executing..." << "\n"
             << "------" << "\n";
-  int64_t GV = main(arg);
+  int64_t exit_code = main(arg);
   std::cout << "\n"
             << "------" << "\n"
-            << "Exit code: " << GV << "\n";
+            << "Exit code: " << exit_code << "\n";
 }

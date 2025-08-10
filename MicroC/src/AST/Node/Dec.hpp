@@ -3,7 +3,6 @@
 #include <string>
 
 #include "AST/AST.hpp"
-#include "codegen/Structs.hpp"
 
 namespace AST {
 

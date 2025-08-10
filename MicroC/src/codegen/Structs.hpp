@@ -9,6 +9,7 @@
 #include "llvm/IR/Module.h"
 
 #include "AST/AST.hpp"
+#include "AST/Node/Dec.hpp"
 
 // A primative function, linked to a module (somehow)
 struct FnPrimative {
@@ -76,6 +77,15 @@ struct Context {
         builder(llvm::IRBuilder<>(*context)) {
 
     this->populate_foundation_fn_map();
+
+    for (auto &foundation_elem : this->foundation_fn_map) {
+      auto primative_fn = foundation_elem.second;
+
+      AST::Dec::Prototype proto(primative_fn->return_type, primative_fn->name, primative_fn->args);
+      AST::Dec::PrototypeHandle handle = std::make_shared<AST::Dec::Prototype>(proto);
+
+      this->env_ast.fns[primative_fn->name] = handle;
+    }
   };
 
   // The type which would be returned with a codegen'd value by calling `access` on `expr`.
