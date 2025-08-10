@@ -6,7 +6,7 @@
 #include "AST/Node/Stmt.hpp"
 #include "codegen/Structs.hpp"
 
-void Driver::generate_llvm() {
+void Driver::generate_ir() {
   for (auto &dec : prg) {
     dec->codegen(ctx);
   }
