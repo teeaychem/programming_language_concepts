@@ -1,11 +1,5 @@
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-#include <stdexcept>
-#include <stdlib.h>
 #include <string>
-
-#include "Driver.hpp"
+#include <vector>
 
 #include "llvm/ADT/APInt.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
@@ -19,11 +13,10 @@
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
 #include <llvm/ExecutionEngine/GenericValue.h>
+#include <llvm/IR/GlobalVariable.h>
 #include <llvm/Linker/Linker.h>
 
-#include <llvm/IR/GlobalVariable.h>
-
-// External `foundation` fns
+#include "Driver.hpp"
 
 int main(int argc, char *argv[]) {
   llvm::InitializeNativeTarget();
@@ -32,46 +25,55 @@ int main(int argc, char *argv[]) {
 
   std::printf("Scratch, for the moment\n");
 
-  Driver driver;
+  Driver driver{};
+
+  std::vector<std::string> args{};
+
+  bool print_canonical = false;
+  bool print_module = false;
 
   for (size_t i = 1; i < argc; ++i) {
     if (argv[i] == std::string("-p")) {
       driver.trace_parsing = true;
     } else if (argv[i] == std::string("-s")) {
       driver.trace_scanning = true;
+    } else if (argv[i] == std::string("-c")) {
+      print_canonical = true;
+    } else if (argv[i] == std::string("-m")) {
+      print_module = true;
     } else {
-      std::cout << "Parsing... " << "\n";
-      driver.parse(argv[i]);
-      std::cout << "OK" << "\n";
+      args.push_back(argv[i]);
     }
   }
 
-  { // AST inspection
-    std::cout << "Printing string representation... ";
-    std::fflush(stdout);
-    printf("%s\n", driver.prg_string().c_str());
-    std::cout << "OK" << "\n";
-    std::fflush(stdout);
+  std::cout << "Parsing... ";
+  driver.parse(args[0]);
+  std::cout << "OK" << "\n";
+
+  if (print_canonical) { // AST inspection
+    std::cout << "Canonical representation... " << "\n"
+              << "---------" << "\n"
+              << driver.prg_string() << "\n"
+              << "---------" << "\n"
+              << "\n";
   }
 
   std::cout << "Generating LLVM IR... ";
   driver.generate_llvm();
   std::cout << "OK" << "\n";
 
-  std::cout << "The module:" << "\n"
-            << "\n"
-            << "---------" << "\n";
-  driver.llvm.module->print(llvm::outs(), nullptr);
-  std::cout << "---------" << "\n"
-            << "\n";
+  if (print_module) {
+    std::cout << "The module:" << "\n"
+              << "---------" << "\n";
+    driver.llvm.module->print(llvm::outs(), nullptr);
+    std::cout << "---------" << "\n";
+  }
 
   std::cout << "Verifying... ";
-
   if (llvm::verifyModule(*driver.llvm.module, &llvm::outs())) {
     llvm::errs() << argv[0] << ": Error constructing function!";
     return 1;
   }
-
   std::cout << "OK" << "\n";
 
   std::cout << "Building execution engine... ";
@@ -95,23 +97,20 @@ int main(int argc, char *argv[]) {
     std::cout << "OK" << "\n";
   }
 
-  // auto main = execution_engine->FindFunctionNamed(llvm::StringRef("main"));
   auto main_ptr = execution_engine->getFunctionAddress("main");
   if (!main_ptr) {
-    throw std::logic_error("Failed to identify main function for JIT");
+    throw std::logic_error("Failed to identify main fn for JIT");
   }
 
-  int64_t (*fn)(int64_t) = (int64_t (*)(int64_t))main_ptr;
+  int64_t (*main)(int64_t) = (int64_t (*)(int64_t))main_ptr;
 
   std::cout << "Executing..." << "\n";
 
-  std::cout << "------" << "\n"
-            << "\n";
-  // TODO: Variable argument length
-  int64_t GV = fn(10);
-  std::cout << "\n"
-            << "------" << "\n";
-  std::cout << GV << "\n";
+  std::cout << "------" << "\n";
 
-  // return result.IntVal.getLimitedValue();
+  // TODO: Variable argument length
+  int64_t GV = main(10);
+  std::cout << "\n"
+            << "------" << "\n"
+            << GV << "\n";
 }

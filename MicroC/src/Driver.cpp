@@ -42,11 +42,11 @@ int Driver::parse(const std::string &file) {
 
 std::string Driver::prg_string() {
   std::string prg_str{};
-  prg_str.append("\n\n");
+  prg_str.append("\n");
 
   for (auto &dec : prg) {
     prg_str.append(dec->to_string());
-    prg_str.append("\n\n");
+    prg_str.append("\n");
   }
 
   return prg_str;
