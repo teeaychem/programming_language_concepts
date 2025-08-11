@@ -41,7 +41,6 @@ Value *AST::Expr::Call::codegen(Context &ctx) const {
 
   std::vector<Value *> arg_values{};
   for (size_t i = 0; i < this->arguments.size(); ++i) {
-
     auto [access_val, access_typ] = ctx.access(this->arguments[i].get());
     arg_values.push_back(access_val);
   }

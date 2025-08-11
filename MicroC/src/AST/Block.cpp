@@ -3,7 +3,7 @@
 #include "AST/Node/Stmt.hpp"
 
 AST::Block AST::Block::push_DecVar(EnvAST &env, AST::Stmt::DeclarationHandle const &dec_var) {
-  std::string var{dec_var->declaration->name()};
+  std::string var{dec_var->declaration->var()};
 
   auto shadowed = env.vars.find(var);
 
@@ -83,7 +83,7 @@ AST::Block AST::Block::finalize(EnvAST &env) {
 
   // Remove fresh variables from `env`
   for (auto &fresh : this->fresh_vars) {
-    env.vars.erase(fresh->declaration->name());
+    env.vars.erase(fresh->declaration->var());
   }
 
   if (!this->returns) {
