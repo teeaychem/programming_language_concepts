@@ -63,7 +63,7 @@ private:
 
 public:
   Ptr(TypHandle typ, std::optional<std::int64_t> area)
-      : _pointee(std::move(typ)),
+      : _pointee(typ),
         _area(area) {
   }
 
@@ -132,27 +132,27 @@ struct Void : TypT {
 
 inline AST::TypHandle pk_Bool() {
   AST::Typ::Bool typ_bool{};
-  return std::make_shared<AST::Typ::Bool>(std::move(typ_bool));
+  return std::make_shared<AST::Typ::Bool>(typ_bool);
 };
 
 inline AST::TypHandle pk_Char() {
   AST::Typ::Char type_char{};
-  return std::make_shared<AST::Typ::Char>(std::move(type_char));
+  return std::make_shared<AST::Typ::Char>(type_char);
 };
 
 inline AST::TypHandle pk_Int() {
   AST::Typ::Int type_int{};
-  return std::make_shared<AST::Typ::Int>(std::move(type_int));
+  return std::make_shared<AST::Typ::Int>(type_int);
 };
 
 inline AST::TypHandle pk_Ptr(AST::TypHandle typ, std::optional<std::int64_t> area) {
-  AST::Typ::Ptr type_ptr(std::move(typ), area);
-  return std::make_shared<AST::Typ::Ptr>(std::move(type_ptr));
+  AST::Typ::Ptr type_ptr(typ, area);
+  return std::make_shared<AST::Typ::Ptr>(type_ptr);
 }
 
 inline AST::TypHandle pk_Void() {
   AST::Typ::Void type_void{};
-  return std::make_shared<AST::Typ::Void>(std::move(type_void));
+  return std::make_shared<AST::Typ::Void>(type_void);
 }
 
 } // namespace Typ

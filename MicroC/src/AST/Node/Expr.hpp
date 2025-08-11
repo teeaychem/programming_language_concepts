@@ -18,9 +18,9 @@ struct Call : ExprT {
   std::string name;
   std::vector<ExprHandle> arguments;
 
-  Call(TypHandle return_type, std::string name, std::vector<ExprHandle> params)
+  Call(TypHandle return_type, std::string name, std::vector<ExprHandle> args)
       : name(name),
-        arguments(std::move(params)) {
+        arguments(args) {
     this->typ = return_type;
   }
 
@@ -87,7 +87,7 @@ struct Prim1 : ExprT {
 
   Prim1(TypHandle typ, OpUnary op, ExprHandle expr)
       : op(op),
-        expr(std::move(expr)) {
+        expr(expr) {
     this->typ = typ;
   }
 
@@ -106,8 +106,8 @@ struct Prim2 : ExprT {
 
   Prim2(TypHandle typ, AST::Expr::OpBinary op, ExprHandle lhs, ExprHandle rhs)
       : op(op),
-        lhs(std::move(lhs)),
-        rhs(std::move(rhs)) {
+        lhs(lhs),
+        rhs(rhs) {
     this->typ = typ;
   }
 
@@ -120,7 +120,7 @@ struct Prim2 : ExprT {
 struct Var : ExprT {
   std::string var;
 
-  Var(TypHandle typ, std::string &&v) : var(std::move(v)) {
+  Var(TypHandle typ, std::string var) : var(var) {
     this->typ = typ;
   }
 

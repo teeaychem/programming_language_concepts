@@ -81,8 +81,11 @@ struct Context {
     for (auto &foundation_elem : this->foundation_fn_map) {
       auto primative_fn = foundation_elem.second;
 
-      AST::Dec::Prototype proto(primative_fn->return_type, primative_fn->name, primative_fn->args);
-      AST::Dec::PrototypeHandle handle = std::make_shared<AST::Dec::Prototype>(proto);
+      std::string pt_var = primative_fn->name;
+      auto pt_args = primative_fn->args;
+
+      AST::Dec::Prototype pt(primative_fn->return_type, std::move(pt_var), std::move(pt_args));
+      AST::Dec::PrototypeHandle handle = std::make_shared<AST::Dec::Prototype>(pt);
 
       this->env_ast.fns[primative_fn->name] = handle;
     }

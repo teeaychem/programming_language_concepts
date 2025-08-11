@@ -292,9 +292,9 @@ struct Driver {
 
   // pk Stmt
 
-  AST::Stmt::BlockHandle pk_StmtBlock(AST::Block &&block);
+  AST::Stmt::BlockHandle pk_StmtBlock(AST::Block block);
 
-  AST::Stmt::BlockHandle pk_StmtBlockStmt(AST::Block &&block);
+  AST::Stmt::BlockHandle pk_StmtBlockStmt(AST::Block block);
 
   AST::Stmt::DeclarationHandle pk_StmtDeclaration(AST::DecHandle declaration);
 
