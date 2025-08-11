@@ -114,7 +114,6 @@ class Six(unittest.TestCase):
         result = run_source("ex/ex6.c", 5)
         stdout = result.stdout.strip()
 
-        # FIXME: Scope issues
         self.assertEqual(stdout, b"1 1 2 6 24 5")
 
 
@@ -244,7 +243,6 @@ class TwentyOne(unittest.TestCase):
         self.assertEqual(lines[1], b"1 7 7 117")
 
 
-# FIXME: Fn returns
 class TwentyTwo(unittest.TestCase):
     def test_5(self):
         result = run_source("ex/ex22.c", 1920)
