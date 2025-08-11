@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -20,6 +21,8 @@
 
 // The main thing, bundling most tasks.
 struct Thing {
+  int8_t verbosity{0};
+
   // The source file.
   std::string source;
 
@@ -56,29 +59,43 @@ struct Thing {
 
   // Parse the source to an AST, held in `driver`.
   void parse() {
-    std::cout << "Parsing... ";
+    if (0 < verbosity) {
+      std::cout << "Parsing... ";
+    }
     this->driver.parse(this->source);
-    std::cout << "OK" << "\n";
+    if (0 < verbosity) {
+      std::cout << "OK" << "\n";
+    }
   }
 
   // Generate LLVM IR for an AST.
   void generate_ir() {
-    std::cout << "Generating LLVM IR... ";
+    if (0 < verbosity) {
+      std::cout << "Generating LLVM IR... ";
+    }
     this->driver.generate_ir();
-    std::cout << "OK" << "\n";
+    if (0 < verbosity) {
+      std::cout << "OK" << "\n";
+    }
   }
 
   void verify() {
-    std::cout << "Verifying... ";
+    if (0 < verbosity) {
+      std::cout << "Verifying... ";
+    }
     if (llvm::verifyModule(*this->driver.ctx.module, &llvm::outs())) {
       llvm::errs() << "Error constructing function!";
       std::exit(1);
     }
-    std::cout << "OK" << "\n";
+    if (0 < verbosity) {
+      std::cout << "OK" << "\n";
+    }
   }
 
   void build_execution_engine() {
-    std::cout << "Building execution engine... ";
+    if (0 < verbosity) {
+      std::cout << "Building execution engine... ";
+    }
     std::string err_str;
     this->execution_engine = llvm::EngineBuilder(std::move(this->driver.ctx.module))
                                  .setEngineKind(llvm::EngineKind::JIT)
@@ -96,12 +113,14 @@ struct Thing {
       std::cout << "Failed to construct execution engine: " << err_str << "\n";
       std::exit(1);
     } else {
-      std::cout << "OK" << "\n";
+      if (0 < verbosity) {
+        std::cout << "OK" << "\n";
+      }
     }
   }
 
   //
-  void execute_main() {
+  int execute_main() {
     if (!this->execution_engine) {
       throw std::logic_error("Execution requires engine");
     }
@@ -113,12 +132,18 @@ struct Thing {
 
     int64_t (*main)(int64_t) = (int64_t (*)(int64_t))main_ptr;
 
-    std::cout << "Executing..." << "\n"
-              << "------" << "\n";
+    if (0 < verbosity) {
+      std::cout << "Executing..." << "\n"
+                << "------" << "\n";
+    }
     int64_t exit_code = main(this->arg);
-    std::cout << "\n"
-              << "------" << "\n"
-              << "Exit code: " << exit_code << "\n";
+    if (0 < verbosity) {
+      std::cout << "\n"
+                << "------" << "\n"
+                << "Exit code: " << exit_code << "\n";
+    }
+
+    return exit_code;
   }
 };
 
@@ -131,19 +156,24 @@ int main(int argc, char *argv[]) {
   bool print_module = false;
   bool trace_parsing = false;
   bool trace_scanning = false;
+  int8_t verbosity{0};
 
   std::vector<std::string> args{};
 
   for (size_t i = 1; i < argc; ++i) {
-    if (argv[i] == std::string("-p")) {
-      trace_parsing = true;
-    } else if (argv[i] == std::string("-s")) {
-      trace_scanning = true;
-    } else if (argv[i] == std::string("-c")) {
+    if (argv[i] == std::string("-c")) {
       print_canonical = true;
     } else if (argv[i] == std::string("-m")) {
       print_module = true;
-    } else {
+    } else if (argv[i] == std::string("-p")) {
+      trace_parsing = true;
+    } else if (argv[i] == std::string("-s")) {
+      trace_scanning = true;
+    } else if (argv[i] == std::string("-v")) {
+      verbosity = 1;
+    }
+
+    else {
       args.push_back(argv[i]);
     }
   }
@@ -166,6 +196,7 @@ int main(int argc, char *argv[]) {
   }
 
   Thing thing(source, arg);
+  thing.verbosity = verbosity;
 
   thing.parse();
 
@@ -183,5 +214,5 @@ int main(int argc, char *argv[]) {
 
   thing.build_execution_engine();
 
-  thing.execute_main();
+  return thing.execute_main();
 }

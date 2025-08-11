@@ -19,6 +19,7 @@
 YY_DECL; // Declare the prototype for bison
 
 struct Driver {
+  // The program, as ordered declarations.
   std::vector<AST::Stmt::DeclarationHandle> prg{};
 
   // Temporary storage for shadowed globals during parsing

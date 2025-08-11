@@ -136,6 +136,9 @@ struct Context {
   llvm::Value *get_zero() { return llvm::ConstantInt::get(this->get_typ(AST::Typ::Kind::Int), 0); }
 
   // The return value for a statement.
-  // Unused in practice.
-  llvm::Value *stmt_return_val() { return this->get_zero(); }
+  // As inaccessible, a null value of void type.
+  llvm::Value *stmt_return_val() {
+    auto void_type = llvm::Type::getVoidTy(*this->context);
+    return llvm::Constant::getNullValue(void_type);
+  }
 };

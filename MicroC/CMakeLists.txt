@@ -42,7 +42,6 @@ file(GLOB_RECURSE AST_SRC src/AST/*.cpp)
 file(GLOB TOP_HDR src/*.hpp)
 file(GLOB TOP_SRC src/*.cpp)
 
-
 file(GLOB_RECURSE CODEGEN_HDR src/codegen/*.hpp)
 file(GLOB_RECURSE CODEGEN_SRC src/codegen/*.cpp)
 
@@ -97,7 +96,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${LLVM_LIBS})
 
-# mc
+# microCJIT
 
 add_executable(microCJIT)
 target_sources(microCJIT PRIVATE bin/microCJIT.cpp)
