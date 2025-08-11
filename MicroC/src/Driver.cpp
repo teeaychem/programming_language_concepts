@@ -4,6 +4,7 @@
 #include "AST/Node/Dec.hpp"
 #include "AST/Node/Expr.hpp"
 #include "AST/Node/Stmt.hpp"
+#include "AST/Types.hpp"
 #include "codegen/Structs.hpp"
 
 void Driver::generate_ir() {
@@ -282,7 +283,22 @@ AST::Stmt::IfHandle Driver::pk_StmtIf(AST::ExprHandle condition, AST::StmtHandle
 }
 
 AST::Stmt::ReturnHandle Driver::pk_StmtReturn(std::optional<AST::ExprHandle> value) {
+
+  // TODO: Generalise implementation
+  // The book ensures all expressions return ints.
+  // Here, however, some expressions return bools, etc.
+  // So, a hacked cast which should be removed by storing information about the expected return type in the env.
+  // See, e.g., how returns are handled during codegen.
+  if (value.has_value()) {
+    if (value.value()->typ_has_kind(AST::Typ::Kind::Bool)) {
+      auto cast = pk_ExprCast(value.value(), AST::Typ::pk_Int());
+      AST::Stmt::Return stmt(cast);
+      return std::make_shared<AST::Stmt::Return>(stmt);
+    }
+  }
+
   AST::Stmt::Return stmt(value);
+
   return std::make_shared<AST::Stmt::Return>(stmt);
 }
 

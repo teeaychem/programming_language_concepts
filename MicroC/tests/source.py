@@ -2,7 +2,7 @@ import pathlib
 import subprocess
 import unittest
 
-print("Hi")
+print("Source tests for microC using microCJIT")
 
 MICROCJIT = "./build/Release/microCJIT"
 TEST_DIR = pathlib.Path(__file__).parent
@@ -250,7 +250,7 @@ class TwentyTwo(unittest.TestCase):
         result = run_source("ex/ex22.c", 1920)
         stdout = result.stdout.strip()
 
-        # self.assertEqual(stdout, b"1892 1896 1904 1908 1912 1916 1920")
+        self.assertEqual(stdout, b"1892 1896 1904 1908 1912 1916 1920")
 
 
 class TwentyThree(unittest.TestCase):
