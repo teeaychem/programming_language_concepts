@@ -25,14 +25,14 @@ public:
 
   Var(Scope scope, TypHandle typ, std::string name)
       : scope(scope),
-        typ(std::move(typ)), id(name) {}
+        typ(typ), id(name) {}
+
+  llvm::Value *codegen(Context &ctx) const override;
+  std::string to_string(size_t indent = 0) const override;
 
   Dec::Kind kind() const override { return Dec::Kind::Var; }
   TypHandle type() const override { return typ; };
   std::string name() const override { return this->id; };
-
-  llvm::Value *codegen(Context &ctx) const override;
-  std::string to_string(size_t indent = 0) const override;
 };
 
 // Prototype
@@ -46,17 +46,18 @@ public:
   VarTypVec args;
 
   Prototype(TypHandle r_typ, std::string name, VarTypVec args)
-      : r_typ(std::move(r_typ)),
+      : r_typ(r_typ),
         id(name),
-        args(std::move(args)) {}
+        args(args) {}
+
+  llvm::Value *codegen(Context &ctx) const override;
+  std::string to_string(size_t indent = 0) const override;
 
   Dec::Kind kind() const override { return Dec::Kind::Fn; }
   TypHandle type() const override { return r_typ; };
   std::string name() const override { return this->id; };
-  TypHandle return_type() const { return r_typ; };
 
-  llvm::Value *codegen(Context &ctx) const override;
-  std::string to_string(size_t indent = 0) const override;
+  TypHandle return_type() const { return r_typ; };
 };
 
 // Fn
@@ -65,17 +66,18 @@ struct Fn : DecT {
   PrototypeHandle prototype;
   Stmt::BlockHandle body;
 
-  Fn(PrototypeHandle prototype, Stmt::BlockHandle body)
-      : prototype(std::move(prototype)),
-        body(std::move(body)) {}
+  Fn(PrototypeHandle pt, Stmt::BlockHandle body)
+      : prototype(pt),
+        body(body) {}
+
+  llvm::Value *codegen(Context &ctx) const override;
+  std::string to_string(size_t indent = 0) const override;
 
   Dec::Kind kind() const override { return Dec::Kind::Fn; }
   TypHandle type() const override { return prototype->return_type(); };
   std::string name() const override { return this->prototype->name(); };
-  TypHandle return_type() const { return prototype->return_type(); };
 
-  llvm::Value *codegen(Context &ctx) const override;
-  std::string to_string(size_t indent = 0) const override;
+  TypHandle return_type() const { return prototype->return_type(); };
 };
 
 } // namespace Dec

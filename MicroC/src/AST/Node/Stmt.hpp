@@ -15,8 +15,8 @@ namespace Stmt {
 struct Block : StmtT {
   AST::Block block{};
 
-  Block(AST::Block &&bv)
-      : block(std::move(bv)) {}
+  Block(AST::Block bv)
+      : block(bv) {}
 
   Stmt::Kind kind() const override { return Stmt::Kind::Block; }
   bool returns() const override { return this->block.returns; };
@@ -33,7 +33,7 @@ struct Declaration : StmtT {
   DecHandle declaration;
 
   Declaration(DecHandle expr)
-      : declaration(std::move(expr)) {}
+      : declaration(expr) {}
 
   Stmt::Kind kind() const override { return Stmt::Kind::Declaration; }
   bool returns() const override { return false; };
@@ -50,7 +50,7 @@ struct Expr : StmtT {
   AST::ExprHandle expr;
 
   Expr(AST::ExprHandle expr)
-      : expr(std::move(expr)) {}
+      : expr(expr) {}
 
   Stmt::Kind kind() const override { return Stmt::Kind::Expr; }
   bool returns() const override { return false; };
@@ -88,7 +88,7 @@ struct Return : StmtT {
   std::optional<AST::ExprHandle> value;
 
   Return(std::optional<AST::ExprHandle> value)
-      : value(std::move(value)) {}
+      : value(value) {}
 
   Stmt::Kind kind() const override { return Stmt::Kind::Return; }
   bool returns() const override { return true; };
