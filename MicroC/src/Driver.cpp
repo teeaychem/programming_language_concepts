@@ -107,8 +107,8 @@ AST::Expr::OpUnary Driver::to_unary_op(std::string op) {
 // This motivation is extended to vars to form a rule.
 
 AST::Dec::FnHandle Driver::pk_DecFn(AST::Dec::PrototypeHandle prototype, AST::Stmt::BlockHandle body) {
-  if (!this->ctx.env_ast.fns.contains(prototype->name())) {
-    throw std::logic_error(std::format("Missing prototype for {}", prototype->name()));
+  if (!this->ctx.env_ast.fns.contains(prototype->var())) {
+    throw std::logic_error(std::format("Missing prototype for {}", prototype->var()));
   }
 
   AST::Dec::Fn dec(prototype, body);

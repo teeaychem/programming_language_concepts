@@ -27,12 +27,16 @@ public:
       : scope(scope),
         typ(typ), id(name) {}
 
+  // Code generation for a declaration.
+  // Should always be called when a declaration is made, and always updates the env.
+  // The details of shadowing are handled at block nodes.
   llvm::Value *codegen(Context &ctx) const override;
+
   std::string to_string(size_t indent = 0) const override;
 
   Dec::Kind kind() const override { return Dec::Kind::Var; }
   TypHandle type() const override { return typ; };
-  std::string name() const override { return this->id; };
+  std::string var() const override { return this->id; };
 };
 
 // Prototype
@@ -55,7 +59,7 @@ public:
 
   Dec::Kind kind() const override { return Dec::Kind::Fn; }
   TypHandle type() const override { return r_typ; };
-  std::string name() const override { return this->id; };
+  std::string var() const override { return this->id; };
 
   TypHandle return_type() const { return r_typ; };
 };
@@ -75,7 +79,7 @@ struct Fn : DecT {
 
   Dec::Kind kind() const override { return Dec::Kind::Fn; }
   TypHandle type() const override { return prototype->return_type(); };
-  std::string name() const override { return this->prototype->name(); };
+  std::string var() const override { return this->prototype->var(); };
 
   TypHandle return_type() const { return prototype->return_type(); };
 };

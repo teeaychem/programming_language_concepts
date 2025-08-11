@@ -271,7 +271,7 @@ struct DecT : NodeT {
   virtual AST::TypHandle type() const = 0;
 
   // The variable declared.
-  virtual std::string name() const = 0;
+  virtual std::string var() const = 0;
 };
 
 typedef std::shared_ptr<DecT> DecHandle;

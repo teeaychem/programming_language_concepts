@@ -106,7 +106,7 @@ class Five(unittest.TestCase):
         result = run_source("ex/ex5.c", 10)
         stdout = result.stdout.strip()
 
-        self.assertEqual(stdout, b"100 100")
+        self.assertEqual(stdout, b"100 10")
 
 
 class Six(unittest.TestCase):
@@ -115,7 +115,7 @@ class Six(unittest.TestCase):
         stdout = result.stdout.strip()
 
         # FIXME: Scope issues
-        # self.assertEqual(stdout, b"1 1 2 6 24 5")
+        self.assertEqual(stdout, b"1 1 2 6 24 5")
 
 
 class Ten(unittest.TestCase):

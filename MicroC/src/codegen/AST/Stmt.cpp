@@ -28,10 +28,10 @@ llvm::Value *AST::Stmt::Block::codegen(Context &ctx) const {
   }
 
   for (auto &shadow_dec : block.shadow_vars) {
-    auto x = std::make_pair(shadow_dec->declaration->name(), ctx.env_llvm.vars[shadow_dec->declaration->name()]);
+    auto var = shadow_dec->declaration->var();
+    auto x = std::make_pair(var, ctx.env_llvm.vars[var]);
     shadowed_values.push_back(x);
-
-    shadow_dec->codegen(ctx);
+    auto y = shadow_dec->codegen(ctx);
   }
 
   for (auto &stmt : block.statements) {
@@ -49,7 +49,7 @@ llvm::Value *AST::Stmt::Block::codegen(Context &ctx) const {
 
   // Clear fresh vars from scope
   for (auto &fresh_var : block.fresh_vars) {
-    ctx.env_llvm.vars.erase(fresh_var->declaration->name());
+    ctx.env_llvm.vars.erase(fresh_var->declaration->var());
   }
 
   return ctx.stmt_return_val();
