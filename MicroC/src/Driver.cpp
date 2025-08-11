@@ -16,7 +16,7 @@ void Driver::generate_ir() {
 int Driver::parse(const std::string &file) {
 
   // Ensure a fresh env.
-  assert(this->env.empty());
+  assert(this->ctx.env_ast.vars.empty());
 
   src_file = file;
   location.initialize(&src_file);

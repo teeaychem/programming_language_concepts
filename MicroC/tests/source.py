@@ -4,7 +4,7 @@ import unittest
 
 print("Source tests for microC using microCJIT")
 
-MICROCJIT = "./build/Release/microCJIT"
+MICROCJIT = "./build/microCJIT"
 TEST_DIR = pathlib.Path(__file__).parent
 
 
