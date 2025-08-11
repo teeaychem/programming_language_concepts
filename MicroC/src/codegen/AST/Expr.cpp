@@ -1,4 +1,5 @@
 #include <vector>
+#include <format>
 
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DIBuilder.h"
@@ -7,13 +8,10 @@
 #include "llvm/IR/Module.h"
 
 #include "AST/AST.hpp"
-#include "AST/Fmt.hpp"
 #include "AST/Node/Expr.hpp"
 #include "codegen/Structs.hpp"
 
 using namespace llvm;
-
-// Nodes
 
 Value *AST::Expr::Var::codegen(Context &ctx) const {
   auto it = ctx.env_llvm.vars.find(this->var);
