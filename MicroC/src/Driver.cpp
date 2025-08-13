@@ -163,7 +163,7 @@ AST::Expr::CallHandle Driver::pk_ExprCall(std::string var, std::vector<AST::Expr
 
     if (!args[i]->typ_has_kind(arg_prototype->kind())) {
 
-      auto arg_access_type = this->ctx.access_type(args[i].get());
+      auto arg_access_type = args[i]->type();
       if (arg_prototype->kind() != arg_access_type->kind()) {
         auto cast = pk_ExprCast(args[i], arg_prototype);
         args[i] = cast;
@@ -203,8 +203,8 @@ AST::Expr::CstIHandle Driver::pk_ExprCstI(std::int64_t i) {
 
 AST::Expr::IndexHandle Driver::pk_ExprIndex(AST::ExprHandle access, AST::ExprHandle index) {
 
-  AST::Expr::Index instance(access, index);
-  return std::make_shared<AST::Expr::Index>(instance);
+  AST::Expr::Index idx(access, index);
+  return std::make_shared<AST::Expr::Index>(idx);
 }
 
 AST::Expr::Prim1Handle Driver::pk_ExprPrim1(AST::Expr::OpUnary op, AST::ExprHandle expr) {

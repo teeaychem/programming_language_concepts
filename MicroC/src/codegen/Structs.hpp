@@ -65,12 +65,6 @@ struct Context {
   // Maps to fn builders
   std::map<const std::string, std::shared_ptr<FnPrimative>> foundation_fn_map{};
 
-  // Contextully 'access' `expr`, returning the codegen'd value and corresponding AST type.
-  // Variables, pointers, etc., are not loaded in order to support assignment.
-  // The `access` method typically performs a load if required.
-  // Called on the rhs of an assignment, or when passing a value to an fn.
-  std::pair<llvm::Value *, AST::TypHandle> access(AST::ExprT const *expr);
-
   Context()
       : context(std::make_unique<llvm::LLVMContext>()),
         module(std::make_unique<llvm::Module>("microC", *context)),
@@ -91,8 +85,6 @@ struct Context {
     }
   };
 
-  // The type which would be returned with a codegen'd value by calling `access` on `expr`.
-  AST::TypHandle access_type(AST::ExprT const *expr);
 
   // Populates the foundation fn map, to be called on initialisation of this.
   // Defined together with the fns.
@@ -122,8 +114,8 @@ struct Context {
     } break;
 
     case AST::Typ::Kind::Ptr: {
-      // Generally unqualified, following current LLVM trends.
-      // Still, calling `codegen` on an AST type is preferred to obtain information about arrays, etc.
+      // Unqualified, following current LLVM trends.
+      // Calling `codegen` on an AST type may be preferred to obtain information about arrays, etc.
       return_typ = llvm::PointerType::getUnqual(*this->context);
     } break;
 

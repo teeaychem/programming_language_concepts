@@ -83,9 +83,6 @@ struct NodeT {
   // The kind of node.
   virtual AST::Kind kind_node() const = 0;
 
-  // Generates LLVM IR and returns the resulting LLVM value.
-  virtual llvm::Value *codegen(Context &ctx) const = 0;
-
   // A string representation of the node, indented to `indent`.
   virtual std::string to_string(size_t indent = 0) const = 0;
 
@@ -160,6 +157,13 @@ enum class OpBinary {
   Or
 };
 
+// The type of value an expression evaluates to.
+// In short, L values do not perform loads on alloca, while R values do.
+enum class Value {
+  L, // What would be expected on the left side of an equality sign.
+  R  // What would be expected on the right side of an equality sign.
+};
+
 } // namespace Expr
 
 struct ExprT : NodeT {
@@ -176,6 +180,8 @@ public:
 
   // The kind of type `this` has.
   AST::Typ::Kind type_kind() const { return this->type()->kind(); }
+
+  virtual llvm::Value *codegen(Context &ctx, AST::Expr::Value value) const = 0;
 
   // LLVM IR codegen which returns true if this expression does not have (LLVM IR) null value for its type and false otherwise.
   llvm::Value *codegen_eval_true(Context &ctx) const;
@@ -225,6 +231,9 @@ typedef std::shared_ptr<While> WhileHandle;
 struct StmtT : NodeT {
   AST::Kind kind_node() const override { return AST::Kind::Stmt; }
 
+  // Generates LLVM IR and returns the resulting LLVM value.
+  virtual llvm::Value *codegen(Context &ctx) const = 0;
+
   // The kind of statement `this` is.
   virtual Stmt::Kind kind() const = 0;
 
@@ -263,6 +272,9 @@ typedef std::shared_ptr<Prototype> PrototypeHandle;
 
 struct DecT : NodeT {
   AST::Kind kind_node() const override { return AST::Kind::Dec; }
+
+  // Generates LLVM IR and returns the resulting LLVM value.
+  virtual llvm::Value *codegen(Context &ctx) const = 0;
 
   // The kind of declaration `this` is.
   virtual Dec::Kind kind() const = 0;

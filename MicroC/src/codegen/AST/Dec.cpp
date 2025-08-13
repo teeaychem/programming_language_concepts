@@ -1,5 +1,4 @@
 #include <format>
-#include <iostream>
 #include <vector>
 
 #include "llvm/IR/Constants.h"
@@ -21,15 +20,14 @@
 // If revised to do so, the fn generation should be abstracted as this is called during fn declaration.
 llvm::Value *AST::Dec::Prototype::codegen(Context &ctx) const {
   llvm::Type *return_type = this->return_type()->codegen(ctx);
-  std::vector<llvm::Type *> parameter_types{};
 
-  // Generate the parameter types
-  parameter_types.reserve(this->args.size());
-  for (auto &p : this->args) {
-    parameter_types.push_back(p.typ->codegen(ctx));
+  std::vector<llvm::Type *> arg_types{};
+  arg_types.reserve(this->args.size());
+  for (auto &arg : this->args) {
+    arg_types.push_back(arg.typ->codegen(ctx));
   }
 
-  auto fn_type = llvm::FunctionType::get(return_type, parameter_types, false);
+  auto fn_type = llvm::FunctionType::get(return_type, arg_types, false);
   llvm::Function *fn = llvm::Function::Create(fn_type, llvm::Function::ExternalLinkage, this->id, ctx.module.get());
 
   ctx.env_llvm.fns[this->id] = fn;

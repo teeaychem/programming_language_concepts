@@ -5,10 +5,9 @@
 #include <vector>
 
 #include "AST/AST.hpp"
+#include "AST/Fmt.hpp"
 #include "AST/Node/Dec.hpp"
 #include "AST/Node/Expr.hpp"
-
-#include "AST/Fmt.hpp"
 #include "AST/Types.hpp"
 #include "codegen/Structs.hpp"
 
@@ -101,12 +100,12 @@ struct Driver {
     } break;
 
     case AST::Expr::OpUnary::Dereference: {
-      if (expr->typ_has_kind(AST::Typ::Kind::Ptr)) {
-        return expr->type()->deref();
-      } else {
+      if (!expr->typ_has_kind(AST::Typ::Kind::Ptr)) {
         throw std::logic_error(std::format("Deref panic... {} {}",
-                                           expr->to_string(), expr->type()->to_string()));
+                                           expr->to_string(),
+                                           expr->type()->to_string()));
       }
+      return expr->type()->deref();
     } break;
 
     case AST::Expr::OpUnary::Sub: {
@@ -147,7 +146,7 @@ struct Driver {
       return;
     }
 
-    if (lhs->type_kind() != rhs->type_kind()) {
+    else {
       throw std::logic_error(std::format("Conflicting types for {}: {} and {}: {}",
                                          lhs->to_string(),
                                          lhs->type()->to_string(),
@@ -223,7 +222,6 @@ struct Driver {
       }
 
       else {
-
         throw std::logic_error(std::format("todo: type resolution: {} {}",
                                            lhs->type()->to_string(),
                                            rhs->type()->to_string()));

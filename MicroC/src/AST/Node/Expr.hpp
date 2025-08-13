@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -28,7 +27,7 @@ struct Call : ExprT {
     return Expr::Kind::Call;
   }
 
-  llvm::Value *codegen(Context &ctx) const override;
+  llvm::Value *codegen(Context &ctx, AST::Expr::Value value) const override;
   std::string to_string(size_t indent = 0) const override;
 };
 
@@ -43,7 +42,7 @@ struct Cast : ExprT {
 
   Expr::Kind kind() const override { return Expr::Kind::Cast; }
 
-  llvm::Value *codegen(Context &ctx) const override;
+  llvm::Value *codegen(Context &ctx, AST::Expr::Value value) const override;
   std::string to_string(size_t indent = 0) const override;
 };
 
@@ -58,7 +57,7 @@ struct CstI : ExprT {
 
   Expr::Kind kind() const override { return Expr::Kind::CstI; }
 
-  llvm::Value *codegen(Context &ctx) const override;
+  llvm::Value *codegen(Context &ctx, AST::Expr::Value value) const override;
   std::string to_string(size_t indent = 0) const override;
 };
 
@@ -70,12 +69,12 @@ struct Index : ExprT {
 
   Index(ExprHandle expr, ExprHandle index) : target(expr),
                                              index(index) {
-    this->typ = this->target->type();
+    this->typ = this->target->type()->deref();
   }
 
   Expr::Kind kind() const override { return Expr::Kind::Index; }
 
-  llvm::Value *codegen(Context &ctx) const override;
+  llvm::Value *codegen(Context &ctx, AST::Expr::Value value) const override;
   std::string to_string(size_t indent = 0) const override;
 };
 
@@ -93,7 +92,7 @@ struct Prim1 : ExprT {
 
   Expr::Kind kind() const override { return Expr::Kind::Prim1; }
 
-  llvm::Value *codegen(Context &ctx) const override;
+  llvm::Value *codegen(Context &ctx, AST::Expr::Value value) const override;
   std::string to_string(size_t indent = 0) const override;
 };
 
@@ -113,7 +112,7 @@ struct Prim2 : ExprT {
 
   Expr::Kind kind() const override { return Expr::Kind::Prim2; }
 
-  llvm::Value *codegen(Context &ctx) const override;
+  llvm::Value *codegen(Context &ctx, AST::Expr::Value value) const override;
   std::string to_string(size_t indent = 0) const override;
 };
 
@@ -126,7 +125,7 @@ struct Var : ExprT {
 
   Expr::Kind kind() const override { return Expr::Kind::Var; }
 
-  llvm::Value *codegen(Context &ctx) const override;
+  llvm::Value *codegen(Context &ctx, AST::Expr::Value value) const override;
   std::string to_string(size_t indent = 0) const override;
 };
 
