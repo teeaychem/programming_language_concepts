@@ -30,10 +30,10 @@ std::string AST::Typ::Int::to_string(size_t indent) const { return "int"; }
 
 std::string AST::Typ::Ptr::to_string(size_t indent) const {
   if (this->area().has_value()) {
-    return std::format("{}[{}]",
+    return std::format("({}[{}])",
                        this->pointee_type()->to_string(indent), this->area().value());
   } else {
-    return std::format("*{}",
+    return std::format("(*{})",
                        this->pointee_type()->to_string(indent));
   }
 }
@@ -109,12 +109,12 @@ std::string AST::Expr::CstI::to_string(size_t indent) const {
 }
 
 std::string AST::Expr::Index::to_string(size_t indent) const {
-  return std::format("{}[{}]",
+  return std::format("({}[{}])",
                      this->target->to_string(indent), this->index->to_string(indent));
 }
 
 std::string AST::Expr::Prim1::to_string(size_t indent) const {
-  return std::format("{}{}",
+  return std::format("({}{})",
                      op, expr->to_string(indent));
 }
 

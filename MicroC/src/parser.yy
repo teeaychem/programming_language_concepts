@@ -92,7 +92,6 @@
 
 %nterm <AST::VarTyp> Vardec
 %nterm <AST::VarTyp> Vardesc
-%nterm <AST::VarTyp> Wardesc
 
 %nterm <AST::ExprHandle> AtomicConst
 %nterm <AST::ExprHandle> Expr
@@ -258,20 +257,24 @@ Topdec:
 
 
 Vardec:
-    DataType Wardesc  { $$ = AST::VarTyp($2.var, $2.typ->complete_with($1)); }
+    DataType Vardesc  { $$ = AST::VarTyp($2.var, $2.typ->complete_with($1)); }
 ;
-
-Wardesc:
-   Vardesc                       { $$ = $1;                                                          }
- | Vardesc LBRACK RBRACK         { $$ = AST::VarTyp($1.var, AST::Typ::pk_Ptr($1.typ, std::nullopt)); }
- | Vardesc LBRACK CSTINT RBRACK  { $$ = AST::VarTyp($1.var, AST::Typ::pk_Ptr($1.typ, $3));           }
- | LPAR Wardesc RPAR             { $$ = $2;                                                          }
-;  
 
 
 Vardesc:
     NAME                          { $$ = AST::VarTyp($1, AST::Typ::pk_Void());                        }
-  | STAR Vardesc                  { $$ = AST::VarTyp($2.var, AST::Typ::pk_Ptr($2.typ, std::nullopt)); }
+  | STAR Vardesc                  {
+      auto fresh = AST::Typ::pk_Ptr(AST::Typ::pk_Void(), std::nullopt);
+      $$ = AST::VarTyp($2.var, $2.typ->complete_with(fresh));
+    }
+  | Vardesc LBRACK RBRACK         {
+      auto fresh = AST::Typ::pk_Ptr(AST::Typ::pk_Void(), std::nullopt);
+      $$ = AST::VarTyp($1.var, $1.typ->complete_with(fresh));
+    }
+  | Vardesc LBRACK CSTINT RBRACK  {
+      auto fresh = AST::Typ::pk_Ptr(AST::Typ::pk_Void(), $3);
+      $$ = AST::VarTyp($1.var, $1.typ->complete_with(fresh));
+    }
   | LPAR Vardesc RPAR             { $$ = $2;                                                          }
 ;
 

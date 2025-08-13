@@ -33,49 +33,37 @@ class One(unittest.TestCase):
 
 
 class Two(unittest.TestCase):
-    def test_10(self):
+    def test(self):
         result = run_source("ex/ex2.c")
         stdout = result.stdout.strip()
 
         details = stdout.split(b" ")
 
-        # i != p
-        self.assertNotEqual(details[0], details[1])
+        self.assertNotEqual(details[0], details[1], "i != p")
 
-        # p == &i, internal
-        self.assertEqual(details[2], b"1")
+        self.assertEqual(details[2], b"1", "p == &i, internal")
 
-        # p == &i, external
-        self.assertEqual(details[1], details[4])
+        self.assertEqual(details[1], details[4], "p == &i, external")
 
-        # *p = i = 227
-        self.assertEqual(details[5], b"227")
+        self.assertEqual(details[5], b"227", "*p = i = 227")
 
-        # *&i = i = 12
-        self.assertEqual(details[6], b"12")
+        self.assertEqual(details[6], b"12", "*&i = i = 12")
 
-        # *p = i = 12
-        self.assertEqual(details[7], b"12")
+        self.assertEqual(details[7], b"12", "*p = i = 12")
 
-        # ia[0] = 14
-        self.assertEqual(details[8], b"14")
+        self.assertEqual(details[8], details[9], "*p == ia, external")
 
-        # ia[9] = 114
-        self.assertEqual(details[9], b"114")
+        self.assertEqual(details[10], b"14", "ia[0] = 14")
 
-        # TODO: FIXME
-        # ipa[2] = p = &i
-        # self.assertEqual(details[10], details[1])
+        self.assertEqual(details[11], b"114", "ia[9] = 114")
 
-        # TODO: FIXME
-        # *ipa[2] = *p = i
-        # self.assertEqual(details[10], b"12")
+        self.assertEqual(details[12], details[13], "ipa[2] = p, external")
 
-        # &*ipa[2] == &**(ipa + 2), internal
-        self.assertEqual(details[12], b"1")
+        self.assertEqual(details[14], b"14", "*ipa[2] = *p = ia([0])")
 
-        # &(*iap)[2] == &*((*iap) + 2), internal
-        self.assertEqual(details[13], b"1")
+        self.assertEqual(details[15], b"1", "&*ipa[2] == &**(ipa + 2), internal")
+
+        self.assertEqual(details[16], b"1", "&(*iap)[2] == &*((*iap) + 2), internal")
 
 
 class Three(unittest.TestCase):

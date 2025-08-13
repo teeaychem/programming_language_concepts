@@ -105,7 +105,6 @@ public:
   TypHandle deref() const override { return _pointee; }
 
   llvm::Type *codegen(Context &ctx) const override {
-
     if (this->_area.has_value()) {
       return llvm::ArrayType::get(this->_pointee->codegen(ctx), this->_area.value());
     } else {

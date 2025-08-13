@@ -62,7 +62,7 @@ llvm::Value *AST::Stmt::Declaration::codegen(Context &ctx) const {
 
 // Expression codegen redirects to the expression.
 llvm::Value *AST::Stmt::Expr::codegen(Context &ctx) const {
-  return this->expr->codegen(ctx);
+  return this->expr->codegen(ctx, AST::Expr::Value::R);
 }
 
 // If codegen builds directs control flow to the appropriate block.
@@ -124,7 +124,7 @@ llvm::Value *AST::Stmt::Return::codegen(Context &ctx) const {
   // If the return has some value...
   if (this->value.has_value()) {
     // Ensure the return value is loaded
-    auto [return_val, _] = ctx.access(this->value.value().get());
+    auto return_val = this->value.value()->codegen(ctx, AST::Expr::Value::R);
 
     // Use a return allocatio if available, and break to the corresponding block
     if (ctx.env_llvm.return_alloca) {

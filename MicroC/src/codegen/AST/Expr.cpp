@@ -1,5 +1,7 @@
-#include <vector>
+#include <cstdio>
 #include <format>
+#include <memory>
+#include <vector>
 
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DIBuilder.h"
@@ -11,20 +13,48 @@
 #include "AST/Node/Expr.hpp"
 #include "codegen/Structs.hpp"
 
-using namespace llvm;
-
-Value *AST::Expr::Var::codegen(Context &ctx) const {
-  auto it = ctx.env_llvm.vars.find(this->var);
-  if (it == ctx.env_llvm.vars.end()) {
+llvm::Value *AST::Expr::Var::codegen(Context &ctx, AST::Expr::Value value) const {
+  auto find_var = ctx.env_llvm.vars.find(this->var);
+  if (find_var == ctx.env_llvm.vars.end()) {
     throw std::logic_error(std::format("Missing variable: {}", this->var));
   }
 
-  return it->second;
+  auto val = find_var->second;
+
+  if (value == AST::Expr::Value::R) {
+    switch (this->type()->kind()) {
+
+    case Typ::Kind::Bool:
+    case Typ::Kind::Char:
+    case Typ::Kind::Int: {
+      val = ctx.builder.CreateLoad(this->type()->codegen(ctx), val);
+    } break;
+
+    case Typ::Kind::Ptr: {
+      auto ptr_typ = std::static_pointer_cast<AST::Typ::Ptr>(this->type());
+      if (ptr_typ->area().has_value()) {
+        val = ctx.builder.CreateInBoundsGEP(ptr_typ->codegen(ctx),
+                                            val,
+                                            llvm::ArrayRef{ctx.get_zero(), ctx.get_zero()},
+                                            "decayR");
+
+      } else {
+        val = ctx.builder.CreateLoad(this->type()->codegen(ctx), val);
+      }
+
+    } break;
+
+    case Typ::Kind::Void: {
+    } break;
+    }
+  }
+
+  return val;
 }
 
-Value *AST::Expr::Call::codegen(Context &ctx) const {
+llvm::Value *AST::Expr::Call::codegen(Context &ctx, AST::Expr::Value value) const {
 
-  Function *callee_f = ctx.module->getFunction(this->name);
+  llvm::Function *callee_f = ctx.module->getFunction(this->name);
   auto prototype = ctx.env_ast.fns.find(this->name)->second.get();
 
   if (callee_f == nullptr) {
@@ -39,17 +69,17 @@ Value *AST::Expr::Call::codegen(Context &ctx) const {
                                        this->name, callee_f->arg_size(), this->arguments.size()));
   }
 
-  std::vector<Value *> arg_values{};
-  for (size_t i = 0; i < this->arguments.size(); ++i) {
-    auto [access_val, access_typ] = ctx.access(this->arguments[i].get());
-    arg_values.push_back(access_val);
+  std::vector<llvm::Value *> arg_vals{};
+  for (auto arg : this->arguments) {
+    auto arg_val = arg->codegen(ctx, AST::Expr::Value::R);
+    arg_vals.push_back(arg_val);
   }
 
   // Named instructions cannot provide void values
-  return ctx.builder.CreateCall(callee_f, arg_values);
+  return ctx.builder.CreateCall(callee_f, arg_vals);
 }
 
-Value *AST::Expr::Cast::codegen(Context &ctx) const {
+llvm::Value *AST::Expr::Cast::codegen(Context &ctx, AST::Expr::Value value) const {
 
   switch (this->type_kind()) {
 
@@ -64,8 +94,10 @@ Value *AST::Expr::Cast::codegen(Context &ctx) const {
     switch (expr->type_kind()) {
 
     case Typ::Kind::Bool: {
-      auto cast = ctx.builder.CreateIntCast(this->expr->codegen(ctx),
-                                            this->type()->codegen(ctx), false);
+      auto cast = ctx.builder.CreateIntCast(this->expr->codegen(ctx, value),
+                                            this->type()->codegen(ctx),
+                                            false,
+                                            "cst");
       return cast;
     } break;
 
@@ -76,8 +108,9 @@ Value *AST::Expr::Cast::codegen(Context &ctx) const {
     } break;
 
     case Typ::Kind::Ptr: {
-      auto cast = ctx.builder.CreatePtrToInt(this->expr->codegen(ctx),
-                                             this->type()->codegen(ctx));
+
+      auto cast = ctx.builder.CreatePtrToInt(this->expr->codegen(ctx, value),
+                                             this->type()->codegen(ctx), "cst");
       return cast;
     } break;
     }
@@ -86,7 +119,7 @@ Value *AST::Expr::Cast::codegen(Context &ctx) const {
 
   case Typ::Kind::Ptr: {
     if (this->expr->typ_has_kind(AST::Typ::Kind::Int)) {
-      auto cast = ctx.builder.CreateIntToPtr(this->expr->codegen(ctx),
+      auto cast = ctx.builder.CreateIntToPtr(this->expr->codegen(ctx, value),
                                              this->type()->codegen(ctx));
       return cast;
     } else {
@@ -96,91 +129,107 @@ Value *AST::Expr::Cast::codegen(Context &ctx) const {
   }
 }
 
-Value *AST::Expr::CstI::codegen(Context &ctx) const {
-  return ConstantInt::get(this->type()->codegen(ctx), this->i, true);
+llvm::Value *AST::Expr::CstI::codegen(Context &ctx, AST::Expr::Value value) const {
+  return llvm::ConstantInt::get(this->type()->codegen(ctx), this->i, true);
 }
 
-Value *AST::Expr::Index::codegen(Context &ctx) const {
+llvm::Value *AST::Expr::Prim1::codegen(Context &ctx, AST::Expr::Value value) const {
 
-  auto [ptr_val, ptr_typ] = ctx.access(this->target.get());
-  auto [access_val, access_typ] = ctx.access(this->index.get());
-
-  auto ptr_add = ctx.builder.CreateInBoundsGEP(ptr_typ->deref()->codegen(ctx),
-                                               ptr_val,
-                                               ArrayRef<Value *>{access_val},
-                                               "idx");
-
-  return ptr_add;
-}
-
-Value *AST::Expr::Prim1::codegen(Context &ctx) const {
-
-  llvm::Value *return_value;
+  llvm::Value *val;
 
   switch (this->op) {
 
   case OpUnary::AddressOf: {
     // The address of a dereference is obtained by avoiding the dereference.
     // This is an instance of the general approach to never take the address of an object.
-    return_value = expr->codegen(ctx);
-
+    val = expr->codegen(ctx, AST::Expr::Value::L);
   } break;
 
   case OpUnary::Dereference: {
-    // Dereference performs a load / access.
-    auto [access_val, _] = ctx.access(this->expr.get());
-    return_value = access_val;
+    auto ptr_typ = std::static_pointer_cast<AST::Typ::Ptr>(expr->type());
+
+    val = this->expr->codegen(ctx, AST::Expr::Value::R);
+
+    if (value == AST::Expr::Value::R) {
+
+      switch (this->type()->kind()) {
+
+      case Typ::Kind::Bool:
+      case Typ::Kind::Char:
+      case Typ::Kind::Int: {
+        val = ctx.builder.CreateLoad(this->type()->codegen(ctx), val);
+      } break;
+
+      case Typ::Kind::Ptr: {
+        auto ptr_typ = std::static_pointer_cast<AST::Typ::Ptr>(this->type());
+        if (ptr_typ->area().has_value()) {
+          val = ctx.builder.CreateInBoundsGEP(ptr_typ->codegen(ctx),
+                                              val,
+                                              llvm::ArrayRef{ctx.get_zero(), ctx.get_zero()},
+                                              "decayR");
+
+        } else {
+          val = ctx.builder.CreateLoad(this->type()->codegen(ctx), val);
+        }
+
+      } break;
+
+      case Typ::Kind::Void: {
+      } break;
+      }
+    }
+
   } break;
 
   case OpUnary::Sub: {
-    auto [access_val, _] = ctx.access(expr.get());
-    return_value = ctx.builder.CreateNeg(access_val, "op.neg");
+    val = expr->codegen(ctx, AST::Expr::Value::R);
+    val = ctx.builder.CreateNeg(val, "op.neg");
   } break;
 
   case OpUnary::Negation: {
-    auto [access_val, _] = ctx.access(expr.get());
-    return_value = ctx.builder.CreateNot(access_val, "op.not");
+    val = expr->codegen(ctx, AST::Expr::Value::R);
+    val = ctx.builder.CreateNot(val, "op.not");
   } break;
   }
 
-  return return_value;
+  return val;
 }
 
 // Support
 
-Value *AST::ExprT::codegen_eval_true(Context &ctx) const {
+llvm::Value *AST::ExprT::codegen_eval_true(Context &ctx) const {
 
   llvm::Value *return_value;
 
-  auto [access_val, access_typ] = ctx.access(this);
+  auto val = this->codegen(ctx, AST::Expr::Value::R);
 
   // If Already a boolean...
-  if (access_val->getType()->isIntegerTy(1)) {
-    return_value = access_val;
+  if (val->getType()->isIntegerTy(1)) {
+    return_value = val;
   }
   // Otherwise test not equal to null val of expr type
   else {
-    return_value = ctx.builder.CreateCmp(ICmpInst::ICMP_NE,
-                                         access_val,
-                                         access_typ->defaultgen(ctx),
+    return_value = ctx.builder.CreateCmp(llvm::ICmpInst::ICMP_NE,
+                                         val,
+                                         this->type()->defaultgen(ctx),
                                          "op.eval_true");
   }
 
   return return_value;
 }
 
-Value *AST::ExprT::codegen_eval_false(Context &ctx) const {
+llvm::Value *AST::ExprT::codegen_eval_false(Context &ctx) const {
 
   llvm::Value *return_value;
 
-  auto [access_val, access_typ] = ctx.access(this);
+  auto val = this->codegen(ctx, AST::Expr::Value::R);
 
-  if (access_val->getType()->isIntegerTy(1)) {
-    return_value = access_val;
+  if (val->getType()->isIntegerTy(1)) {
+    return_value = val;
   } else {
-    return_value = ctx.builder.CreateCmp(ICmpInst::ICMP_EQ,
-                                         access_val,
-                                         access_typ->defaultgen(ctx),
+    return_value = ctx.builder.CreateCmp(llvm::ICmpInst::ICMP_EQ,
+                                         val,
+                                         this->type()->defaultgen(ctx),
                                          "op.eval_false");
   }
 
@@ -193,30 +242,30 @@ namespace OpBinaryCodegen {
 
 llvm::Value *builder_assign(Context &ctx, AST::ExprHandle destination, AST::ExprHandle value) {
 
-  llvm::Value *destination_val = destination->codegen(ctx);
+  llvm::Value *desti_val = destination->codegen(ctx, AST::Expr::Value::L);
+  llvm::Value *value_val = value->codegen(ctx, AST::Expr::Value::R);
 
-  auto [access_val, access_typ] = ctx.access(value.get());
-  ctx.builder.CreateStore(access_val, destination_val, "op.assign");
+  ctx.builder.CreateStore(value_val, desti_val, "op.assign");
 
-  return access_val;
+  return value_val;
 }
 
 // Codegen for ptr + int
-llvm::Value *builder_ptr_add(Context &ctx, AST::ExprHandle ptr, AST::ExprHandle val) {
+llvm::Value *builder_ptr_add(Context &ctx, AST::ExprHandle ptr, AST::ExprHandle offset) {
 
-  auto [access_val, access_typ] = ctx.access(val.get());
-  auto [ptr_val, ptr_typ] = ctx.access(ptr.get());
-  auto ptr_add = ctx.builder.CreateInBoundsGEP(ptr_typ->deref()->codegen(ctx),
-                                               ptr_val,
-                                               ArrayRef<Value *>{access_val},
-                                               "add.ptr");
+  auto offset_val = offset->codegen(ctx, AST::Expr::Value::R);
 
-  return ptr_add;
+  auto val = ctx.builder.CreateInBoundsGEP(ptr->type()->deref()->codegen(ctx),
+                                           ptr->codegen(ctx, AST::Expr::Value::R),
+                                           llvm::ArrayRef<llvm::Value *>{offset_val},
+                                           "add.ptr");
+
+  return val;
 }
 
-llvm::Value *builder_add(Context &ctx, const AST::Expr::Prim2 *expr) {
+llvm::Value *builder_add(Context &ctx, const AST::Expr::Prim2 *expr, AST::Expr::Value value) {
 
-  llvm::Value *return_value;
+  llvm::Value *val;
 
   switch (expr->type_kind()) {
 
@@ -228,10 +277,10 @@ llvm::Value *builder_add(Context &ctx, const AST::Expr::Prim2 *expr) {
 
   case AST::Typ::Kind::Int: {
 
-    auto [lhs_val, lhs_typ] = ctx.access(expr->lhs.get());
-    auto [rhs_val, rhs_typ] = ctx.access(expr->rhs.get());
+    auto lhs_val = expr->lhs->codegen(ctx, AST::Expr::Value::R);
+    auto rhs_val = expr->rhs->codegen(ctx, AST::Expr::Value::R);
 
-    return_value = ctx.builder.CreateAdd(lhs_val, rhs_val, "op.add");
+    val = ctx.builder.CreateAdd(lhs_val, rhs_val, "op.add");
 
   } break;
 
@@ -241,40 +290,37 @@ llvm::Value *builder_add(Context &ctx, const AST::Expr::Prim2 *expr) {
     auto rhs_typ = expr->rhs->type();
 
     if (lhs_typ->is_kind(AST::Typ::Kind::Ptr) && rhs_typ->is_kind(AST::Typ::Kind::Int)) {
-      return_value = builder_ptr_add(ctx, expr->lhs, expr->rhs);
-    }
-
-    else if (lhs_typ->is_kind(AST::Typ::Kind::Int) && rhs_typ->is_kind(AST::Typ::Kind::Ptr)) {
-      return_value = builder_ptr_add(ctx, expr->rhs, expr->lhs);
-    }
-
-    else {
+      val = builder_ptr_add(ctx, expr->lhs, expr->rhs);
+    } else if (lhs_typ->is_kind(AST::Typ::Kind::Int) && rhs_typ->is_kind(AST::Typ::Kind::Ptr)) {
+      val = builder_ptr_add(ctx, expr->rhs, expr->lhs);
+    } else {
       throw std::logic_error("Incompatible targets for pointer arithmetic");
     }
+
   } break;
   }
 
-  return return_value;
+  return val;
 }
 
 // Codegen for ptr - int
-llvm::Value *builder_ptr_sub(Context &ctx, AST::ExprHandle ptr, AST::ExprHandle val) {
+llvm::Value *builder_ptr_sub(Context &ctx, AST::ExprHandle ptr, AST::ExprHandle value) {
 
-  auto [access_val, access_typ] = ctx.access(val.get());
+  auto val = value->codegen(ctx, AST::Expr::Value::R);
 
   auto ptr_typ = ptr->type()->codegen(ctx);
-  auto ptr_elem = ctx.builder.CreateNeg(access_val);
+  auto ptr_elem = ctx.builder.CreateNeg(val);
   auto ptr_sub = ctx.builder.CreateGEP(ptr_typ,
-                                       ptr->codegen(ctx),
-                                       ArrayRef<Value *>(ptr_elem),
+                                       ptr->codegen(ctx, AST::Expr::Value::R),
+                                       llvm::ArrayRef<llvm::Value *>(ptr_elem),
                                        "sub");
 
   return ptr_sub;
 }
 
-llvm::Value *builder_sub(Context &ctx, const AST::Expr::Prim2 *expr) {
+llvm::Value *builder_sub(Context &ctx, const AST::Expr::Prim2 *expr, AST::Expr::Value value) {
 
-  llvm::Value *return_value;
+  llvm::Value *val;
 
   switch (expr->type_kind()) {
 
@@ -286,10 +332,10 @@ llvm::Value *builder_sub(Context &ctx, const AST::Expr::Prim2 *expr) {
 
   case AST::Typ::Kind::Int: {
 
-    auto [lhs_val, lhs_typ] = ctx.access(expr->lhs.get());
-    auto [rhs_val, rhs_typ] = ctx.access(expr->rhs.get());
+    auto lhs_val = expr->lhs->codegen(ctx, AST::Expr::Value::R);
+    auto rhs_val = expr->rhs->codegen(ctx, AST::Expr::Value::R);
 
-    return_value = ctx.builder.CreateSub(lhs_val, rhs_val, "op.sub");
+    val = ctx.builder.CreateSub(lhs_val, rhs_val, "op.sub");
 
   } break;
 
@@ -299,48 +345,45 @@ llvm::Value *builder_sub(Context &ctx, const AST::Expr::Prim2 *expr) {
     auto rhs_typ = expr->rhs->type();
 
     if (lhs_typ->is_kind(AST::Typ::Kind::Ptr) && rhs_typ->is_kind(AST::Typ::Kind::Int)) {
-      return_value = builder_ptr_sub(ctx, expr->lhs, expr->rhs);
-    }
-
-    else if (lhs_typ->is_kind(AST::Typ::Kind::Int) && rhs_typ->is_kind(AST::Typ::Kind::Ptr)) {
-      return_value = builder_ptr_sub(ctx, expr->rhs, expr->lhs);
-    }
-
-    else {
+      val = builder_ptr_sub(ctx, expr->lhs, expr->rhs);
+    } else if (lhs_typ->is_kind(AST::Typ::Kind::Int) && rhs_typ->is_kind(AST::Typ::Kind::Ptr)) {
+      val = builder_ptr_sub(ctx, expr->rhs, expr->lhs);
+    } else {
       throw std::logic_error("Incompatible targets for pointer arithmetic");
     }
+
   }
 
   break;
   }
 
-  return return_value;
+  return val;
 }
 
-llvm::Value *builder_mul(Context &ctx, const AST::Expr::Prim2 *expr) {
-  auto [lhs_val, lhs_typ] = ctx.access(expr->lhs.get());
-  auto [rhs_val, rhs_typ] = ctx.access(expr->rhs.get());
+llvm::Value *builder_mul(Context &ctx, const AST::Expr::Prim2 *expr, AST::Expr::Value value) {
+  auto lhs_val = expr->lhs->codegen(ctx, AST::Expr::Value::R);
+  auto rhs_val = expr->rhs->codegen(ctx, AST::Expr::Value::R);
 
   return ctx.builder.CreateMul(lhs_val, rhs_val, "op.mul");
 }
 
-llvm::Value *builder_div(Context &ctx, const AST::Expr::Prim2 *expr) {
-  auto [lhs_val, lhs_typ] = ctx.access(expr->lhs.get());
-  auto [rhs_val, rhs_typ] = ctx.access(expr->rhs.get());
+llvm::Value *builder_div(Context &ctx, const AST::Expr::Prim2 *expr, AST::Expr::Value value) {
+  auto lhs_val = expr->lhs->codegen(ctx, AST::Expr::Value::R);
+  auto rhs_val = expr->rhs->codegen(ctx, AST::Expr::Value::R);
 
   return ctx.builder.CreateSDiv(lhs_val, rhs_val, "op.div");
 }
 
-llvm::Value *builder_mod(Context &ctx, const AST::Expr::Prim2 *expr) {
-  auto [lhs_val, lhs_typ] = ctx.access(expr->lhs.get());
-  auto [rhs_val, rhs_typ] = ctx.access(expr->rhs.get());
+llvm::Value *builder_mod(Context &ctx, const AST::Expr::Prim2 *expr, AST::Expr::Value value) {
+  auto lhs_val = expr->lhs->codegen(ctx, AST::Expr::Value::R);
+  auto rhs_val = expr->rhs->codegen(ctx, AST::Expr::Value::R);
 
   return ctx.builder.CreateSRem(lhs_val, rhs_val, "op.mod");
 }
 
 } // namespace OpBinaryCodegen
 
-Value *AST::Expr::Prim2::codegen(Context &ctx) const {
+llvm::Value *AST::Expr::Prim2::codegen(Context &ctx, AST::Expr::Value value) const {
 
   switch (op) {
 
@@ -369,63 +412,80 @@ Value *AST::Expr::Prim2::codegen(Context &ctx) const {
   } break;
 
   case OpBinary::Add: {
-    return OpBinaryCodegen::builder_add(ctx, this);
+    return OpBinaryCodegen::builder_add(ctx, this, value);
   } break;
 
   case OpBinary::Sub: {
-    return OpBinaryCodegen::builder_sub(ctx, this);
+    return OpBinaryCodegen::builder_sub(ctx, this, value);
   } break;
 
   case OpBinary::Mul: {
-    return OpBinaryCodegen::builder_mul(ctx, this);
+    return OpBinaryCodegen::builder_mul(ctx, this, value);
   } break;
 
   case OpBinary::Div: {
-    return OpBinaryCodegen::builder_div(ctx, this);
+    return OpBinaryCodegen::builder_div(ctx, this, value);
   } break;
 
   case OpBinary::Mod: {
-    return OpBinaryCodegen::builder_mod(ctx, this);
+    return OpBinaryCodegen::builder_mod(ctx, this, value);
   } break;
 
+  // TODO: Tidy up ops to use pointers when relevant.
   case OpBinary::Eq: {
-    auto [lhs_val, lhs_typ] = ctx.access(this->lhs.get());
-    auto [rhs_val, rhs_typ] = ctx.access(this->rhs.get());
+    llvm::Value *lhs_val;
+    llvm::Value *rhs_val;
+
+    lhs_val = this->lhs->codegen(ctx, AST::Expr::Value::R);
+    rhs_val = this->rhs->codegen(ctx, AST::Expr::Value::R);
+
+    // lhs_val->getType()->print(outs());
+    // rhs_val->getType()->print(outs());
+
+    fflush(stdout);
 
     return ctx.builder.CreateCmp(llvm::ICmpInst::ICMP_EQ, lhs_val, rhs_val, "op.eq");
   } break;
 
   case OpBinary::Neq: {
-    auto [lhs_val, lhs_typ] = ctx.access(this->lhs.get());
-    auto [rhs_val, rhs_typ] = ctx.access(this->rhs.get());
+    llvm::Value *lhs_val;
+    llvm::Value *rhs_val;
+
+    if (lhs->typ_has_kind(AST::Typ::Kind::Ptr) && rhs->typ_has_kind(AST::Typ::Kind::Ptr)) {
+      lhs_val = this->lhs->codegen(ctx, AST::Expr::Value::L);
+      rhs_val = this->rhs->codegen(ctx, AST::Expr::Value::L);
+    } else {
+      lhs_val = this->lhs->codegen(ctx, AST::Expr::Value::R);
+      rhs_val = this->rhs->codegen(ctx, AST::Expr::Value::R);
+    }
 
     return ctx.builder.CreateCmp(llvm::ICmpInst::ICMP_NE, lhs_val, rhs_val, "op.neq");
   } break;
 
   case OpBinary::Gt: {
-    auto [lhs_val, lhs_typ] = ctx.access(this->lhs.get());
-    auto [rhs_val, rhs_typ] = ctx.access(this->rhs.get());
+    auto lhs_val = this->lhs->codegen(ctx, AST::Expr::Value::R);
+    auto rhs_val = this->rhs->codegen(ctx, AST::Expr::Value::R);
 
     return ctx.builder.CreateCmp(llvm::ICmpInst::ICMP_SGT, lhs_val, rhs_val, "op.gt");
   } break;
 
   case OpBinary::Lt: {
-    auto [lhs_val, lhs_typ] = ctx.access(this->lhs.get());
-    auto [rhs_val, rhs_typ] = ctx.access(this->rhs.get());
+    auto lhs_val = this->lhs->codegen(ctx, AST::Expr::Value::R);
+    auto rhs_val = this->rhs->codegen(ctx, AST::Expr::Value::R);
 
     return ctx.builder.CreateCmp(llvm::ICmpInst::ICMP_SLT, lhs_val, rhs_val, "op.lt");
   } break;
 
   case OpBinary::Leq: {
-    auto [lhs_val, lhs_typ] = ctx.access(this->lhs.get());
-    auto [rhs_val, rhs_typ] = ctx.access(this->rhs.get());
+    auto lhs_val = this->lhs->codegen(ctx, AST::Expr::Value::R);
+    auto rhs_val = this->rhs->codegen(ctx, AST::Expr::Value::R);
 
     return ctx.builder.CreateCmp(llvm::ICmpInst::ICMP_SLE, lhs_val, rhs_val, "op.leq");
   } break;
 
   case OpBinary::Geq: {
-    auto [lhs_val, lhs_typ] = ctx.access(this->lhs.get());
-    auto [rhs_val, rhs_typ] = ctx.access(this->rhs.get());
+    auto lhs_val = this->lhs->codegen(ctx, AST::Expr::Value::R);
+    auto rhs_val = this->rhs->codegen(ctx, AST::Expr::Value::R);
 
     return ctx.builder.CreateCmp(llvm::ICmpInst::ICMP_SGE, lhs_val, rhs_val, "op.geq");
   } break;
@@ -444,4 +504,37 @@ Value *AST::Expr::Prim2::codegen(Context &ctx) const {
     return ctx.builder.CreateOr(lhs_val, rhs_val, "op.or");
   } break;
   }
+}
+
+llvm::Value *AST::Expr::Index::codegen(Context &ctx, AST::Expr::Value value) const {
+
+  llvm::Value *val;
+
+  auto as_ptr = std::static_pointer_cast<AST::Typ::Ptr>(this->target->type());
+  if (as_ptr->area().has_value()) {
+
+    auto index_val = this->index->codegen(ctx, AST::Expr::Value::R);
+
+    std::vector<llvm::Value *> array_ref = {};
+    if (as_ptr->area().has_value()) {
+      array_ref.push_back(ctx.get_zero());
+    }
+    array_ref.push_back(index_val);
+
+    val = ctx.builder.CreateInBoundsGEP(this->target->type()->codegen(ctx),
+                                        this->target->codegen(ctx, AST::Expr::Value::L),
+                                        llvm::ArrayRef<llvm::Value *>(array_ref),
+                                        "idx");
+
+  } else {
+    val = OpBinaryCodegen::builder_ptr_add(ctx, this->target, this->index);
+  }
+
+  if (value == AST::Expr::Value::R) {
+    val = ctx.builder.CreateLoad(this->type()->codegen(ctx),
+                                 val,
+                                 "op.idx");
+  }
+
+  return val;
 }
