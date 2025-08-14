@@ -163,7 +163,7 @@ AST::Expr::CallHandle Driver::pk_ExprCall(std::string var, std::vector<AST::Expr
 
     if (!args[i]->typ_has_kind(arg_prototype->kind())) {
 
-      auto arg_access_type = args[i]->type();
+      auto arg_access_type = args[i]->typ();
       if (arg_prototype->kind() != arg_access_type->kind()) {
         auto cast = pk_ExprCast(args[i], arg_prototype);
         args[i] = cast;
@@ -182,16 +182,16 @@ AST::Expr::CastHandle Driver::pk_ExprCast(AST::ExprHandle expr, AST::TypHandle t
   return std::make_shared<AST::Expr::Cast>(cast);
 }
 
-AST::Expr::CallHandle Driver::pk_ExprCall(std::string name, AST::ExprHandle param) {
+AST::Expr::CallHandle Driver::pk_ExprCall(std::string name, AST::ExprHandle arg) {
 
-  std::vector<AST::ExprHandle> params = std::vector<AST::ExprHandle>{param};
-  return this->pk_ExprCall(name, params);
+  std::vector<AST::ExprHandle> args = std::vector<AST::ExprHandle>{arg};
+  return this->pk_ExprCall(name, args);
 }
 
 AST::Expr::CallHandle Driver::pk_ExprCall(std::string name) {
 
-  std::vector<AST::ExprHandle> empty_params = std::vector<AST::ExprHandle>{};
-  return this->pk_ExprCall(name, empty_params);
+  std::vector<AST::ExprHandle> empty_args = std::vector<AST::ExprHandle>{};
+  return this->pk_ExprCall(name, empty_args);
 }
 
 AST::Expr::CstIHandle Driver::pk_ExprCstI(std::int64_t i) {
@@ -209,7 +209,7 @@ AST::Expr::IndexHandle Driver::pk_ExprIndex(AST::ExprHandle access, AST::ExprHan
 
 AST::Expr::Prim1Handle Driver::pk_ExprPrim1(AST::Expr::OpUnary op, AST::ExprHandle expr) {
 
-  auto typ = this->type_resolution_prim1(op, expr);
+  auto typ = this->typ_resolution_prim1(op, expr);
   AST::Expr::Prim1 prim1(typ, op, expr);
 
   return std::make_shared<AST::Expr::Prim1>(prim1);
@@ -217,7 +217,7 @@ AST::Expr::Prim1Handle Driver::pk_ExprPrim1(AST::Expr::OpUnary op, AST::ExprHand
 
 AST::Expr::Prim2Handle Driver::pk_ExprPrim2(AST::Expr::OpBinary op, AST::ExprHandle lhs, AST::ExprHandle rhs) {
 
-  auto typ = this->type_resolution_prim2(op, lhs, rhs);
+  auto typ = this->typ_resolution_prim2(op, lhs, rhs);
   AST::Expr::Prim2 prim2(typ, op, lhs, rhs);
   return std::make_shared<AST::Expr::Prim2>(prim2);
 }

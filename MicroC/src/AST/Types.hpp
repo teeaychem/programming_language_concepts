@@ -69,7 +69,7 @@ public:
 
   std::string to_string(size_t indent = 0) const override;
 
-  TypHandle pointee_type() const { return _pointee; }
+  TypHandle pointee_typ() const { return _pointee; }
   std::optional<std::size_t> area() const { return _area; }
 
   TypHandle complete_with(TypHandle data) override {
@@ -79,7 +79,7 @@ public:
     case Kind::Bool:
     case Kind::Char:
     case Kind::Int: {
-      throw std::logic_error("Idx to data type");
+      throw std::logic_error("Index to a data type");
     } break;
 
     case Kind::Ptr: {
@@ -135,23 +135,23 @@ inline AST::TypHandle pk_Bool() {
 };
 
 inline AST::TypHandle pk_Char() {
-  AST::Typ::Char type_char{};
-  return std::make_shared<AST::Typ::Char>(type_char);
+  AST::Typ::Char typ_char{};
+  return std::make_shared<AST::Typ::Char>(typ_char);
 };
 
 inline AST::TypHandle pk_Int() {
-  AST::Typ::Int type_int{};
-  return std::make_shared<AST::Typ::Int>(type_int);
+  AST::Typ::Int typ_int{};
+  return std::make_shared<AST::Typ::Int>(typ_int);
 };
 
 inline AST::TypHandle pk_Ptr(AST::TypHandle typ, std::optional<std::int64_t> area) {
-  AST::Typ::Ptr type_ptr(typ, area);
-  return std::make_shared<AST::Typ::Ptr>(type_ptr);
+  AST::Typ::Ptr typ_ptr(typ, area);
+  return std::make_shared<AST::Typ::Ptr>(typ_ptr);
 }
 
 inline AST::TypHandle pk_Void() {
-  AST::Typ::Void type_void{};
-  return std::make_shared<AST::Typ::Void>(type_void);
+  AST::Typ::Void typ_void{};
+  return std::make_shared<AST::Typ::Void>(typ_void);
 }
 
 } // namespace Typ

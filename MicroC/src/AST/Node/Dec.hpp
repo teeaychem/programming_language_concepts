@@ -18,14 +18,15 @@ enum class Scope {
 struct Var : DecT {
 private:
   std::string id;
-  TypHandle typ;
+  TypHandle _typ;
 
 public:
   Scope scope;
 
   Var(Scope scope, TypHandle typ, std::string name)
       : scope(scope),
-        typ(typ), id(name) {}
+        _typ(typ),
+        id(name) {}
 
   // Code generation for a declaration.
   // Should always be called when a declaration is made, and always updates the env.
@@ -35,7 +36,7 @@ public:
   std::string to_string(size_t indent = 0) const override;
 
   Dec::Kind kind() const override { return Dec::Kind::Var; }
-  TypHandle type() const override { return typ; };
+  TypHandle typ() const override { return this->_typ; };
   std::string var() const override { return this->id; };
 };
 
@@ -58,7 +59,7 @@ public:
   std::string to_string(size_t indent = 0) const override;
 
   Dec::Kind kind() const override { return Dec::Kind::Fn; }
-  TypHandle type() const override { return r_typ; };
+  TypHandle typ() const override { return r_typ; };
   std::string var() const override { return this->id; };
 
   TypHandle return_type() const { return r_typ; };
@@ -78,7 +79,7 @@ struct Fn : DecT {
   std::string to_string(size_t indent = 0) const override;
 
   Dec::Kind kind() const override { return Dec::Kind::Fn; }
-  TypHandle type() const override { return prototype->return_type(); };
+  TypHandle typ() const override { return prototype->return_type(); };
   std::string var() const override { return this->prototype->var(); };
 
   TypHandle return_type() const { return prototype->return_type(); };

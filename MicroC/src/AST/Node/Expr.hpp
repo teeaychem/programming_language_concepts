@@ -17,10 +17,10 @@ struct Call : ExprT {
   std::string name;
   std::vector<ExprHandle> arguments;
 
-  Call(TypHandle return_type, std::string name, std::vector<ExprHandle> args)
+  Call(TypHandle return_typ, std::string name, std::vector<ExprHandle> args)
       : name(name),
         arguments(args) {
-    this->typ = return_type;
+    this->_typ = return_typ;
   }
 
   Expr::Kind kind() const override {
@@ -36,8 +36,9 @@ struct Call : ExprT {
 struct Cast : ExprT {
   ExprHandle expr;
 
-  Cast(ExprHandle expr, TypHandle to) : expr(expr) {
-    this->typ = to;
+  Cast(ExprHandle expr, TypHandle to)
+      : expr(expr) {
+    this->_typ = to;
   }
 
   Expr::Kind kind() const override { return Expr::Kind::Cast; }
@@ -51,8 +52,9 @@ struct Cast : ExprT {
 struct CstI : ExprT {
   int64_t i;
 
-  CstI(TypHandle type, int64_t i) : i(i) {
-    this->typ = type;
+  CstI(TypHandle typ, int64_t i)
+      : i(i) {
+    this->_typ = typ;
   }
 
   Expr::Kind kind() const override { return Expr::Kind::CstI; }
@@ -67,9 +69,10 @@ struct Index : ExprT {
   ExprHandle target;
   ExprHandle index;
 
-  Index(ExprHandle expr, ExprHandle index) : target(expr),
-                                             index(index) {
-    this->typ = this->target->type()->deref();
+  Index(ExprHandle expr, ExprHandle index)
+      : target(expr),
+        index(index) {
+    this->_typ = this->target->typ()->deref();
   }
 
   Expr::Kind kind() const override { return Expr::Kind::Index; }
@@ -87,7 +90,7 @@ struct Prim1 : ExprT {
   Prim1(TypHandle typ, OpUnary op, ExprHandle expr)
       : op(op),
         expr(expr) {
-    this->typ = typ;
+    this->_typ = typ;
   }
 
   Expr::Kind kind() const override { return Expr::Kind::Prim1; }
@@ -107,7 +110,7 @@ struct Prim2 : ExprT {
       : op(op),
         lhs(lhs),
         rhs(rhs) {
-    this->typ = typ;
+    this->_typ = typ;
   }
 
   Expr::Kind kind() const override { return Expr::Kind::Prim2; }
@@ -120,7 +123,7 @@ struct Var : ExprT {
   std::string var;
 
   Var(TypHandle typ, std::string var) : var(var) {
-    this->typ = typ;
+    this->_typ = typ;
   }
 
   Expr::Kind kind() const override { return Expr::Kind::Var; }

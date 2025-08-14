@@ -31,10 +31,11 @@ std::string AST::Typ::Int::to_string(size_t indent) const { return "int"; }
 std::string AST::Typ::Ptr::to_string(size_t indent) const {
   if (this->area().has_value()) {
     return std::format("({}[{}])",
-                       this->pointee_type()->to_string(indent), this->area().value());
+                       this->pointee_typ()->to_string(indent),
+                       this->area().value());
   } else {
     return std::format("(*{})",
-                       this->pointee_type()->to_string(indent));
+                       this->pointee_typ()->to_string(indent));
   }
 }
 
@@ -46,19 +47,18 @@ std::string AST::Typ::Void::to_string(size_t indent) const { return "void"; }
 
 std::string AST::Dec::Fn::to_string(size_t indent) const {
   return std::format("{} {}",
-                     this->prototype->to_string(), this->body->to_string(indent));
+                     this->prototype->to_string(),
+                     this->body->to_string(indent));
 }
 
 std::string AST::Dec::Prototype::to_string(size_t indent) const {
   std::stringstream fn_ss{};
 
-  fn_ss << std::format("{} {} (",
-                       r_typ->to_string(indent), this->id);
+  fn_ss << std::format("{} {} (", r_typ->to_string(indent), this->id);
 
   if (!args.empty()) {
     for (auto &p : args) {
-      fn_ss << std::format("{} {}, ",
-                           p.typ->to_string(indent), p.var);
+      fn_ss << std::format("{} {}, ", p.typ->to_string(indent), p.var);
     }
     fn_ss.seekp(-2, std::ios_base::end);
   }
@@ -69,8 +69,7 @@ std::string AST::Dec::Prototype::to_string(size_t indent) const {
 }
 
 std::string AST::Dec::Var::to_string(size_t indent) const {
-  return std::format("{} {}",
-                     typ->to_string(indent), id);
+  return std::format("{} {}", this->_typ->to_string(indent), id);
 }
 
 // Expr
@@ -81,8 +80,8 @@ std::string AST::Expr::Call::to_string(size_t indent) const {
   call_ss << this->name << "(";
 
   if (!arguments.empty()) {
-    for (auto &param : arguments) {
-      call_ss << param->to_string(indent) << ", ";
+    for (auto &arg : arguments) {
+      call_ss << arg->to_string(indent) << ", ";
     }
     call_ss.seekp(-2, std::ios_base::end);
   }
@@ -100,12 +99,11 @@ std::string AST::Expr::Call::to_string(size_t indent) const {
 
 std::string AST::Expr::Cast::to_string(size_t indent) const {
   return std::format("({}){}",
-                     this->typ->to_string(), this->expr->to_string());
+                     this->typ()->to_string(), this->expr->to_string());
 }
 
 std::string AST::Expr::CstI::to_string(size_t indent) const {
-  return std::format("{}",
-                     i);
+  return std::format("{}", i);
 }
 
 std::string AST::Expr::Index::to_string(size_t indent) const {
@@ -123,9 +121,7 @@ std::string AST::Expr::Prim2::to_string(size_t indent) const {
                      this->lhs->to_string(indent), this->op, this->rhs->to_string(indent));
 }
 
-std::string AST::Expr::Var::to_string(size_t indent) const {
-  return this->var;
-}
+std::string AST::Expr::Var::to_string(size_t indent) const { return this->var; }
 
 // Stmt
 
@@ -184,8 +180,7 @@ std::string AST::Stmt::If::to_string(size_t indent) const {
     }
   }
 
-  if_ss << std::format(" else {}",
-                       this->stmt_else->to_string(indent));
+  if_ss << std::format(" else {}", this->stmt_else->to_string(indent));
 
 complete_if_string:
 
@@ -197,8 +192,7 @@ std::string AST::Stmt::Return::to_string(size_t indent) const {
 
   r_ss << "return";
   if (this->value.has_value()) {
-    r_ss << " "
-         << this->value.value()->to_string(indent);
+    r_ss << " " << this->value.value()->to_string(indent);
   }
   r_ss << ";";
 

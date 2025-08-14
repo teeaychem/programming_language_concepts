@@ -57,6 +57,7 @@ struct TypT {
   // Completes the type, may throw if already complete.
   virtual TypHandle complete_with(TypHandle d_typ) = 0;
 
+  // Default vals are LLVM null vals.
   virtual llvm::Constant *defaultgen(Context &ctx) const {
     return llvm::Constant::getNullValue(this->codegen(ctx));
   };
@@ -85,6 +86,11 @@ struct NodeT {
 
   // A string representation of the node, indented to `indent`.
   virtual std::string to_string(size_t indent = 0) const = 0;
+
+  friend std::ostream &operator<<(std::ostream &out, const NodeT &node) {
+    out << node.to_string();
+    return out;
+  }
 
   virtual ~NodeT() = default;
 };
@@ -170,16 +176,16 @@ struct ExprT : NodeT {
 
 protected:
   // Each expression node is typed, and should be initialised with its type.
-  TypHandle typ{nullptr};
+  TypHandle _typ{nullptr};
 
 public:
   AST::Kind kind_node() const override { return AST::Kind::Expr; }
 
   // Returns the type of an expression.
-  AST::TypHandle type() const { return this->typ; };
+  AST::TypHandle typ() const { return this->_typ; };
 
   // The kind of type `this` has.
-  AST::Typ::Kind type_kind() const { return this->type()->kind(); }
+  AST::Typ::Kind typ_kind() const { return this->typ()->kind(); }
 
   virtual llvm::Value *codegen(Context &ctx, AST::Expr::Value value) const = 0;
 
@@ -190,7 +196,7 @@ public:
   llvm::Value *codegen_eval_false(Context &ctx) const;
 
   // Returns true if `this` has type of `kind`.
-  bool typ_has_kind(AST::Typ::Kind kind) const { return this->typ->kind() == kind; };
+  bool typ_has_kind(AST::Typ::Kind kind) const { return this->_typ->kind() == kind; };
 
   virtual Expr::Kind kind() const = 0;
 };
@@ -280,7 +286,7 @@ struct DecT : NodeT {
   virtual Dec::Kind kind() const = 0;
 
   // The type of variable declared.
-  virtual AST::TypHandle type() const = 0;
+  virtual AST::TypHandle typ() const = 0;
 
   // The variable declared.
   virtual std::string var() const = 0;
@@ -289,11 +295,9 @@ struct DecT : NodeT {
 typedef std::shared_ptr<DecT> DecHandle;
 } // namespace AST
 
-// etc.
+// Etc...
 
 namespace AST {
-
-// Etc
 
 struct VarTyp {
   // The var.
