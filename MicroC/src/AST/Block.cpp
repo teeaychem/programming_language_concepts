@@ -14,7 +14,7 @@ AST::Block AST::Block::push_DecVar(EnvAST &env, AST::Stmt::DeclarationHandle con
     this->fresh_vars.push_back(dec_var);
   }
 
-  env.vars[var] = dec_var->declaration->type();
+  env.vars[var] = dec_var->declaration->typ();
 
   return *this;
 }

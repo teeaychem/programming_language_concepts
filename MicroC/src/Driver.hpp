@@ -72,8 +72,8 @@ struct Driver {
   }
 
   void fn_finalise(AST::Dec::FnHandle fn) {
-    for (auto &param : fn->prototype->args) {
-      this->ctx.env_ast.vars.erase(param.var);
+    for (auto &arg : fn->prototype->args) {
+      this->ctx.env_ast.vars.erase(arg.var);
     }
 
     for (auto &shadowed : this->shadow_cache) {
@@ -91,21 +91,21 @@ struct Driver {
   // types
 
   // Returns the type which results from applying `op` to `expr`.
-  AST::TypHandle type_resolution_prim1(AST::Expr::OpUnary op, AST::ExprHandle expr) {
+  AST::TypHandle typ_resolution_prim1(AST::Expr::OpUnary op, AST::ExprHandle expr) {
 
     switch (op) {
 
     case AST::Expr::OpUnary::AddressOf: {
-      return AST::Typ::pk_Ptr(expr->type(), std::nullopt);
+      return AST::Typ::pk_Ptr(expr->typ(), std::nullopt);
     } break;
 
     case AST::Expr::OpUnary::Dereference: {
       if (!expr->typ_has_kind(AST::Typ::Kind::Ptr)) {
         throw std::logic_error(std::format("Deref panic... {} {}",
                                            expr->to_string(),
-                                           expr->type()->to_string()));
+                                           expr->typ()->to_string()));
       }
-      return expr->type()->deref();
+      return expr->typ()->deref();
     } break;
 
     case AST::Expr::OpUnary::Sub: {
@@ -121,37 +121,37 @@ struct Driver {
   void type_ensure_assignment(AST::ExprHandle lhs, AST::ExprHandle rhs) {
 
     // TODO: Unify this pattern, it likely appears elsewhere
-    auto rhs_type = rhs->type();
+    auto rhs_typ = rhs->typ();
     if (rhs->kind() == AST::Expr::Kind::Index) {
       auto as_index = std::static_pointer_cast<AST::Expr::Index>(rhs);
-      rhs_type = as_index->target->type()->deref();
+      rhs_typ = as_index->target->typ()->deref();
     }
 
-    if ((lhs->typ_has_kind(rhs_type->kind())) //
-        || (lhs->typ_has_kind(AST::Typ::Kind::Ptr) && lhs->type()->deref()->kind() == rhs_type->kind())) {
+    if ((lhs->typ_has_kind(rhs_typ->kind())) //
+        || (lhs->typ_has_kind(AST::Typ::Kind::Ptr) && lhs->typ()->deref()->is_kind(rhs_typ->kind()))) {
       return;
     }
 
     else {
       throw std::logic_error(std::format("Conflicting types for {}: {} and {}: {}",
                                          lhs->to_string(),
-                                         lhs->type()->to_string(),
+                                         lhs->typ()->to_string(),
                                          rhs->to_string(),
-                                         rhs_type->to_string()));
+                                         rhs_typ->to_string()));
     }
   }
 
   void type_ensure_match(AST::ExprHandle lhs, AST::ExprHandle rhs) {
-    if (lhs->typ_has_kind(rhs->type_kind())) {
+    if (lhs->typ_has_kind(rhs->typ_kind())) {
       return;
     }
 
     else {
       throw std::logic_error(std::format("Conflicting types for {}: {} and {}: {}",
                                          lhs->to_string(),
-                                         lhs->type()->to_string(),
+                                         lhs->typ()->to_string(),
                                          rhs->to_string(),
-                                         rhs->type()->to_string()));
+                                         rhs->typ()->to_string()));
     }
   }
 
@@ -160,19 +160,19 @@ struct Driver {
   AST::TypHandle type_unsupported_binary_op(AST::Expr::OpBinary op, AST::ExprHandle lhs, AST::ExprHandle rhs) {
     throw std::logic_error(std::format("Unsupported operation {} on {} and {}",
                                        op,
-                                       lhs->type()->to_string(),
-                                       rhs->type()->to_string()));
+                                       lhs->typ()->to_string(),
+                                       rhs->typ()->to_string()));
   }
 
-  AST::TypHandle type_resolution_prim2_ptr_expr(AST::Expr::OpBinary op, AST::ExprHandle ptr, AST::ExprHandle expr) {
+  AST::TypHandle typ_resolution_prim2_ptr_expr(AST::Expr::OpBinary op, AST::ExprHandle ptr, AST::ExprHandle expr) {
     if (expr->typ_has_kind(AST::Typ::Kind::Int)) {
-      return ptr->type();
+      return ptr->typ();
     }
 
     return type_unsupported_binary_op(op, ptr, expr);
   }
 
-  AST::TypHandle type_resolution_prim2(AST::Expr::OpBinary op, AST::ExprHandle lhs, AST::ExprHandle rhs) {
+  AST::TypHandle typ_resolution_prim2(AST::Expr::OpBinary op, AST::ExprHandle lhs, AST::ExprHandle rhs) {
 
     switch (op) {
 
@@ -184,7 +184,7 @@ struct Driver {
     case AST::Expr::OpBinary::AssignMod: {
       type_ensure_assignment(lhs, rhs);
 
-      return rhs->type();
+      return rhs->typ();
     } break;
 
     case AST::Expr::OpBinary::Add:
@@ -192,9 +192,9 @@ struct Driver {
     case AST::Expr::OpBinary::Mul:
     case AST::Expr::OpBinary::Div:
     case AST::Expr::OpBinary::Mod: {
-      if (lhs->type_kind() == rhs->type_kind()) {
+      if (lhs->typ_kind() == rhs->typ_kind()) {
 
-        switch (lhs->type_kind()) {
+        switch (lhs->typ_kind()) {
 
         case AST::Typ::Kind::Bool:
         case AST::Typ::Kind::Char: {
@@ -214,17 +214,17 @@ struct Driver {
       }
 
       else if (lhs->typ_has_kind(AST::Typ::Kind::Ptr)) {
-        return type_resolution_prim2_ptr_expr(op, lhs, rhs);
+        return typ_resolution_prim2_ptr_expr(op, lhs, rhs);
       }
 
       else if (rhs->typ_has_kind(AST::Typ::Kind::Ptr)) {
-        return type_resolution_prim2_ptr_expr(op, rhs, lhs);
+        return typ_resolution_prim2_ptr_expr(op, rhs, lhs);
       }
 
       else {
-        throw std::logic_error(std::format("todo: type resolution: {} {}",
-                                           lhs->type()->to_string(),
-                                           rhs->type()->to_string()));
+        throw std::logic_error(std::format("TODO: type resolution: {} {}",
+                                           lhs->typ()->to_string(),
+                                           rhs->typ()->to_string()));
       }
     } break;
 
@@ -259,7 +259,7 @@ struct Driver {
   AST::Dec::FnHandle pk_DecFn(AST::Dec::PrototypeHandle prototype, AST::Stmt::BlockHandle body);
 
   // Prototypes require specification of return type, var, and arguments (as type var pairs).
-  AST::Dec::PrototypeHandle pk_Prototype(AST::TypHandle r_typ, std::string var, AST::VarTypVec params);
+  AST::Dec::PrototypeHandle pk_Prototype(AST::TypHandle r_typ, std::string var, AST::VarTypVec args);
 
   // Variable declaration requires specification scope, typ, and var of the variable.
   AST::Dec::VarHandle pk_DecVar(AST::Dec::Scope scope, AST::TypHandle typ, std::string var);
@@ -269,8 +269,8 @@ struct Driver {
   // Calls requires the var of the fn and arguments.
   // An error is thrown if no prototype is found, or if arguments are incorrect.
   // Overloads are provided for convenience.
-  AST::Expr::CallHandle pk_ExprCall(std::string name, std::vector<AST::ExprHandle> params);
-  AST::Expr::CallHandle pk_ExprCall(std::string name, AST::ExprHandle param);
+  AST::Expr::CallHandle pk_ExprCall(std::string name, std::vector<AST::ExprHandle> args);
+  AST::Expr::CallHandle pk_ExprCall(std::string name, AST::ExprHandle arg);
   AST::Expr::CallHandle pk_ExprCall(std::string name);
 
   // Casts require the expression cast and the target type.
